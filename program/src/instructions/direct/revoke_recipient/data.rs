@@ -37,7 +37,7 @@ mod tests {
         let data = [0u8];
         let result = RevokeDirectRecipientData::try_from(&data[..]);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().revoke_mode, RevokeMode::NonVested {});
+        assert_eq!(result.unwrap().revoke_mode, RevokeMode::NonVested);
     }
 
     #[test]
@@ -45,7 +45,7 @@ mod tests {
         let data = [1u8];
         let result = RevokeDirectRecipientData::try_from(&data[..]);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().revoke_mode, RevokeMode::Full {});
+        assert_eq!(result.unwrap().revoke_mode, RevokeMode::Full);
     }
 
     #[test]

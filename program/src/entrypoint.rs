@@ -2,6 +2,13 @@ use pinocchio::{account::AccountView, entrypoint, error::ProgramError, Address, 
 
 use crate::{
     instructions::{
+        continuous::{
+            claim::process_claim_continuous, close_pool::process_close_continuous_pool,
+            create_pool::process_create_continuous_pool, distribute_reward::process_distribute_continuous_reward,
+            opt_in::process_continuous_opt_in, opt_out::process_continuous_opt_out,
+            revoke_user::process_revoke_continuous_user, set_balance::process_set_continuous_balance,
+            sync_balance::process_sync_continuous_balance,
+        },
         direct::{
             add_recipient::process_add_direct_recipient, claim::process_claim_direct,
             close_distribution::process_close_direct_distribution, close_recipient::process_close_direct_recipient,
@@ -54,6 +61,33 @@ pub fn process_instruction(program_id: &Address, accounts: &[AccountView], instr
         }
         RewardsInstructionDiscriminators::RevokeMerkleClaim => {
             process_revoke_merkle_claim(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::CreateContinuousPool => {
+            process_create_continuous_pool(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::ContinuousOptIn => {
+            process_continuous_opt_in(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::ContinuousOptOut => {
+            process_continuous_opt_out(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::DistributeContinuousReward => {
+            process_distribute_continuous_reward(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::ClaimContinuous => {
+            process_claim_continuous(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::SyncContinuousBalance => {
+            process_sync_continuous_balance(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::SetContinuousBalance => {
+            process_set_continuous_balance(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::CloseContinuousPool => {
+            process_close_continuous_pool(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::RevokeContinuousUser => {
+            process_revoke_continuous_user(program_id, accounts, instruction_data)
         }
         RewardsInstructionDiscriminators::EmitEvent => process_emit_event(program_id, accounts),
     }

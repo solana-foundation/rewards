@@ -1,3 +1,4 @@
+pub mod continuous;
 pub mod definition;
 pub mod direct;
 pub mod emit_event;

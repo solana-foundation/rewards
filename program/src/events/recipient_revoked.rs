@@ -57,11 +57,11 @@ mod tests {
         let distribution = Address::new_from_array([1u8; 32]);
         let recipient = Address::new_from_array([2u8; 32]);
 
-        let event = RecipientRevokedEvent::new(distribution, recipient, RevokeMode::NonVested {}, 300, 500);
+        let event = RecipientRevokedEvent::new(distribution, recipient, RevokeMode::NonVested, 300, 500);
 
         assert_eq!(event.distribution, distribution);
         assert_eq!(event.recipient, recipient);
-        assert_eq!(event.revoke_mode, RevokeMode::NonVested {});
+        assert_eq!(event.revoke_mode, RevokeMode::NonVested);
         assert_eq!(event.vested_transferred, 300);
         assert_eq!(event.unvested_returned, 500);
     }
@@ -70,7 +70,7 @@ mod tests {
     fn test_recipient_revoked_event_to_bytes_inner() {
         let distribution = Address::new_from_array([1u8; 32]);
         let recipient = Address::new_from_array([2u8; 32]);
-        let event = RecipientRevokedEvent::new(distribution, recipient, RevokeMode::Full {}, 0, 1000);
+        let event = RecipientRevokedEvent::new(distribution, recipient, RevokeMode::Full, 0, 1000);
 
         let bytes = event.to_bytes_inner();
         assert_eq!(bytes.len(), RecipientRevokedEvent::DATA_LEN);
@@ -85,7 +85,7 @@ mod tests {
     fn test_recipient_revoked_event_to_bytes() {
         let distribution = Address::new_from_array([1u8; 32]);
         let recipient = Address::new_from_array([2u8; 32]);
-        let event = RecipientRevokedEvent::new(distribution, recipient, RevokeMode::NonVested {}, 300, 500);
+        let event = RecipientRevokedEvent::new(distribution, recipient, RevokeMode::NonVested, 300, 500);
 
         let bytes = event.to_bytes();
         assert_eq!(bytes.len(), EVENT_DISCRIMINATOR_LEN + RecipientRevokedEvent::DATA_LEN);

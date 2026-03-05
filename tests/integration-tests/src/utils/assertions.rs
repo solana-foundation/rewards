@@ -1,7 +1,7 @@
 use rewards_program_client::accounts::{DirectDistribution, DirectRecipient, MerkleClaim, MerkleDistribution};
 use solana_sdk::{instruction::InstructionError, pubkey::Pubkey, transaction::TransactionError};
 
-use crate::utils::{TestContext, PROGRAM_ID};
+use crate::utils::{get_reward_pool, TestContext, PROGRAM_ID};
 
 pub use rewards_program_client::errors::RewardsProgramError as RewardsError;
 
@@ -108,4 +108,19 @@ pub fn assert_merkle_claim(ctx: &TestContext, claim_pda: &Pubkey, expected_claim
 
     assert_eq!(data.bump, expected_bump);
     assert_eq!(data.claimed_amount, expected_claimed_amount);
+}
+
+pub fn assert_reward_pool(
+    ctx: &TestContext,
+    pool_pda: &Pubkey,
+    expected_authority: &Pubkey,
+    expected_tracked_mint: &Pubkey,
+    expected_reward_mint: &Pubkey,
+    expected_bump: u8,
+) {
+    let data = get_reward_pool(ctx, pool_pda);
+    assert_eq!(data.bump, expected_bump);
+    assert_eq!(data.authority, *expected_authority);
+    assert_eq!(data.tracked_mint, *expected_tracked_mint);
+    assert_eq!(data.reward_mint, *expected_reward_mint);
 }

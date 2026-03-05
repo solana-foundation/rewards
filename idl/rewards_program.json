@@ -325,10 +325,217 @@
           "kind": "structTypeNode"
         },
         "kind": "accountNode",
-        "name": "merkleRevocation"
+        "name": "revocation"
+      },
+      {
+        "data": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "bump",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "balanceSource",
+              "type": {
+                "kind": "definedTypeLinkNode",
+                "name": "balanceSource"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "revocable",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "padding",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 5
+                },
+                "item": {
+                  "endian": "le",
+                  "format": "u8",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "authority",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "trackedMint",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rewardMint",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "seed",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rewardPerToken",
+              "type": {
+                "endian": "le",
+                "format": "u128",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "optedInSupply",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "totalDistributed",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "totalClaimed",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "clawbackTs",
+              "type": {
+                "endian": "le",
+                "format": "i64",
+                "kind": "numberTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "kind": "accountNode",
+        "name": "rewardPool"
+      },
+      {
+        "data": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "bump",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "padding",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 7
+                },
+                "item": {
+                  "endian": "le",
+                  "format": "u8",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rewardPerTokenPaid",
+              "type": {
+                "endian": "le",
+                "format": "u128",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "accruedRewards",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "lastKnownBalance",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "kind": "accountNode",
+        "name": "userRewardAccount"
       }
     ],
     "definedTypes": [
+      {
+        "kind": "definedTypeNode",
+        "name": "balanceSource",
+        "type": {
+          "kind": "enumTypeNode",
+          "size": {
+            "endian": "le",
+            "format": "u8",
+            "kind": "numberTypeNode"
+          },
+          "variants": [
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "onChain"
+            },
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "authoritySet"
+            }
+          ]
+        }
+      },
       {
         "kind": "definedTypeNode",
         "name": "revokeMode",
@@ -341,20 +548,12 @@
           },
           "variants": [
             {
-              "kind": "enumStructVariantTypeNode",
-              "name": "nonVested",
-              "struct": {
-                "fields": [],
-                "kind": "structTypeNode"
-              }
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "nonVested"
             },
             {
-              "kind": "enumStructVariantTypeNode",
-              "name": "full",
-              "struct": {
-                "fields": [],
-                "kind": "structTypeNode"
-              }
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "full"
             }
           ]
         }
@@ -460,6 +659,47 @@
               }
             }
           ]
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "balanceSyncedEvent",
+        "type": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rewardPool",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "user",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "oldBalance",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "newBalance",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
         }
       },
       {
@@ -651,8 +891,106 @@
                 ],
                 "kind": "structTypeNode"
               }
+            },
+            {
+              "kind": "enumStructVariantTypeNode",
+              "name": "continuous",
+              "struct": {
+                "fields": [
+                  {
+                    "kind": "structFieldTypeNode",
+                    "name": "trackedMint",
+                    "type": {
+                      "kind": "publicKeyTypeNode"
+                    }
+                  },
+                  {
+                    "kind": "structFieldTypeNode",
+                    "name": "balanceSource",
+                    "type": {
+                      "endian": "le",
+                      "format": "u8",
+                      "kind": "numberTypeNode"
+                    }
+                  },
+                  {
+                    "kind": "structFieldTypeNode",
+                    "name": "clawbackTs",
+                    "type": {
+                      "endian": "le",
+                      "format": "i64",
+                      "kind": "numberTypeNode"
+                    }
+                  }
+                ],
+                "kind": "structTypeNode"
+              }
             }
           ]
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "optInEvent",
+        "type": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rewardPool",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "user",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "balance",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "optOutEvent",
+        "type": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rewardPool",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "user",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rewardsClaimed",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
         }
       },
       {
@@ -737,6 +1075,40 @@
               "type": {
                 "endian": "le",
                 "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        }
+      },
+      {
+        "kind": "definedTypeNode",
+        "name": "rewardDistributedEvent",
+        "type": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "rewardPool",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "amount",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "newRewardPerToken",
+              "type": {
+                "endian": "le",
+                "format": "u128",
                 "kind": "numberTypeNode"
               }
             }
@@ -865,6 +1237,72 @@
         "kind": "errorNode",
         "message": "Claimant has already been revoked",
         "name": "claimantAlreadyRevoked"
+      },
+      {
+        "code": 20,
+        "kind": "errorNode",
+        "message": "No users opted in to receive rewards",
+        "name": "noOptedInUsers"
+      },
+      {
+        "code": 21,
+        "kind": "errorNode",
+        "message": "User is already opted in",
+        "name": "userAlreadyOptedIn"
+      },
+      {
+        "code": 22,
+        "kind": "errorNode",
+        "message": "User is not opted in",
+        "name": "userNotOptedIn"
+      },
+      {
+        "code": 23,
+        "kind": "errorNode",
+        "message": "Distribution amount too small for opted-in supply",
+        "name": "distributionAmountTooSmall"
+      },
+      {
+        "code": 24,
+        "kind": "errorNode",
+        "message": "Tracked mint does not match pool",
+        "name": "trackedMintMismatch"
+      },
+      {
+        "code": 25,
+        "kind": "errorNode",
+        "message": "Reward mint does not match pool",
+        "name": "rewardMintMismatch"
+      },
+      {
+        "code": 26,
+        "kind": "errorNode",
+        "message": "Invalid balance source mode",
+        "name": "invalidBalanceSource"
+      },
+      {
+        "code": 27,
+        "kind": "errorNode",
+        "message": "Instruction not allowed for this pool's balance source mode",
+        "name": "balanceSourceMismatch"
+      },
+      {
+        "code": 28,
+        "kind": "errorNode",
+        "message": "User has been revoked from this reward pool",
+        "name": "userRevoked"
+      },
+      {
+        "code": 29,
+        "kind": "errorNode",
+        "message": "User has already been revoked from this reward pool",
+        "name": "userAlreadyRevoked"
+      },
+      {
+        "code": 30,
+        "kind": "errorNode",
+        "message": "Invalid timestamp value",
+        "name": "invalidTimestamp"
       }
     ],
     "instructions": [
@@ -1727,12 +2165,12 @@
           },
           {
             "docs": [
-              "PDA: [b\"merkle_revocation\", distribution, claimant] (checked for existence)"
+              "PDA: [b\"revocation\", distribution, claimant] (checked for existence)"
             ],
             "isSigner": false,
             "isWritable": false,
             "kind": "instructionAccountNode",
-            "name": "revocationAccount"
+            "name": "revocationMarker"
           },
           {
             "docs": [
@@ -2246,12 +2684,12 @@
           },
           {
             "docs": [
-              "PDA: [b\"merkle_revocation\", distribution, claimant] (created)"
+              "PDA: [b\"revocation\", distribution, claimant] (created)"
             ],
             "isSigner": false,
             "isWritable": true,
             "kind": "instructionAccountNode",
-            "name": "revocationAccount"
+            "name": "revocationMarker"
           },
           {
             "docs": [
@@ -2412,6 +2850,1201 @@
         ],
         "kind": "instructionNode",
         "name": "revokeMerkleClaim"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "Pays for account creation"
+            ],
+            "isSigner": true,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "payer"
+          },
+          {
+            "docs": [
+              "Pool authority; stored on-chain"
+            ],
+            "isSigner": true,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          },
+          {
+            "docs": [
+              "Arbitrary signer used as PDA seed for uniqueness"
+            ],
+            "isSigner": true,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "seed"
+          },
+          {
+            "docs": [
+              "PDA: [b\"reward_pool\", reward_mint, tracked_mint, authority, seed] (created)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardPool"
+          },
+          {
+            "docs": [
+              "SPL token mint tracked for balance-based rewards (e.g. USD1)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "trackedMint"
+          },
+          {
+            "docs": [
+              "SPL token mint distributed as reward"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardMint"
+          },
+          {
+            "docs": [
+              "ATA of reward_pool PDA for reward_mint (created via CPI)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardVault"
+          },
+          {
+            "docs": [
+              "System program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "systemProgram"
+          },
+          {
+            "docs": [
+              "SPL Token or Token-2022 program for reward mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardTokenProgram"
+          },
+          {
+            "docs": [
+              "Associated Token Account program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "associatedTokenProgram"
+          },
+          {
+            "docs": [
+              "PDA: [b\"__event_authority\"] for event CPI"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "docs": [
+              "This program's ID (for event CPI)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardsProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 11
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "bump",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "balanceSource",
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "balanceSource"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "revocable",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "clawbackTs",
+            "type": {
+              "endian": "le",
+              "format": "i64",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "createContinuousPool"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "Pays for UserRewardAccount PDA creation"
+            ],
+            "isSigner": true,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "payer"
+          },
+          {
+            "docs": [
+              "User opting in; stored on-chain"
+            ],
+            "isSigner": true,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "user"
+          },
+          {
+            "docs": [
+              "PDA: RewardPool account"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardPool"
+          },
+          {
+            "docs": [
+              "PDA: [b\"user_reward\", reward_pool, user] (created)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "userRewardAccount"
+          },
+          {
+            "docs": [
+              "PDA: [b\"revocation\", reward_pool, user] (checked for existence; must be uninitialized)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "revocationMarker"
+          },
+          {
+            "docs": [
+              "User's tracked token account (read for initial balance)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "userTrackedTokenAccount"
+          },
+          {
+            "docs": [
+              "SPL token mint; must match pool tracked_mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "trackedMint"
+          },
+          {
+            "docs": [
+              "System program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "systemProgram"
+          },
+          {
+            "docs": [
+              "SPL Token or Token-2022 program for tracked mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "trackedTokenProgram"
+          },
+          {
+            "docs": [
+              "PDA: [b\"__event_authority\"] for event CPI"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "docs": [
+              "This program's ID"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardsProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 12
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "bump",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "continuousOptIn"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "User opting out; receives rent refund"
+            ],
+            "isSigner": true,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "user"
+          },
+          {
+            "docs": [
+              "PDA: RewardPool account"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardPool"
+          },
+          {
+            "docs": [
+              "PDA: [b\"user_reward\", reward_pool, user] (closed)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "userRewardAccount"
+          },
+          {
+            "docs": [
+              "User's tracked token account (read for balance sync)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "userTrackedTokenAccount"
+          },
+          {
+            "docs": [
+              "ATA of reward_pool PDA for reward_mint; source of claimed tokens"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardVault"
+          },
+          {
+            "docs": [
+              "User's reward token account; destination for claimed tokens"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "userRewardTokenAccount"
+          },
+          {
+            "docs": [
+              "SPL token mint; must match pool tracked_mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "trackedMint"
+          },
+          {
+            "docs": [
+              "SPL token mint; must match reward_pool.reward_mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardMint"
+          },
+          {
+            "docs": [
+              "SPL Token or Token-2022 program for tracked mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "trackedTokenProgram"
+          },
+          {
+            "docs": [
+              "SPL Token or Token-2022 program for reward mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardTokenProgram"
+          },
+          {
+            "docs": [
+              "PDA: [b\"__event_authority\"] for event CPI"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "docs": [
+              "This program's ID"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardsProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 13
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "continuousOptOut"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "Pool authority; must match reward_pool.authority"
+            ],
+            "isSigner": true,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          },
+          {
+            "docs": [
+              "PDA: RewardPool account"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardPool"
+          },
+          {
+            "docs": [
+              "SPL token mint; must match reward_pool.reward_mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardMint"
+          },
+          {
+            "docs": [
+              "ATA of reward_pool PDA for reward_mint; receives deposited tokens"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardVault"
+          },
+          {
+            "docs": [
+              "Authority's reward token account; source of deposited tokens"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "authorityTokenAccount"
+          },
+          {
+            "docs": [
+              "SPL Token or Token-2022 program for reward mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardTokenProgram"
+          },
+          {
+            "docs": [
+              "PDA: [b\"__event_authority\"] for event CPI"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "docs": [
+              "This program's ID"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardsProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 14
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "distributeContinuousReward"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "User claiming rewards"
+            ],
+            "isSigner": true,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "user"
+          },
+          {
+            "docs": [
+              "PDA: RewardPool account"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardPool"
+          },
+          {
+            "docs": [
+              "PDA: [b\"user_reward\", reward_pool, user]"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "userRewardAccount"
+          },
+          {
+            "docs": [
+              "User's tracked token account (read for balance sync)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "userTrackedTokenAccount"
+          },
+          {
+            "docs": [
+              "ATA of reward_pool PDA for reward_mint; source of claimed tokens"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardVault"
+          },
+          {
+            "docs": [
+              "User's reward token account; destination for claimed tokens"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "userRewardTokenAccount"
+          },
+          {
+            "docs": [
+              "SPL token mint; must match pool tracked_mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "trackedMint"
+          },
+          {
+            "docs": [
+              "SPL token mint; must match reward_pool.reward_mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardMint"
+          },
+          {
+            "docs": [
+              "SPL Token or Token-2022 program for tracked mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "trackedTokenProgram"
+          },
+          {
+            "docs": [
+              "SPL Token or Token-2022 program for reward mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardTokenProgram"
+          },
+          {
+            "docs": [
+              "PDA: [b\"__event_authority\"] for event CPI"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "docs": [
+              "This program's ID"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardsProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 15
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "claimContinuous"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "PDA: RewardPool account (balance_source must be 0)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardPool"
+          },
+          {
+            "docs": [
+              "PDA: [b\"user_reward\", reward_pool, user]"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "userRewardAccount"
+          },
+          {
+            "docs": [
+              "User wallet; used for PDA derivation"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "user"
+          },
+          {
+            "docs": [
+              "User's tracked token account (read for current balance)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "userTrackedTokenAccount"
+          },
+          {
+            "docs": [
+              "SPL token mint; must match pool tracked_mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "trackedMint"
+          },
+          {
+            "docs": [
+              "SPL Token or Token-2022 program for tracked mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "trackedTokenProgram"
+          },
+          {
+            "docs": [
+              "PDA: [b\"__event_authority\"] for event CPI"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "docs": [
+              "This program's ID"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardsProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 16
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "syncContinuousBalance"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "Pool authority; must match reward_pool.authority"
+            ],
+            "isSigner": true,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          },
+          {
+            "docs": [
+              "PDA: RewardPool account (balance_source must be 1)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardPool"
+          },
+          {
+            "docs": [
+              "PDA: [b\"user_reward\", reward_pool, user]"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "userRewardAccount"
+          },
+          {
+            "docs": [
+              "User wallet; used for PDA derivation"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "user"
+          },
+          {
+            "docs": [
+              "PDA: [b\"__event_authority\"] for event CPI"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "docs": [
+              "This program's ID"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardsProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 17
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "balance",
+            "type": {
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "setContinuousBalance"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "Pool authority; receives rent + remaining reward vault tokens"
+            ],
+            "isSigner": true,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          },
+          {
+            "docs": [
+              "PDA: RewardPool account (closed)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardPool"
+          },
+          {
+            "docs": [
+              "SPL token mint; must match reward_pool.reward_mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardMint"
+          },
+          {
+            "docs": [
+              "ATA of reward_pool PDA for reward_mint; remaining tokens returned to authority"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardVault"
+          },
+          {
+            "docs": [
+              "Authority's reward token account; destination for remaining tokens"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "authorityTokenAccount"
+          },
+          {
+            "docs": [
+              "SPL Token or Token-2022 program for reward mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardTokenProgram"
+          },
+          {
+            "docs": [
+              "PDA: [b\"__event_authority\"] for event CPI"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "docs": [
+              "This program's ID"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardsProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 18
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "closeContinuousPool"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "Pool authority; must match reward_pool.authority"
+            ],
+            "isSigner": true,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          },
+          {
+            "docs": [
+              "Pays for revocation PDA creation"
+            ],
+            "isSigner": true,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "payer"
+          },
+          {
+            "docs": [
+              "PDA: RewardPool account"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardPool"
+          },
+          {
+            "docs": [
+              "PDA: [b\"user_reward\", reward_pool, user] (closed)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "userRewardAccount"
+          },
+          {
+            "docs": [
+              "PDA: [b\"revocation\", reward_pool, user] (created)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "revocationMarker"
+          },
+          {
+            "docs": [
+              "User being revoked"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "user"
+          },
+          {
+            "docs": [
+              "Receives rent refund from closed UserRewardAccount; authority decides destination"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rentDestination"
+          },
+          {
+            "docs": [
+              "User's tracked token account (read for balance sync)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "userTrackedTokenAccount"
+          },
+          {
+            "docs": [
+              "ATA of reward_pool PDA for reward_mint; source of reward transfer"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "rewardVault"
+          },
+          {
+            "docs": [
+              "User's reward token account; destination for rewards (NonVested mode)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "userRewardTokenAccount"
+          },
+          {
+            "docs": [
+              "Authority's reward token account; destination for forfeited rewards (Full mode)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "authorityRewardTokenAccount"
+          },
+          {
+            "docs": [
+              "SPL token mint; must match pool tracked_mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "trackedMint"
+          },
+          {
+            "docs": [
+              "SPL token mint; must match reward_pool.reward_mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardMint"
+          },
+          {
+            "docs": [
+              "System program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "systemProgram"
+          },
+          {
+            "docs": [
+              "SPL Token or Token-2022 program for tracked mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "trackedTokenProgram"
+          },
+          {
+            "docs": [
+              "SPL Token or Token-2022 program for reward mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardTokenProgram"
+          },
+          {
+            "docs": [
+              "PDA: [b\"__event_authority\"] for event CPI"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "docs": [
+              "This program's ID"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardsProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 19
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "revokeMode",
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "revokeMode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "revokeContinuousUser"
       },
       {
         "accounts": [

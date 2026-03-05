@@ -1,15 +1,23 @@
+pub mod balance_synced;
 pub mod claim_closed;
 pub mod claimed;
 pub mod distribution_closed;
 pub mod distribution_created;
+pub mod opt_in;
+pub mod opt_out;
 pub mod recipient_added;
 pub mod recipient_revoked;
+pub mod reward_distributed;
 pub mod shared;
 
+pub use balance_synced::*;
 pub use claim_closed::*;
 pub use claimed::*;
 pub use distribution_closed::*;
 pub use distribution_created::*;
+pub use opt_in::*;
+pub use opt_out::*;
 pub use recipient_added::*;
 pub use recipient_revoked::*;
+pub use reward_distributed::*;
 pub use shared::*;

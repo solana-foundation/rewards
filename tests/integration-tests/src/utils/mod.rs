@@ -1,3 +1,4 @@
+pub mod account_utils;
 pub mod assertions;
 pub mod cu_utils;
 pub mod merkle_utils;
@@ -7,6 +8,7 @@ pub mod test_helpers;
 pub mod token_utils;
 pub mod traits;
 
+pub use account_utils::*;
 pub use assertions::*;
 pub use cu_utils::*;
 pub use merkle_utils::*;

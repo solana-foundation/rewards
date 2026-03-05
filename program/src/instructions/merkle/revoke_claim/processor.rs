@@ -4,7 +4,7 @@ use pinocchio_token_2022::instructions::TransferChecked;
 use crate::{
     errors::RewardsProgramError,
     events::RecipientRevokedEvent,
-    state::{MerkleClaim, MerkleClaimSeeds, MerkleDistribution, MerkleRevocation, MerkleRevocationSeeds},
+    state::{MerkleClaim, MerkleClaimSeeds, MerkleDistribution, Revocation, RevocationSeeds},
     traits::{
         AccountParse, AccountSerialize, AccountSize, Distribution, DistributionSigner, EventSerialize, InstructionData,
         PdaSeeds, VestingParams,
@@ -45,13 +45,11 @@ pub fn process_revoke_merkle_claim(
     verify_proof_or_error(&ix.data.proof, &distribution.merkle_root, &leaf)?;
 
     // Validate revocation PDA and derive bump on-chain
-    let revocation_seeds = MerkleRevocationSeeds {
-        distribution: *ix.accounts.distribution.address(),
-        claimant: *ix.accounts.claimant.address(),
-    };
-    let revocation_bump = revocation_seeds.validate_pda_address(ix.accounts.revocation_account, &ID)?;
+    let revocation_seeds =
+        RevocationSeeds { parent: *ix.accounts.distribution.address(), user: *ix.accounts.claimant.address() };
+    let revocation_bump = revocation_seeds.validate_pda_address(ix.accounts.revocation_marker, &ID)?;
 
-    if !is_pda_uninitialized(ix.accounts.revocation_account) {
+    if !is_pda_uninitialized(ix.accounts.revocation_marker) {
         return Err(RewardsProgramError::ClaimantAlreadyRevoked.into());
     }
 
@@ -80,7 +78,7 @@ pub fn process_revoke_merkle_claim(
     let decimals = get_mint_decimals(ix.accounts.mint)?;
 
     let (vested_transferred, total_freed) = match ix.data.revoke_mode {
-        RevokeMode::NonVested {} => {
+        RevokeMode::NonVested => {
             if vested_unclaimed > 0 {
                 distribution.with_signer(|signers| {
                     TransferChecked {
@@ -100,7 +98,7 @@ pub fn process_revoke_merkle_claim(
 
             (vested_unclaimed, unvested)
         }
-        RevokeMode::Full {} => {
+        RevokeMode::Full => {
             let total_freed = unvested.checked_add(vested_unclaimed).ok_or(RewardsProgramError::MathOverflow)?;
             (0, total_freed)
         }
@@ -134,14 +132,14 @@ pub fn process_revoke_merkle_claim(
 
     create_pda_account(
         ix.accounts.payer,
-        MerkleRevocation::LEN,
+        Revocation::LEN,
         &ID,
-        ix.accounts.revocation_account,
+        ix.accounts.revocation_marker,
         revocation_pda_seeds_array,
     )?;
 
-    let revocation = MerkleRevocation::new(revocation_bump);
-    let mut revocation_data = ix.accounts.revocation_account.try_borrow_mut()?;
+    let revocation = Revocation::new(revocation_bump);
+    let mut revocation_data = ix.accounts.revocation_marker.try_borrow_mut()?;
     revocation.write_to_slice(&mut revocation_data)?;
     drop(revocation_data);
 

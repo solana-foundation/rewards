@@ -19,28 +19,29 @@ REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi
 
 ## Overview
 
-A token vesting program for Solana that enables authorities to create distributions with configurable vesting schedules. Recipients can claim tokens as they vest over time according to their individual schedule.
+A token rewards program for Solana that supports three distribution models: direct allocations with vesting, merkle-proof-based claims, and continuous reward pools with proportional distribution.
 
 ## Key Features
 
-- **Two distribution types** - Direct (on-chain recipient accounts) and Merkle (off-chain tree, on-chain root)
-- **Configurable vesting schedules** - Immediate, Linear, Cliff, and CliffLinear
-- **Per-recipient configuration** - Each recipient has their own vesting schedule within a distribution
+- **Three distribution types** - Direct (on-chain recipient accounts), Merkle (off-chain tree, on-chain root), and Continuous (proportional reward pools)
+- **Configurable vesting schedules** - Immediate, Linear, Cliff, and CliffLinear (Direct and Merkle)
+- **Continuous reward pools** - Users earn rewards proportional to their held balance over time
+- **Revocation support** - Authority can revoke recipients across all distribution types (NonVested or Full mode)
 - **Token-2022 support** - Works with both SPL Token and Token-2022 mints
 
 ## When to Use What
 
 ### Distribution Type
 
-|                  | Direct                                          | Merkle                                                                   |
-| ---------------- | ----------------------------------------------- | ------------------------------------------------------------------------ |
-| **How it works** | Creates an on-chain account per recipient       | Stores a single merkle root on-chain; recipients provide proofs to claim |
-| **Upfront cost** | Authority pays rent for every recipient account | No per-recipient accounts until someone claims                           |
-| **Scalability**  | Practical up to low thousands of recipients     | Scales to millions with constant on-chain storage                        |
-| **Mutability**   | Recipients can be added after creation          | Recipient set is fixed at creation                                       |
-| **Best for**     | Small, dynamic distributions                    | Large, fixed distributions                                               |
+|                  | Direct                                          | Merkle                                                                   | Continuous                                                         |
+| ---------------- | ----------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| **How it works** | Creates an on-chain account per recipient       | Stores a single merkle root on-chain; recipients provide proofs to claim | Users opt in; rewards distributed proportional to held balance     |
+| **Upfront cost** | Authority pays rent for every recipient account | No per-recipient accounts until someone claims                           | Users pay rent for their own reward account on opt-in              |
+| **Scalability**  | Practical up to low thousands of recipients     | Scales to millions with constant on-chain storage                        | Scales to any number of opted-in users                             |
+| **Mutability**   | Recipients can be added after creation          | Recipient set is fixed at creation                                       | Users opt in/out freely; authority distributes rewards at any time |
+| **Best for**     | Small, dynamic distributions                    | Large, fixed distributions                                               | Ongoing reward programs (staking, liquidity mining)                |
 
-### Vesting Schedule
+### Vesting Schedule (Direct & Merkle only)
 
 | Schedule        | Behavior                                                                                                                                          |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -49,14 +50,63 @@ A token vesting program for Solana that enables authorities to create distributi
 | **Cliff**       | Nothing unlocks until `cliff_ts`, then everything unlocks at once                                                                                 |
 | **CliffLinear** | Nothing unlocks until `cliff_ts`, then linear vesting from `start_ts` to `end_ts` (tokens accrued before the cliff become claimable at the cliff) |
 
+### Revocation Modes
+
+| Mode          | Behavior                                                                     |
+| ------------- | ---------------------------------------------------------------------------- |
+| **NonVested** | Vested/accrued tokens are transferred to the user; unvested tokens are freed |
+| **Full**      | All tokens (vested and unvested) are returned to the authority               |
+
+Revocation is opt-in per distribution via the `revocable` bitmask field. A `Revocation` marker PDA is created per user to permanently block future claims or opt-ins.
+
 ## Account Types
 
-| Account            | PDA Seeds                                         | Description                                   |
-| ------------------ | ------------------------------------------------- | --------------------------------------------- |
-| DirectDistribution | `["direct_distribution", mint, authority, seeds]` | Distribution config (authority, mint, totals) |
-| DirectRecipient    | `["direct_recipient", distribution, recipient]`   | Recipient allocation and vesting schedule     |
-| MerkleDistribution | `["merkle_distribution", mint, authority, seeds]` | Distribution config with merkle root          |
-| MerkleClaim        | `["merkle_claim", distribution, claimant]`        | Tracks claimed amount per claimant            |
+| Account            | PDA Seeds                                                     | Description                                   |
+| ------------------ | ------------------------------------------------------------- | --------------------------------------------- |
+| DirectDistribution | `["direct_distribution", mint, authority, seed]`              | Distribution config (authority, mint, totals) |
+| DirectRecipient    | `["direct_recipient", distribution, recipient]`               | Recipient allocation and vesting schedule     |
+| MerkleDistribution | `["merkle_distribution", mint, authority, seed]`              | Distribution config with merkle root          |
+| MerkleClaim        | `["merkle_claim", distribution, claimant]`                    | Tracks claimed amount per claimant            |
+| RewardPool         | `["reward_pool", reward_mint, tracked_mint, authority, seed]` | Continuous pool config and reward accumulator |
+| UserRewardAccount  | `["user_reward", reward_pool, user]`                          | Tracks user participation and accrued rewards |
+| Revocation         | `["revocation", parent, user]`                                | Marker PDA blocking revoked users (all types) |
+
+## Instructions
+
+### Direct Distribution
+
+| #   | Instruction              | Description                                         |
+| --- | ------------------------ | --------------------------------------------------- |
+| 0   | CreateDirectDistribution | Create distribution, fund vault                     |
+| 1   | AddDirectRecipient       | Add recipient with vesting schedule                 |
+| 2   | ClaimDirect              | Recipient claims vested tokens                      |
+| 9   | RevokeDirectRecipient    | Authority revokes a recipient                       |
+| 4   | CloseDirectRecipient     | Recipient reclaims rent after full vest             |
+| 3   | CloseDirectDistribution  | Authority closes distribution, reclaims tokens/rent |
+
+### Merkle Distribution
+
+| #   | Instruction              | Description                                         |
+| --- | ------------------------ | --------------------------------------------------- |
+| 5   | CreateMerkleDistribution | Create distribution with merkle root, fund vault    |
+| 6   | ClaimMerkle              | Claimant proves allocation and claims vested tokens |
+| 10  | RevokeMerkleClaim        | Authority revokes a claimant with merkle proof      |
+| 7   | CloseMerkleClaim         | Claimant reclaims rent after distribution closed    |
+| 8   | CloseMerkleDistribution  | Authority closes distribution, reclaims tokens/rent |
+
+### Continuous Reward Pool
+
+| #   | Instruction                | Description                                              |
+| --- | -------------------------- | -------------------------------------------------------- |
+| 11  | CreateContinuousPool       | Create pool with tracked/reward mints and balance source |
+| 12  | ContinuousOptIn            | User opts in; initial balance snapshot taken             |
+| 14  | DistributeContinuousReward | Authority deposits rewards; accumulator updated          |
+| 16  | SyncContinuousBalance      | Permissionless: sync user's on-chain token balance       |
+| 17  | SetContinuousBalance       | Authority sets user balance (AuthoritySet mode only)     |
+| 15  | ClaimContinuous            | User claims accrued rewards                              |
+| 19  | RevokeContinuousUser       | Authority revokes user from pool                         |
+| 13  | ContinuousOptOut           | User opts out and claims remaining rewards               |
+| 18  | CloseContinuousPool        | Authority closes pool, reclaims remaining tokens         |
 
 ## Workflow
 
@@ -121,6 +171,29 @@ sequenceDiagram
     Program->>Claimant: transfer vested tokens
 ```
 
+### Continuous Reward Pool
+
+```mermaid
+sequenceDiagram
+    participant Authority
+    participant Program
+    participant User
+
+    Authority->>Program: CreateContinuousPool
+    Program->>Program: create RewardPool PDA + Vault ATA
+
+    User->>Program: ContinuousOptIn
+    Program->>Program: create UserRewardAccount PDA
+    Program->>Program: snapshot initial balance
+
+    Authority->>Program: DistributeContinuousReward
+    Program->>Program: update reward_per_token accumulator
+
+    User->>Program: ClaimContinuous
+    Program->>Program: settle accrued rewards
+    Program->>User: transfer reward tokens
+```
+
 ### Closing
 
 ```mermaid
@@ -129,14 +202,17 @@ sequenceDiagram
     participant Program
     participant Accounts
 
-    Authority->>Program: CloseDirectDistribution / CloseMerkleDistribution
+    Authority->>Program: CloseDirectDistribution / CloseMerkleDistribution / CloseContinuousPool
     Program->>Accounts: return remaining tokens
-    Program->>Accounts: close Distribution PDA
+    Program->>Accounts: close PDA
     Program->>Authority: reclaim rent
 ```
 
 ## Documentation
 
+- [Direct Distribution](program/src/instructions/direct/README.md) - On-chain recipient accounts with vesting
+- [Merkle Distribution](program/src/instructions/merkle/README.md) - Off-chain tree, on-chain root verification
+- [Continuous Reward Pool](program/src/instructions/continuous/README.md) - Proportional balance-based rewards
 - [CU Benchmarks](docs/CU_BENCHMARKS.md) - Compute unit usage per instruction
 
 ## Local Development

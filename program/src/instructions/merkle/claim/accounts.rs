@@ -14,7 +14,7 @@ pub struct ClaimMerkleAccounts<'a> {
     pub claimant: &'a AccountView,
     pub distribution: &'a AccountView,
     pub claim_account: &'a AccountView,
-    pub revocation_account: &'a AccountView,
+    pub revocation_marker: &'a AccountView,
     pub mint: &'a AccountView,
     pub distribution_vault: &'a AccountView,
     pub claimant_token_account: &'a AccountView,
@@ -29,7 +29,7 @@ impl<'a> TryFrom<&'a [AccountView]> for ClaimMerkleAccounts<'a> {
 
     #[inline(always)]
     fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
-        let [payer, claimant, distribution, claim_account, revocation_account, mint, distribution_vault, claimant_token_account, system_program, token_program, event_authority, program] =
+        let [payer, claimant, distribution, claim_account, revocation_marker, mint, distribution_vault, claimant_token_account, system_program, token_program, event_authority, program] =
             accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
@@ -46,7 +46,7 @@ impl<'a> TryFrom<&'a [AccountView]> for ClaimMerkleAccounts<'a> {
         verify_writable(claimant_token_account, true)?;
 
         // 2b. Validate read-only accounts
-        verify_readonly(revocation_account)?;
+        verify_readonly(revocation_marker)?;
         verify_readonly(mint)?;
 
         // 3. Validate program IDs
@@ -71,7 +71,7 @@ impl<'a> TryFrom<&'a [AccountView]> for ClaimMerkleAccounts<'a> {
             claimant,
             distribution,
             claim_account,
-            revocation_account,
+            revocation_marker,
             mint,
             distribution_vault,
             claimant_token_account,

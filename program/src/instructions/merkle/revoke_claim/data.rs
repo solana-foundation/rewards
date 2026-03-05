@@ -102,7 +102,7 @@ mod tests {
     fn test_try_from_non_vested_immediate_no_proof() {
         let data = build_data(0, VestingSchedule::Immediate {}, &[]);
         let parsed = RevokeMerkleClaimData::try_from(&data[..]).unwrap();
-        assert_eq!(parsed.revoke_mode, RevokeMode::NonVested {});
+        assert_eq!(parsed.revoke_mode, RevokeMode::NonVested);
         assert_eq!(parsed.total_amount, 1000);
         assert_eq!(parsed.schedule, VestingSchedule::Immediate {});
         assert!(parsed.proof.is_empty());
@@ -114,7 +114,7 @@ mod tests {
         let proof = [[1u8; 32], [2u8; 32]];
         let data = build_data(1, schedule, &proof);
         let parsed = RevokeMerkleClaimData::try_from(&data[..]).unwrap();
-        assert_eq!(parsed.revoke_mode, RevokeMode::Full {});
+        assert_eq!(parsed.revoke_mode, RevokeMode::Full);
         assert_eq!(parsed.schedule, schedule);
         assert_eq!(parsed.proof.len(), 2);
         assert_eq!(parsed.proof[0], [1u8; 32]);

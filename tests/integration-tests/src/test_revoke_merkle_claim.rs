@@ -28,7 +28,7 @@ fn test_revoke_merkle_distribution_not_writable() {
 }
 
 #[test]
-fn test_revoke_merkle_revocation_account_not_writable() {
+fn test_revoke_merkle_revocation_marker_not_writable() {
     let mut ctx = TestContext::new();
     test_not_writable::<RevokeMerkleClaimFixture>(&mut ctx, 4);
 }
@@ -131,8 +131,8 @@ fn test_revoke_merkle_non_vested_before_vesting_start() {
     assert_eq!(claimant_balance, 0, "Claimant should receive nothing when nothing is vested");
 
     // Revocation PDA should exist
-    let revocation_account = ctx.get_account(&setup.revocation_pda).expect("Revocation PDA should exist");
-    assert_eq!(revocation_account.owner, PROGRAM_ID);
+    let revocation_marker = ctx.get_account(&setup.revocation_pda).expect("Revocation PDA should exist");
+    assert_eq!(revocation_marker.owner, PROGRAM_ID);
 }
 
 #[test]

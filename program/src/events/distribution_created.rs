@@ -16,6 +16,7 @@ pub struct DistributionCreatedEvent {
 pub enum DistributionCreatedData {
     Direct { clawback_ts: i64 },
     Merkle { merkle_root: [u8; 32], total_amount: u64, clawback_ts: i64 },
+    Continuous { tracked_mint: Address, balance_source: u8, clawback_ts: i64 },
 }
 
 impl DistributionCreatedData {
@@ -32,6 +33,14 @@ impl DistributionCreatedData {
                 data.push(1); // Merkle variant
                 data.extend_from_slice(merkle_root);
                 data.extend_from_slice(&total_amount.to_le_bytes());
+                data.extend_from_slice(&clawback_ts.to_le_bytes());
+                data
+            }
+            DistributionCreatedData::Continuous { tracked_mint, balance_source, clawback_ts } => {
+                let mut data = Vec::with_capacity(1 + 32 + 1 + 8);
+                data.push(2); // Continuous variant
+                data.extend_from_slice(tracked_mint.as_ref());
+                data.push(*balance_source);
                 data.extend_from_slice(&clawback_ts.to_le_bytes());
                 data
             }
@@ -59,6 +68,7 @@ impl EventSerialize for DistributionCreatedEvent {
 impl DistributionCreatedEvent {
     pub const DIRECT_DATA_LEN: usize = 32 + 32 + 32 + 1 + 8; // authority + mint + seed + variant + clawback_ts
     pub const MERKLE_DATA_LEN: usize = 32 + 32 + 32 + 1 + 32 + 8 + 8; // authority + mint + seed + variant + merkle_root + total_amount + clawback_ts
+    pub const CONTINUOUS_DATA_LEN: usize = 32 + 32 + 32 + 1 + 32 + 1 + 8; // authority + mint + seed + variant + tracked_mint + balance_source + clawback_ts
 
     #[inline(always)]
     pub fn direct(authority: Address, mint: Address, seed: Address, clawback_ts: i64) -> Self {
@@ -79,6 +89,23 @@ impl DistributionCreatedEvent {
             mint,
             seed,
             type_data: DistributionCreatedData::Merkle { merkle_root, total_amount, clawback_ts },
+        }
+    }
+
+    #[inline(always)]
+    pub fn continuous(
+        authority: Address,
+        mint: Address,
+        seed: Address,
+        tracked_mint: Address,
+        balance_source: u8,
+        clawback_ts: i64,
+    ) -> Self {
+        Self {
+            authority,
+            mint,
+            seed,
+            type_data: DistributionCreatedData::Continuous { tracked_mint, balance_source, clawback_ts },
         }
     }
 }

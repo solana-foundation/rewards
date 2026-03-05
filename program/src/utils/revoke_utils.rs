@@ -5,8 +5,8 @@ use crate::errors::RewardsProgramError;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, CodamaType)]
 pub enum RevokeMode {
-    NonVested {},
-    Full {},
+    NonVested,
+    Full,
 }
 
 impl TryFrom<u8> for RevokeMode {
@@ -14,8 +14,8 @@ impl TryFrom<u8> for RevokeMode {
 
     fn try_from(byte: u8) -> Result<Self, ProgramError> {
         match byte {
-            0 => Ok(RevokeMode::NonVested {}),
-            1 => Ok(RevokeMode::Full {}),
+            0 => Ok(RevokeMode::NonVested),
+            1 => Ok(RevokeMode::Full),
             _ => Err(RewardsProgramError::InvalidRevokeMode.into()),
         }
     }
@@ -24,8 +24,8 @@ impl TryFrom<u8> for RevokeMode {
 impl RevokeMode {
     pub fn to_byte(&self) -> u8 {
         match self {
-            RevokeMode::NonVested {} => 0,
-            RevokeMode::Full {} => 1,
+            RevokeMode::NonVested => 0,
+            RevokeMode::Full => 1,
         }
     }
 
@@ -45,13 +45,13 @@ mod tests {
     #[test]
     fn test_revoke_mode_try_from_non_vested() {
         let mode = RevokeMode::try_from(0).unwrap();
-        assert_eq!(mode, RevokeMode::NonVested {});
+        assert_eq!(mode, RevokeMode::NonVested);
     }
 
     #[test]
     fn test_revoke_mode_try_from_full() {
         let mode = RevokeMode::try_from(1).unwrap();
-        assert_eq!(mode, RevokeMode::Full {});
+        assert_eq!(mode, RevokeMode::Full);
     }
 
     #[test]
@@ -62,8 +62,8 @@ mod tests {
 
     #[test]
     fn test_revoke_mode_to_byte() {
-        assert_eq!(RevokeMode::NonVested {}.to_byte(), 0);
-        assert_eq!(RevokeMode::Full {}.to_byte(), 1);
+        assert_eq!(RevokeMode::NonVested.to_byte(), 0);
+        assert_eq!(RevokeMode::Full.to_byte(), 1);
     }
 
     #[test]
@@ -76,29 +76,29 @@ mod tests {
 
     #[test]
     fn test_revoke_mode_to_bit() {
-        assert_eq!(RevokeMode::NonVested {}.to_bit(), 0b01);
-        assert_eq!(RevokeMode::Full {}.to_bit(), 0b10);
+        assert_eq!(RevokeMode::NonVested.to_bit(), 0b01);
+        assert_eq!(RevokeMode::Full.to_bit(), 0b10);
     }
 
     #[test]
     fn test_revoke_mode_is_disabled_by() {
-        assert!(RevokeMode::NonVested {}.is_disabled_by(0));
-        assert!(RevokeMode::Full {}.is_disabled_by(0));
+        assert!(RevokeMode::NonVested.is_disabled_by(0));
+        assert!(RevokeMode::Full.is_disabled_by(0));
 
-        assert!(!RevokeMode::NonVested {}.is_disabled_by(1));
-        assert!(RevokeMode::Full {}.is_disabled_by(1));
+        assert!(!RevokeMode::NonVested.is_disabled_by(1));
+        assert!(RevokeMode::Full.is_disabled_by(1));
 
-        assert!(RevokeMode::NonVested {}.is_disabled_by(2));
-        assert!(!RevokeMode::Full {}.is_disabled_by(2));
+        assert!(RevokeMode::NonVested.is_disabled_by(2));
+        assert!(!RevokeMode::Full.is_disabled_by(2));
 
-        assert!(!RevokeMode::NonVested {}.is_disabled_by(3));
-        assert!(!RevokeMode::Full {}.is_disabled_by(3));
+        assert!(!RevokeMode::NonVested.is_disabled_by(3));
+        assert!(!RevokeMode::Full.is_disabled_by(3));
     }
 
     #[test]
     fn test_revoke_mode_bitmask_combinations() {
-        let non_vested_bit = RevokeMode::NonVested {}.to_bit();
-        let full_bit = RevokeMode::Full {}.to_bit();
+        let non_vested_bit = RevokeMode::NonVested.to_bit();
+        let full_bit = RevokeMode::Full.to_bit();
 
         let both = non_vested_bit | full_bit;
         assert_eq!(both, 0b11);

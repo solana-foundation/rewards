@@ -7,12 +7,33 @@ use pinocchio::{
 use pinocchio_system::instructions::{Allocate, Assign, CreateAccount, Transfer};
 
 use crate::errors::RewardsProgramError;
+use crate::state::RevocationSeeds;
+use crate::traits::PdaSeeds;
 
 /// Check if a PDA account is uninitialized (owned by system program).
 /// Safe alternative to checking lamports == 0, which can be manipulated.
 #[inline(always)]
 pub fn is_pda_uninitialized(account: &AccountView) -> bool {
     account.owned_by(&pinocchio_system::ID)
+}
+
+/// Verify that the revocation marker PDA for this parent+user pair is uninitialized.
+/// Returns the provided error if the user has been revoked.
+pub fn verify_not_revoked(
+    parent: &Address,
+    user: &Address,
+    revocation_marker: &AccountView,
+    program_id: &Address,
+    err: RewardsProgramError,
+) -> ProgramResult {
+    let revocation_seeds = RevocationSeeds { parent: *parent, user: *user };
+    revocation_seeds.validate_pda_address(revocation_marker, program_id)?;
+
+    if !is_pda_uninitialized(revocation_marker) {
+        return Err(err.into());
+    }
+
+    Ok(())
 }
 
 /// Close a PDA account and return the lamports to the recipient.

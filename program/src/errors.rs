@@ -84,6 +84,50 @@ pub enum RewardsProgramError {
     /// (19) Claimant has already been revoked
     #[error("Claimant has already been revoked")]
     ClaimantAlreadyRevoked,
+
+    /// (20) No users opted in to receive rewards
+    #[error("No users opted in to receive rewards")]
+    NoOptedInUsers,
+
+    /// (21) User is already opted in
+    #[error("User is already opted in")]
+    UserAlreadyOptedIn,
+
+    /// (22) User is not opted in
+    #[error("User is not opted in")]
+    UserNotOptedIn,
+
+    /// (23) Distribution amount too small for opted-in supply
+    #[error("Distribution amount too small for opted-in supply")]
+    DistributionAmountTooSmall,
+
+    /// (24) Tracked mint does not match pool
+    #[error("Tracked mint does not match pool")]
+    TrackedMintMismatch,
+
+    /// (25) Reward mint does not match pool
+    #[error("Reward mint does not match pool")]
+    RewardMintMismatch,
+
+    /// (26) Invalid balance source mode
+    #[error("Invalid balance source mode")]
+    InvalidBalanceSource,
+
+    /// (27) Instruction not allowed for this pool's balance source mode
+    #[error("Instruction not allowed for this pool's balance source mode")]
+    BalanceSourceMismatch,
+
+    /// (28) User has been revoked from this reward pool
+    #[error("User has been revoked from this reward pool")]
+    UserRevoked,
+
+    /// (29) User has already been revoked from this reward pool
+    #[error("User has already been revoked from this reward pool")]
+    UserAlreadyRevoked,
+
+    /// (30) Invalid timestamp value
+    #[error("Invalid timestamp value")]
+    InvalidTimestamp,
 }
 
 impl From<RewardsProgramError> for ProgramError {

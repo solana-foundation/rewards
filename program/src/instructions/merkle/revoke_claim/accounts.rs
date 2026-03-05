@@ -14,7 +14,7 @@ pub struct RevokeMerkleClaimAccounts<'a> {
     pub payer: &'a AccountView,
     pub distribution: &'a AccountView,
     pub claim_account: &'a AccountView,
-    pub revocation_account: &'a AccountView,
+    pub revocation_marker: &'a AccountView,
     pub claimant: &'a AccountView,
     pub mint: &'a AccountView,
     pub distribution_vault: &'a AccountView,
@@ -31,7 +31,7 @@ impl<'a> TryFrom<&'a [AccountView]> for RevokeMerkleClaimAccounts<'a> {
 
     #[inline(always)]
     fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
-        let [authority, payer, distribution, claim_account, revocation_account, claimant, mint, distribution_vault, claimant_token_account, authority_token_account, system_program, token_program, event_authority, program] =
+        let [authority, payer, distribution, claim_account, revocation_marker, claimant, mint, distribution_vault, claimant_token_account, authority_token_account, system_program, token_program, event_authority, program] =
             accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
@@ -43,7 +43,7 @@ impl<'a> TryFrom<&'a [AccountView]> for RevokeMerkleClaimAccounts<'a> {
 
         // 2. Validate writable
         verify_writable(distribution, true)?;
-        verify_writable(revocation_account, true)?;
+        verify_writable(revocation_marker, true)?;
         verify_writable(distribution_vault, true)?;
         verify_writable(claimant_token_account, true)?;
         verify_writable(authority_token_account, true)?;
@@ -61,7 +61,7 @@ impl<'a> TryFrom<&'a [AccountView]> for RevokeMerkleClaimAccounts<'a> {
 
         // 4. Validate accounts owned by current program
         verify_current_program_account(distribution)?;
-        // revocation_account will be created
+        // revocation_marker will be created
 
         // 5. Validate token account ownership
         verify_owned_by(mint, token_program.address())?;
@@ -76,7 +76,7 @@ impl<'a> TryFrom<&'a [AccountView]> for RevokeMerkleClaimAccounts<'a> {
             payer,
             distribution,
             claim_account,
-            revocation_account,
+            revocation_marker,
             claimant,
             mint,
             distribution_vault,

@@ -4,14 +4,14 @@ use pinocchio_token_2022::instructions::TransferChecked;
 use crate::{
     errors::RewardsProgramError,
     events::ClaimedEvent,
-    state::{MerkleClaim, MerkleClaimSeeds, MerkleDistribution, MerkleRevocationSeeds},
+    state::{MerkleClaim, MerkleClaimSeeds, MerkleDistribution},
     traits::{
         AccountParse, AccountSerialize, AccountSize, ClaimTracker, Distribution, DistributionSigner, EventSerialize,
         PdaSeeds, VestingParams,
     },
     utils::{
         compute_leaf_hash, create_pda_account_idempotent, emit_event, get_current_timestamp, get_mint_decimals,
-        is_pda_uninitialized, resolve_claim_amount, verify_proof_or_error,
+        is_pda_uninitialized, resolve_claim_amount, verify_not_revoked, verify_proof_or_error,
     },
     ID,
 };
@@ -31,16 +31,13 @@ pub fn process_claim_merkle(_program_id: &Address, accounts: &[AccountView], ins
     let leaf = compute_leaf_hash(ix.accounts.claimant.address(), ix.data.total_amount, &schedule_bytes);
     verify_proof_or_error(&ix.data.proof, &distribution.merkle_root, &leaf)?;
 
-    // Check if claimant has been revoked
-    let revocation_seeds = MerkleRevocationSeeds {
-        distribution: *ix.accounts.distribution.address(),
-        claimant: *ix.accounts.claimant.address(),
-    };
-    revocation_seeds.validate_pda_address(ix.accounts.revocation_account, &ID)?;
-
-    if !is_pda_uninitialized(ix.accounts.revocation_account) {
-        return Err(RewardsProgramError::ClaimantAlreadyRevoked.into());
-    }
+    verify_not_revoked(
+        ix.accounts.distribution.address(),
+        ix.accounts.claimant.address(),
+        ix.accounts.revocation_marker,
+        &ID,
+        RewardsProgramError::ClaimantAlreadyRevoked,
+    )?;
 
     let claim_seeds = MerkleClaimSeeds {
         distribution: *ix.accounts.distribution.address(),

@@ -50,7 +50,7 @@ pub fn process_revoke_direct_recipient(
     let decimals = get_mint_decimals(ix.accounts.mint)?;
 
     let (vested_transferred, total_freed) = match ix.data.revoke_mode {
-        RevokeMode::NonVested {} => {
+        RevokeMode::NonVested => {
             if vested_unclaimed > 0 {
                 distribution.with_signer(|signers| {
                     TransferChecked {
@@ -73,7 +73,7 @@ pub fn process_revoke_direct_recipient(
 
             (vested_unclaimed, unvested)
         }
-        RevokeMode::Full {} => {
+        RevokeMode::Full => {
             let total_freed = unvested.checked_add(vested_unclaimed).ok_or(RewardsProgramError::MathOverflow)?;
 
             distribution.total_allocated =

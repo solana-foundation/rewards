@@ -9,7 +9,7 @@ use spl_token_interface::ID as TOKEN_PROGRAM_ID;
 
 use crate::fixtures::CreateMerkleDistributionSetup;
 use crate::utils::{
-    find_event_authority_pda, find_merkle_claim_pda, find_merkle_revocation_pda, InstructionTestFixture, MerkleLeaf,
+    find_event_authority_pda, find_merkle_claim_pda, find_revocation_pda, InstructionTestFixture, MerkleLeaf,
     MerkleTree, TestContext, TestInstruction,
 };
 
@@ -58,7 +58,7 @@ impl RevokeMerkleClaimSetup {
             .payer(self.payer.pubkey())
             .distribution(self.distribution_pda)
             .claim_account(self.claim_pda)
-            .revocation_account(self.revocation_pda)
+            .revocation_marker(self.revocation_pda)
             .claimant(self.claimant.pubkey())
             .mint(self.mint)
             .distribution_vault(self.distribution_vault)
@@ -92,7 +92,7 @@ impl RevokeMerkleClaimSetup {
             .payer(self.payer.pubkey())
             .distribution(self.distribution_pda)
             .claim_account(self.claim_pda)
-            .revocation_account(self.revocation_pda)
+            .revocation_marker(self.revocation_pda)
             .claimant(self.claimant.pubkey())
             .mint(self.mint)
             .distribution_vault(self.distribution_vault)
@@ -121,7 +121,7 @@ impl RevokeMerkleClaimSetup {
             .claimant(self.claimant.pubkey())
             .distribution(self.distribution_pda)
             .claim_account(self.claim_pda)
-            .revocation_account(self.revocation_pda)
+            .revocation_marker(self.revocation_pda)
             .mint(self.mint)
             .distribution_vault(self.distribution_vault)
             .claimant_token_account(self.claimant_token_account)
@@ -221,7 +221,7 @@ impl<'a> RevokeMerkleClaimSetupBuilder<'a> {
         create_ix.send_expect_success(self.ctx);
 
         let (claim_pda, claim_bump) = find_merkle_claim_pda(&distribution_setup.distribution_pda, &claimant.pubkey());
-        let (revocation_pda, _) = find_merkle_revocation_pda(&distribution_setup.distribution_pda, &claimant.pubkey());
+        let (revocation_pda, _) = find_revocation_pda(&distribution_setup.distribution_pda, &claimant.pubkey());
 
         let proof = merkle_tree.get_proof_for_claimant(&claimant.pubkey()).unwrap();
 
@@ -273,7 +273,7 @@ impl InstructionTestFixture for RevokeMerkleClaimFixture {
     /// Account indices that must be writable:
     /// 1: payer
     /// 2: distribution
-    /// 4: revocation_account
+    /// 4: revocation_marker
     /// 7: distribution_vault
     /// 8: claimant_token_account
     /// 9: authority_token_account
