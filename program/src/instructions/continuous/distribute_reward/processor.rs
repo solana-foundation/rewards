@@ -49,6 +49,10 @@ pub fn process_distribute_continuous_reward(
         .checked_div(REWARD_PRECISION)
         .ok_or(RewardsProgramError::MathOverflow)? as u64;
 
+    if effective_amount == 0 {
+        return Err(RewardsProgramError::DistributionAmountTooSmall.into());
+    }
+
     pool.reward_per_token = pool.reward_per_token.checked_add(delta_rpt).ok_or(RewardsProgramError::MathOverflow)?;
 
     pool.total_distributed =

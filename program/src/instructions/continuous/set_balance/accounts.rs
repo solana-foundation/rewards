@@ -2,7 +2,9 @@ use pinocchio::{account::AccountView, error::ProgramError};
 
 use crate::{
     traits::InstructionAccounts,
-    utils::{verify_current_program_account, verify_signer, verify_writable},
+    utils::{
+        verify_current_program, verify_current_program_account, verify_event_authority, verify_signer, verify_writable,
+    },
 };
 
 pub struct SetContinuousBalanceAccounts<'a> {
@@ -10,6 +12,8 @@ pub struct SetContinuousBalanceAccounts<'a> {
     pub reward_pool: &'a AccountView,
     pub user_reward_account: &'a AccountView,
     pub user: &'a AccountView,
+    pub event_authority: &'a AccountView,
+    pub program: &'a AccountView,
 }
 
 impl<'a> TryFrom<&'a [AccountView]> for SetContinuousBalanceAccounts<'a> {
@@ -17,7 +21,7 @@ impl<'a> TryFrom<&'a [AccountView]> for SetContinuousBalanceAccounts<'a> {
 
     #[inline(always)]
     fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
-        let [authority, reward_pool, user_reward_account, user] = accounts else {
+        let [authority, reward_pool, user_reward_account, user, event_authority, program] = accounts else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };
 
@@ -29,7 +33,10 @@ impl<'a> TryFrom<&'a [AccountView]> for SetContinuousBalanceAccounts<'a> {
         verify_current_program_account(reward_pool)?;
         verify_current_program_account(user_reward_account)?;
 
-        Ok(Self { authority, reward_pool, user_reward_account, user })
+        verify_current_program(program)?;
+        verify_event_authority(event_authority)?;
+
+        Ok(Self { authority, reward_pool, user_reward_account, user, event_authority, program })
     }
 }
 

@@ -418,12 +418,15 @@ pub fn build_set_balance_instruction(
     user_reward_pda: &Pubkey,
     balance: u64,
 ) -> TestInstruction {
+    let (event_authority, _) = find_event_authority_pda();
+
     let mut builder = SetContinuousBalanceBuilder::new();
     builder
         .authority(pool_setup.authority.pubkey())
         .reward_pool(pool_setup.reward_pool_pda)
         .user_reward_account(*user_reward_pda)
         .user(*user)
+        .event_authority(event_authority)
         .balance(balance);
 
     TestInstruction {
@@ -668,7 +671,7 @@ impl InstructionTestFixture for SetContinuousBalanceFixture {
     }
 
     fn current_program_index() -> Option<usize> {
-        None
+        Some(5) // rewards_program
     }
 
     fn data_len() -> usize {

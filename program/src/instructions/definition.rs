@@ -523,6 +523,8 @@ pub enum RewardsProgramInstruction {
     #[codama(account(name = "reward_pool", writable, docs = "PDA: RewardPool account (balance_source must be 1)"))]
     #[codama(account(name = "user_reward_account", writable, docs = "PDA: [b\"user_reward\", reward_pool, user]"))]
     #[codama(account(name = "user", docs = "User wallet; used for PDA derivation"))]
+    #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
+    #[codama(account(name = "rewards_program", docs = "This program's ID"))]
     SetContinuousBalance {
         /// New balance to set for the user
         balance: u64,

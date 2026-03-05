@@ -2,9 +2,10 @@ use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
     errors::RewardsProgramError,
+    events::BalanceSyncedEvent,
     state::{RewardPool, UserRewardAccount},
-    traits::AccountSerialize,
-    utils::{sync_user_balance, update_user_rewards, BalanceSource},
+    traits::{AccountSerialize, EventSerialize},
+    utils::{emit_event, sync_user_balance, update_user_rewards, BalanceSource},
     ID,
 };
 
@@ -37,6 +38,8 @@ pub fn process_set_continuous_balance(
     )?;
     drop(user_data);
 
+    let old_balance = user.last_known_balance;
+
     update_user_rewards(&pool, &mut user)?;
     sync_user_balance(&mut pool, &mut user, ix.data.balance)?;
 
@@ -47,6 +50,14 @@ pub fn process_set_continuous_balance(
     let mut pool_data = ix.accounts.reward_pool.try_borrow_mut()?;
     pool.write_to_slice(&mut pool_data)?;
     drop(pool_data);
+
+    let event = BalanceSyncedEvent::new(
+        *ix.accounts.reward_pool.address(),
+        *ix.accounts.user.address(),
+        old_balance,
+        ix.data.balance,
+    );
+    emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;
 
     Ok(())
 }

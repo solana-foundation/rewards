@@ -2,7 +2,8 @@ use solana_sdk::signature::Signer;
 
 use crate::fixtures::{build_set_balance_instruction, ContinuousOptInSetup, SetContinuousBalanceFixture};
 use crate::utils::{
-    assert_rewards_error, test_missing_signer, test_not_writable, RewardsError, TestContext, TestInstruction,
+    assert_rewards_error, find_event_authority_pda, test_missing_signer, test_not_writable, RewardsError, TestContext,
+    TestInstruction,
 };
 
 // ─── Generic validation tests ───
@@ -49,12 +50,14 @@ fn test_set_balance_unauthorized_authority() {
     setup.build_instruction(&ctx).send_expect_success(&mut ctx);
 
     let wrong_authority = ctx.create_funded_keypair();
+    let (event_authority, _) = find_event_authority_pda();
     let mut builder = rewards_program_client::instructions::SetContinuousBalanceBuilder::new();
     builder
         .authority(wrong_authority.pubkey())
         .reward_pool(setup.pool_setup.reward_pool_pda)
         .user_reward_account(setup.user_reward_pda)
         .user(setup.user.pubkey())
+        .event_authority(event_authority)
         .balance(500_000);
 
     let ix = TestInstruction {
