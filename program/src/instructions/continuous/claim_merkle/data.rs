@@ -1,7 +1,13 @@
 use alloc::vec::Vec;
 use pinocchio::error::ProgramError;
 
-use crate::{require_len, traits::InstructionData};
+use crate::{
+    require_len,
+    traits::InstructionData,
+    utils::{HASH_SIZE, VEC_PREFIX_LEN},
+};
+
+const MAX_PROOF_LEN: usize = 64;
 
 pub struct ClaimContinuousMerkleData {
     pub claim_bump: u8,
@@ -25,18 +31,25 @@ impl<'a> TryFrom<&'a [u8]> for ClaimContinuousMerkleData {
             u64::from_le_bytes(data[9..17].try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
         let amount = u64::from_le_bytes(data[17..25].try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
 
-        let proof_len =
-            u32::from_le_bytes(data[25..29].try_into().map_err(|_| ProgramError::InvalidInstructionData)?) as usize;
+        let proof_len_offset = Self::LEN - VEC_PREFIX_LEN;
+        let proof_len = u32::from_le_bytes(
+            data[proof_len_offset..Self::LEN].try_into().map_err(|_| ProgramError::InvalidInstructionData)?,
+        ) as usize;
+        if proof_len > MAX_PROOF_LEN {
+            return Err(ProgramError::InvalidInstructionData);
+        }
 
-        let proof_start = 29;
-        let expected_len = proof_start + proof_len * 32;
+        let proof_start = Self::LEN;
+        let proof_bytes = proof_len.checked_mul(HASH_SIZE).ok_or(ProgramError::InvalidInstructionData)?;
+        let expected_len = proof_start.checked_add(proof_bytes).ok_or(ProgramError::InvalidInstructionData)?;
         require_len!(data, expected_len);
 
         let mut proof = Vec::with_capacity(proof_len);
         for i in 0..proof_len {
-            let start = proof_start + i * 32;
-            let end = start + 32;
-            let hash: [u8; 32] = data[start..end].try_into().map_err(|_| ProgramError::InvalidInstructionData)?;
+            let start = proof_start + i * HASH_SIZE;
+            let end = start + HASH_SIZE;
+            let hash: [u8; HASH_SIZE] =
+                data[start..end].try_into().map_err(|_| ProgramError::InvalidInstructionData)?;
             proof.push(hash);
         }
 
@@ -98,6 +111,19 @@ mod tests {
     fn test_try_from_invalid_proof_len() {
         let mut data = build_data(0, &[]);
         data.truncate(20);
+        let result = ClaimContinuousMerkleData::try_from(&data[..]);
+        assert_eq!(result.err(), Some(ProgramError::InvalidInstructionData));
+    }
+
+    #[test]
+    fn test_try_from_proof_len_exceeds_max() {
+        let mut data = Vec::new();
+        data.push(255); // claim bump
+        data.extend_from_slice(&2u64.to_le_bytes()); // root_version
+        data.extend_from_slice(&1000u64.to_le_bytes()); // cumulative_amount
+        data.extend_from_slice(&0u64.to_le_bytes()); // amount
+        data.extend_from_slice(&((MAX_PROOF_LEN as u32) + 1).to_le_bytes()); // proof_len
+
         let result = ClaimContinuousMerkleData::try_from(&data[..]);
         assert_eq!(result.err(), Some(ProgramError::InvalidInstructionData));
     }

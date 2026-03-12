@@ -379,10 +379,12 @@ pub fn build_set_continuous_merkle_root_instruction(
     merkle_root: [u8; 32],
     root_version: u64,
 ) -> TestInstruction {
+    let (event_authority, _) = find_event_authority_pda();
     let mut builder = SetContinuousMerkleRootBuilder::new();
     builder
         .authority(pool_setup.authority.pubkey())
         .reward_pool(pool_setup.reward_pool_pda)
+        .event_authority(event_authority)
         .merkle_root(merkle_root)
         .root_version(root_version);
 
@@ -577,7 +579,7 @@ impl InstructionTestFixture for SetContinuousMerkleRootFixture {
     }
 
     fn current_program_index() -> Option<usize> {
-        Some(2)
+        Some(3)
     }
 
     fn data_len() -> usize {

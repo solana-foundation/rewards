@@ -611,6 +611,7 @@ pub enum RewardsProgramInstruction {
     /// Set or rotate the continuous-merkle root for a reward pool.
     #[codama(account(name = "authority", signer, docs = "Pool authority; must match reward_pool.authority"))]
     #[codama(account(name = "reward_pool", writable, docs = "PDA: RewardPool account"))]
+    #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
     #[codama(account(name = "rewards_program", docs = "This program's ID"))]
     SetContinuousMerkleRoot {
         /// Merkle root for cumulative continuous claims

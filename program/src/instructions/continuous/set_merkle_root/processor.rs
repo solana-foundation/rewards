@@ -1,9 +1,10 @@
 use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
-    errors::RewardsProgramError,
+    events::MerkleRootSetEvent,
     state::RewardPool,
-    traits::{AccountSerialize, InstructionData},
+    traits::{AccountSerialize, EventSerialize, InstructionData},
+    utils::emit_event,
     ID,
 };
 
@@ -22,10 +23,7 @@ pub fn process_set_continuous_merkle_root(
     drop(pool_data);
 
     pool.validate_authority(ix.accounts.authority.address())?;
-
-    if ix.data.root_version <= pool.merkle_root_version {
-        return Err(RewardsProgramError::InvalidMerkleRootVersion.into());
-    }
+    pool.validate_merkle_root_version(ix.data.root_version)?;
 
     pool.merkle_root = ix.data.merkle_root;
     pool.merkle_root_version = ix.data.root_version;
@@ -33,6 +31,14 @@ pub fn process_set_continuous_merkle_root(
     let mut pool_data = ix.accounts.reward_pool.try_borrow_mut()?;
     pool.write_to_slice(&mut pool_data)?;
     drop(pool_data);
+
+    let event = MerkleRootSetEvent::new(
+        *ix.accounts.reward_pool.address(),
+        *ix.accounts.authority.address(),
+        ix.data.merkle_root,
+        ix.data.root_version,
+    );
+    emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;
 
     Ok(())
 }

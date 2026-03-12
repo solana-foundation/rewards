@@ -228,6 +228,36 @@ impl RewardPool {
     }
 
     #[inline(always)]
+    pub fn validate_merkle_root_version(&self, new_version: u64) -> Result<(), ProgramError> {
+        if new_version <= self.merkle_root_version {
+            return Err(RewardsProgramError::InvalidMerkleRootVersion.into());
+        }
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn validate_claim_root_version(&self, claim_version: u64) -> Result<(), ProgramError> {
+        if self.merkle_root_version == 0 {
+            return Err(RewardsProgramError::MerkleRootNotSet.into());
+        }
+
+        if claim_version != self.merkle_root_version {
+            return Err(RewardsProgramError::MerkleRootVersionMismatch.into());
+        }
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn validate_total_claim(&self, claim_amount: u64) -> Result<u64, ProgramError> {
+        let new_total_claimed =
+            self.total_claimed.checked_add(claim_amount).ok_or(RewardsProgramError::MathOverflow)?;
+        if new_total_claimed > self.total_distributed {
+            return Err(RewardsProgramError::InsufficientFunds.into());
+        }
+        Ok(new_total_claimed)
+    }
+
+    #[inline(always)]
     pub fn ensure_merkle_mode_disabled(&self) -> Result<(), ProgramError> {
         if self.merkle_root_version != 0 {
             return Err(RewardsProgramError::ContinuousMerkleModeEnabled.into());
@@ -400,6 +430,68 @@ mod tests {
         let pool = create_test_pool();
         let wrong_mint = Address::new_from_array([99u8; 32]);
         assert!(pool.validate_reward_mint(&wrong_mint).is_err());
+    }
+
+    #[test]
+    fn test_validate_merkle_root_version_accepts_strictly_increasing() {
+        let mut pool = create_test_pool();
+        pool.merkle_root_version = 3;
+        assert!(pool.validate_merkle_root_version(4).is_ok());
+    }
+
+    #[test]
+    fn test_validate_merkle_root_version_rejects_equal_or_lower() {
+        let mut pool = create_test_pool();
+        pool.merkle_root_version = 3;
+        assert!(pool.validate_merkle_root_version(3).is_err());
+        assert!(pool.validate_merkle_root_version(2).is_err());
+    }
+
+    #[test]
+    fn test_validate_claim_root_version_rejects_when_not_set() {
+        let pool = create_test_pool();
+        assert_eq!(pool.validate_claim_root_version(1).err(), Some(RewardsProgramError::MerkleRootNotSet.into()));
+    }
+
+    #[test]
+    fn test_validate_claim_root_version_rejects_mismatch() {
+        let mut pool = create_test_pool();
+        pool.merkle_root_version = 2;
+        assert_eq!(
+            pool.validate_claim_root_version(1).err(),
+            Some(RewardsProgramError::MerkleRootVersionMismatch.into())
+        );
+    }
+
+    #[test]
+    fn test_validate_claim_root_version_accepts_match() {
+        let mut pool = create_test_pool();
+        pool.merkle_root_version = 2;
+        assert!(pool.validate_claim_root_version(2).is_ok());
+    }
+
+    #[test]
+    fn test_validate_total_claim_accepts_when_within_distributed() {
+        let mut pool = create_test_pool();
+        pool.total_distributed = 1_000;
+        pool.total_claimed = 100;
+        assert_eq!(pool.validate_total_claim(200).unwrap(), 300);
+    }
+
+    #[test]
+    fn test_validate_total_claim_rejects_insufficient_funds() {
+        let mut pool = create_test_pool();
+        pool.total_distributed = 250;
+        pool.total_claimed = 100;
+        assert_eq!(pool.validate_total_claim(200).err(), Some(RewardsProgramError::InsufficientFunds.into()));
+    }
+
+    #[test]
+    fn test_validate_total_claim_rejects_overflow() {
+        let mut pool = create_test_pool();
+        pool.total_distributed = u64::MAX;
+        pool.total_claimed = u64::MAX;
+        assert_eq!(pool.validate_total_claim(1).err(), Some(RewardsProgramError::MathOverflow.into()));
     }
 
     #[test]

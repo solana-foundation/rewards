@@ -5,6 +5,8 @@ use crate::errors::RewardsProgramError;
 
 /// Leaf prefix to prevent second preimage attacks.
 pub const LEAF_PREFIX: &[u8] = &[0];
+pub const HASH_SIZE: usize = 32;
+pub const VEC_PREFIX_LEN: usize = 4;
 
 /// Maximum byte length of a leaf's inner hash input:
 /// 32 (claimant) + 8 (total_amount) + 25 (max schedule = CliffLinear)
@@ -23,18 +25,18 @@ fn keccak256(data: &[u8]) -> [u8; 32] {
 /// `hash(LEAF_PREFIX || hash(claimant || total_amount || schedule_bytes))`
 pub fn compute_leaf_hash(claimant: &Address, total_amount: u64, schedule_bytes: &[u8]) -> [u8; 32] {
     let schedule_len = schedule_bytes.len();
-    let inner_len = 32 + 8 + schedule_len;
+    let inner_len = HASH_SIZE + 8 + schedule_len;
     let mut inner_data = [0u8; MAX_LEAF_DATA_LEN];
-    inner_data[0..32].copy_from_slice(claimant.as_ref());
-    inner_data[32..40].copy_from_slice(&total_amount.to_le_bytes());
-    inner_data[40..40 + schedule_len].copy_from_slice(schedule_bytes);
+    inner_data[0..HASH_SIZE].copy_from_slice(claimant.as_ref());
+    inner_data[HASH_SIZE..HASH_SIZE + 8].copy_from_slice(&total_amount.to_le_bytes());
+    inner_data[HASH_SIZE + 8..HASH_SIZE + 8 + schedule_len].copy_from_slice(schedule_bytes);
 
     let inner_hash = keccak256(&inner_data[..inner_len]);
 
     // Outer hash: hash(LEAF_PREFIX || inner_hash)
-    let mut outer_data = [0u8; 1 + 32]; // 33 bytes
+    let mut outer_data = [0u8; 1 + HASH_SIZE]; // 33 bytes
     outer_data[0..1].copy_from_slice(LEAF_PREFIX);
-    outer_data[1..33].copy_from_slice(&inner_hash);
+    outer_data[1..1 + HASH_SIZE].copy_from_slice(&inner_hash);
 
     keccak256(&outer_data)
 }
@@ -58,9 +60,9 @@ pub fn compute_continuous_leaf_hash(
     let inner_hash = keccak256(&inner_data);
 
     // Outer hash: hash(LEAF_PREFIX || inner_hash)
-    let mut outer_data = [0u8; 1 + 32]; // 33 bytes
+    let mut outer_data = [0u8; 1 + HASH_SIZE]; // 33 bytes
     outer_data[0..1].copy_from_slice(LEAF_PREFIX);
-    outer_data[1..33].copy_from_slice(&inner_hash);
+    outer_data[1..1 + HASH_SIZE].copy_from_slice(&inner_hash);
 
     keccak256(&outer_data)
 }
@@ -84,13 +86,13 @@ pub fn verify_proof(proof: &[[u8; 32]], root: &[u8; 32], leaf: &[u8; 32]) -> boo
 /// Hash two nodes together in sorted order (smaller first).
 /// This ensures deterministic tree construction regardless of proof ordering.
 fn hash_pair(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
-    let mut data = [0u8; 64];
+    let mut data = [0u8; HASH_SIZE * 2];
     if a < b {
-        data[0..32].copy_from_slice(a);
-        data[32..64].copy_from_slice(b);
+        data[0..HASH_SIZE].copy_from_slice(a);
+        data[HASH_SIZE..HASH_SIZE * 2].copy_from_slice(b);
     } else {
-        data[0..32].copy_from_slice(b);
-        data[32..64].copy_from_slice(a);
+        data[0..HASH_SIZE].copy_from_slice(b);
+        data[HASH_SIZE..HASH_SIZE * 2].copy_from_slice(a);
     }
     keccak256(&data)
 }

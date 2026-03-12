@@ -110,6 +110,12 @@ Revocation is opt-in per distribution via the `revocable` bitmask field. A `Revo
 | 13  | ContinuousOptOut           | User opts out and claims remaining rewards               |
 | 18  | CloseContinuousPool        | Authority closes pool, reclaims remaining tokens         |
 
+Continuous pools also support cumulative-merkle claims for high-scale distribution accounting:
+- Authority rotates snapshots with `SetContinuousMerkleRoot`
+- Users claim deltas with `ClaimContinuousMerkle`
+- Each rotation emits `MerkleRootSet` and each claim emits `Claimed`
+- Full details: [Continuous Merkle Claim Mode](program/src/instructions/continuous/README.md#merkle-claim-mode)
+
 ## Workflow
 
 ### Direct Distribution
@@ -215,6 +221,7 @@ sequenceDiagram
 - [Direct Distribution](program/src/instructions/direct/README.md) - On-chain recipient accounts with vesting
 - [Merkle Distribution](program/src/instructions/merkle/README.md) - Off-chain tree, on-chain root verification
 - [Continuous Reward Pool](program/src/instructions/continuous/README.md) - Proportional balance-based rewards
+- [Continuous Merkle Claim Mode](program/src/instructions/continuous/README.md#merkle-claim-mode) - Cumulative snapshot claims and root rotation
 - [CU Benchmarks](docs/CU_BENCHMARKS.md) - Compute unit usage per instruction
 
 ## Local Development

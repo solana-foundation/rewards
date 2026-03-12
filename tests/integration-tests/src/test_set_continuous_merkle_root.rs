@@ -2,8 +2,8 @@ use crate::fixtures::{
     build_set_continuous_merkle_root_instruction, SetContinuousMerkleRootFixture, SetContinuousMerkleRootSetup,
 };
 use crate::utils::{
-    assert_rewards_error, get_reward_pool, test_empty_data, test_missing_signer, test_not_writable,
-    test_truncated_data, test_wrong_current_program, RewardsError, TestContext, TestInstruction,
+    assert_rewards_error, find_event_authority_pda, get_reward_pool, test_empty_data, test_missing_signer,
+    test_not_writable, test_truncated_data, test_wrong_current_program, RewardsError, TestContext, TestInstruction,
 };
 use solana_sdk::signature::Signer;
 
@@ -83,11 +83,13 @@ fn test_set_continuous_merkle_root_unauthorized_authority() {
     let mut ctx = TestContext::new();
     let setup = SetContinuousMerkleRootSetup::new(&mut ctx);
     let wrong_authority = ctx.create_funded_keypair();
+    let (event_authority, _) = find_event_authority_pda();
 
     let mut builder = rewards_program_client::instructions::SetContinuousMerkleRootBuilder::new();
     builder
         .authority(wrong_authority.pubkey())
         .reward_pool(setup.pool_setup.reward_pool_pda)
+        .event_authority(event_authority)
         .merkle_root(setup.merkle_root)
         .root_version(setup.root_version);
 

@@ -27,14 +27,7 @@ pub fn process_claim_continuous_merkle(
     drop(pool_data);
 
     pool.validate_reward_mint(ix.accounts.reward_mint.address())?;
-
-    if pool.merkle_root_version == 0 {
-        return Err(RewardsProgramError::MerkleRootNotSet.into());
-    }
-
-    if ix.data.root_version != pool.merkle_root_version {
-        return Err(RewardsProgramError::MerkleRootVersionMismatch.into());
-    }
+    pool.validate_claim_root_version(ix.data.root_version)?;
 
     let leaf = compute_continuous_leaf_hash(
         ix.accounts.reward_pool.address(),
@@ -93,11 +86,7 @@ pub fn process_claim_continuous_merkle(
 
     ClaimTracker::add_claimed(&mut claim, claim_amount)?;
 
-    let new_total_claimed = pool.total_claimed.checked_add(claim_amount).ok_or(RewardsProgramError::MathOverflow)?;
-    if new_total_claimed > pool.total_distributed {
-        return Err(RewardsProgramError::InsufficientFunds.into());
-    }
-    pool.total_claimed = new_total_claimed;
+    pool.total_claimed = pool.validate_total_claim(claim_amount)?;
 
     let mut claim_data = ix.accounts.claim_account.try_borrow_mut()?;
     claim.write_to_slice(&mut claim_data)?;

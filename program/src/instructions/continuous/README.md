@@ -57,6 +57,27 @@ For high-scale or off-chain accounting use cases, an authority can publish cumul
 
 Once merkle mode is enabled (`root_version > 0`), accumulator-based withdrawal instructions (`ClaimContinuous`, `ContinuousOptOut`, `RevokeContinuousUser`) are blocked to avoid mixed accounting paths.
 
+### Root Rotation Rules
+
+- `merkle_root` must be non-zero (`[0u8; 32]` is rejected).
+- `root_version` must be strictly increasing (`new_version > current_version`).
+- Root updates emit `MerkleRootSetEvent { reward_pool, authority, merkle_root, root_version }`.
+
+### Claim Semantics
+
+- Continuous-merkle leaves are computed from `reward_pool`, `claimant`, `root_version`, and `cumulative_amount`.
+- On each claim, claimable delta is `claimable = cumulative_amount - previously_claimed`.
+- `amount = 0` means "claim full delta". Non-zero `amount` must be `<= claimable`.
+- Proof parsing is defensive: max proof length is `64` nodes, and checked arithmetic is used for proof length/offset calculations.
+- Successful claims emit `ClaimedEvent { distribution, claimant, amount }`.
+
+### Operational Pattern (Authority)
+
+1. Build snapshot off-chain with cumulative amounts per user.
+2. Publish root via `SetContinuousMerkleRoot`.
+3. Users submit proofs and claim deltas via `ClaimContinuousMerkle`.
+4. Repeat with higher `root_version` as balances/rewards evolve.
+
 ## Reward Accumulator
 
 The program uses a reward-per-token accumulator to distribute rewards without iterating over all users:

@@ -26,9 +26,39 @@ impl<'a> InstructionData<'a> for SetContinuousMerkleRootData {
     const LEN: usize = 40; // merkle_root(32) + root_version(8)
 
     fn validate(&self) -> Result<(), ProgramError> {
+        if self.merkle_root == [0u8; 32] {
+            return Err(ProgramError::InvalidInstructionData);
+        }
+
         if self.root_version == 0 {
             return Err(RewardsProgramError::InvalidMerkleRootVersion.into());
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_rejects_zero_root() {
+        let data = SetContinuousMerkleRootData { merkle_root: [0u8; 32], root_version: 1 };
+        let result = data.validate();
+        assert_eq!(result.err(), Some(ProgramError::InvalidInstructionData));
+    }
+
+    #[test]
+    fn test_validate_rejects_zero_version() {
+        let data = SetContinuousMerkleRootData { merkle_root: [1u8; 32], root_version: 0 };
+        let result = data.validate();
+        assert_eq!(result.err(), Some(RewardsProgramError::InvalidMerkleRootVersion.into()));
+    }
+
+    #[test]
+    fn test_validate_accepts_non_zero_root_and_version() {
+        let data = SetContinuousMerkleRootData { merkle_root: [1u8; 32], root_version: 1 };
+        let result = data.validate();
+        assert!(result.is_ok());
     }
 }
