@@ -10,7 +10,7 @@ pub const LEAF_PREFIX: &[u8] = &[0];
 /// 32 (claimant) + 8 (total_amount) + 25 (max schedule = CliffLinear)
 const MAX_LEAF_DATA_LEN: usize = 65;
 /// Maximum byte length of a continuous merkle leaf's inner hash input:
-/// 32 (reward_pool) + 32 (claimant) + 8 (epoch) + 8 (cumulative_amount)
+/// 32 (reward_pool) + 32 (claimant) + 8 (root_version) + 8 (cumulative_amount)
 const MAX_CONTINUOUS_LEAF_DATA_LEN: usize = 80;
 
 fn keccak256(data: &[u8]) -> [u8; 32] {
@@ -42,17 +42,17 @@ pub fn compute_leaf_hash(claimant: &Address, total_amount: u64, schedule_bytes: 
 /// Compute the merkle leaf hash for continuous-merkle claims.
 ///
 /// The leaf format is:
-/// `hash(LEAF_PREFIX || hash(reward_pool || claimant || epoch || cumulative_amount))`
+/// `hash(LEAF_PREFIX || hash(reward_pool || claimant || root_version || cumulative_amount))`
 pub fn compute_continuous_leaf_hash(
     reward_pool: &Address,
     claimant: &Address,
-    epoch: u64,
+    root_version: u64,
     cumulative_amount: u64,
 ) -> [u8; 32] {
     let mut inner_data = [0u8; MAX_CONTINUOUS_LEAF_DATA_LEN];
     inner_data[0..32].copy_from_slice(reward_pool.as_ref());
     inner_data[32..64].copy_from_slice(claimant.as_ref());
-    inner_data[64..72].copy_from_slice(&epoch.to_le_bytes());
+    inner_data[64..72].copy_from_slice(&root_version.to_le_bytes());
     inner_data[72..80].copy_from_slice(&cumulative_amount.to_le_bytes());
 
     let inner_hash = keccak256(&inner_data);
@@ -197,7 +197,7 @@ mod tests {
     }
 
     #[test]
-    fn test_compute_continuous_leaf_hash_different_epochs() {
+    fn test_compute_continuous_leaf_hash_different_root_versions() {
         let reward_pool = Address::new_from_array([7u8; 32]);
         let claimant = Address::new_from_array([1u8; 32]);
 

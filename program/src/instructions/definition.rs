@@ -615,8 +615,8 @@ pub enum RewardsProgramInstruction {
     SetContinuousMerkleRoot {
         /// Merkle root for cumulative continuous claims
         merkle_root: [u8; 32],
-        /// Monotonically increasing root epoch (must be > current epoch)
-        epoch: u64,
+        /// Monotonically increasing root version (must be > current root version)
+        root_version: u64,
     } = 20,
 
     /// Claim rewards from a continuous reward pool using a merkle proof over cumulative amounts.
@@ -650,9 +650,9 @@ pub enum RewardsProgramInstruction {
     ClaimContinuousMerkle {
         /// Bump for the claim PDA
         claim_bump: u8,
-        /// Merkle root epoch this proof targets
-        epoch: u64,
-        /// Cumulative amount claimable by user at this epoch
+        /// Merkle root version this proof targets
+        root_version: u64,
+        /// Cumulative amount claimable by user at this root_version
         cumulative_amount: u64,
         /// Amount to claim. 0 = claim all available.
         amount: u64,

@@ -29,7 +29,7 @@ pub fn process_continuous_opt_out(
     pool.validate_tracked_mint(ix.accounts.tracked_mint.address())?;
     pool.validate_reward_mint(ix.accounts.reward_mint.address())?;
 
-    if pool.merkle_root_epoch != 0 {
+    if pool.merkle_root_version != 0 {
         return Err(RewardsProgramError::ContinuousMerkleModeEnabled.into());
     }
 

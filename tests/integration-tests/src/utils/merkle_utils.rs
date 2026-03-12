@@ -8,7 +8,7 @@ const LEAF_PREFIX: &[u8] = &[0];
 /// 32 (claimant) + 8 (total_amount) + 25 (max schedule = CliffLinear)
 const MAX_LEAF_DATA_LEN: usize = 65;
 /// Maximum byte length of a continuous leaf's inner hash input:
-/// 32 (reward_pool) + 32 (claimant) + 8 (epoch) + 8 (cumulative_amount)
+/// 32 (reward_pool) + 32 (claimant) + 8 (root_version) + 8 (cumulative_amount)
 const MAX_CONTINUOUS_LEAF_DATA_LEN: usize = 80;
 
 fn schedule_to_bytes(schedule: &VestingSchedule) -> Vec<u8> {
@@ -71,13 +71,13 @@ pub fn compute_leaf_hash(claimant: &Pubkey, total_amount: u64, schedule: &Vestin
 pub fn compute_continuous_leaf_hash(
     reward_pool: &Pubkey,
     claimant: &Pubkey,
-    epoch: u64,
+    root_version: u64,
     cumulative_amount: u64,
 ) -> [u8; 32] {
     let mut inner_data = [0u8; MAX_CONTINUOUS_LEAF_DATA_LEN];
     inner_data[0..32].copy_from_slice(reward_pool.as_ref());
     inner_data[32..64].copy_from_slice(claimant.as_ref());
-    inner_data[64..72].copy_from_slice(&epoch.to_le_bytes());
+    inner_data[64..72].copy_from_slice(&root_version.to_le_bytes());
     inner_data[72..80].copy_from_slice(&cumulative_amount.to_le_bytes());
 
     let inner_hash = keccak256(&inner_data);
@@ -225,15 +225,15 @@ impl MerkleTree {
 pub struct ContinuousMerkleLeaf {
     pub reward_pool: Pubkey,
     pub claimant: Pubkey,
-    pub epoch: u64,
+    pub root_version: u64,
     pub cumulative_amount: u64,
     pub leaf_hash: [u8; 32],
 }
 
 impl ContinuousMerkleLeaf {
-    pub fn new(reward_pool: Pubkey, claimant: Pubkey, epoch: u64, cumulative_amount: u64) -> Self {
-        let leaf_hash = compute_continuous_leaf_hash(&reward_pool, &claimant, epoch, cumulative_amount);
-        Self { reward_pool, claimant, epoch, cumulative_amount, leaf_hash }
+    pub fn new(reward_pool: Pubkey, claimant: Pubkey, root_version: u64, cumulative_amount: u64) -> Self {
+        let leaf_hash = compute_continuous_leaf_hash(&reward_pool, &claimant, root_version, cumulative_amount);
+        Self { reward_pool, claimant, root_version, cumulative_amount, leaf_hash }
     }
 }
 

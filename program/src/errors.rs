@@ -129,17 +129,17 @@ pub enum RewardsProgramError {
     #[error("Invalid timestamp value")]
     InvalidTimestamp,
 
-    /// (31) Invalid merkle root epoch value
-    #[error("Invalid merkle root epoch value")]
-    InvalidMerkleRootEpoch,
+    /// (31) Invalid merkle root version value
+    #[error("Invalid merkle root version value")]
+    InvalidMerkleRootVersion,
 
     /// (32) Merkle root is not configured for this pool
     #[error("Merkle root is not configured for this pool")]
     MerkleRootNotSet,
 
-    /// (33) Merkle proof epoch does not match the pool root epoch
-    #[error("Merkle proof epoch does not match the pool root epoch")]
-    MerkleRootEpochMismatch,
+    /// (33) Merkle proof root version does not match the pool root version
+    #[error("Merkle proof root version does not match the pool root version")]
+    MerkleRootVersionMismatch,
 
     /// (34) This pool is configured for merkle claims
     #[error("This pool is configured for merkle claims")]

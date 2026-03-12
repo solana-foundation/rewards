@@ -377,14 +377,14 @@ pub fn build_claim_continuous_instruction(
 pub fn build_set_continuous_merkle_root_instruction(
     pool_setup: &CreateContinuousPoolSetup,
     merkle_root: [u8; 32],
-    epoch: u64,
+    root_version: u64,
 ) -> TestInstruction {
     let mut builder = SetContinuousMerkleRootBuilder::new();
     builder
         .authority(pool_setup.authority.pubkey())
         .reward_pool(pool_setup.reward_pool_pda)
         .merkle_root(merkle_root)
-        .epoch(epoch);
+        .root_version(root_version);
 
     TestInstruction {
         instruction: builder.instruction(),
@@ -401,7 +401,7 @@ pub fn build_claim_continuous_merkle_instruction(
     claim_pda: Pubkey,
     claim_bump: u8,
     user_reward_token_account: Pubkey,
-    epoch: u64,
+    root_version: u64,
     cumulative_amount: u64,
     amount: u64,
     proof: Vec<[u8; 32]>,
@@ -422,7 +422,7 @@ pub fn build_claim_continuous_merkle_instruction(
         .reward_token_program(pool_setup.reward_token_program)
         .event_authority(event_authority)
         .claim_bump(claim_bump)
-        .epoch(epoch)
+        .root_version(root_version)
         .cumulative_amount(cumulative_amount)
         .amount(amount)
         .proof(proof);
@@ -542,7 +542,7 @@ pub struct ClaimContinuousSetup {
 pub struct SetContinuousMerkleRootSetup {
     pub pool_setup: CreateContinuousPoolSetup,
     pub merkle_root: [u8; 32],
-    pub epoch: u64,
+    pub root_version: u64,
 }
 
 impl SetContinuousMerkleRootSetup {
@@ -550,11 +550,11 @@ impl SetContinuousMerkleRootSetup {
         let pool_setup = CreateContinuousPoolSetup::new(ctx);
         pool_setup.build_instruction(ctx).send_expect_success(ctx);
 
-        Self { pool_setup, merkle_root: [11u8; 32], epoch: 1 }
+        Self { pool_setup, merkle_root: [11u8; 32], root_version: 1 }
     }
 
     pub fn build_instruction(&self) -> TestInstruction {
-        build_set_continuous_merkle_root_instruction(&self.pool_setup, self.merkle_root, self.epoch)
+        build_set_continuous_merkle_root_instruction(&self.pool_setup, self.merkle_root, self.root_version)
     }
 }
 
@@ -581,7 +581,7 @@ impl InstructionTestFixture for SetContinuousMerkleRootFixture {
     }
 
     fn data_len() -> usize {
-        1 + 32 + 8 // discriminator + merkle_root + epoch
+        1 + 32 + 8 // discriminator + merkle_root + root_version
     }
 }
 
@@ -590,7 +590,7 @@ pub struct ClaimContinuousMerkleSetup {
     pub user_reward_token_account: Pubkey,
     pub claim_pda: Pubkey,
     pub claim_bump: u8,
-    pub epoch: u64,
+    pub root_version: u64,
     pub cumulative_amount: u64,
     pub proof: Vec<[u8; 32]>,
     pub merkle_tree: ContinuousMerkleTree,
@@ -604,21 +604,22 @@ impl ClaimContinuousMerkleSetup {
         let pool_setup = &distribute_setup.opt_in_setup.pool_setup;
         let user = &distribute_setup.opt_in_setup.user;
         let other_claimant = ctx.create_funded_keypair();
-        let epoch = 1;
+        let root_version = 1;
         let cumulative_amount = DEFAULT_REWARD_AMOUNT;
 
         let leaves = vec![
-            ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), epoch, cumulative_amount),
+            ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), root_version, cumulative_amount),
             ContinuousMerkleLeaf::new(
                 pool_setup.reward_pool_pda,
                 other_claimant.pubkey(),
-                epoch,
+                root_version,
                 cumulative_amount / 2,
             ),
         ];
         let merkle_tree = ContinuousMerkleTree::new(leaves);
 
-        build_set_continuous_merkle_root_instruction(pool_setup, merkle_tree.root, epoch).send_expect_success(ctx);
+        build_set_continuous_merkle_root_instruction(pool_setup, merkle_tree.root, root_version)
+            .send_expect_success(ctx);
 
         let (claim_pda, claim_bump) = find_merkle_claim_pda(&pool_setup.reward_pool_pda, &user.pubkey());
         let proof = merkle_tree.get_proof_for_claimant(&user.pubkey()).unwrap_or_default();
@@ -629,7 +630,7 @@ impl ClaimContinuousMerkleSetup {
             user_reward_token_account,
             claim_pda,
             claim_bump,
-            epoch,
+            root_version,
             cumulative_amount,
             proof,
             merkle_tree,
@@ -650,7 +651,7 @@ impl ClaimContinuousMerkleSetup {
             self.claim_pda,
             self.claim_bump,
             self.user_reward_token_account,
-            self.epoch,
+            self.root_version,
             self.cumulative_amount,
             amount,
             self.proof.clone(),
@@ -685,7 +686,7 @@ impl InstructionTestFixture for ClaimContinuousMerkleFixture {
     }
 
     fn data_len() -> usize {
-        1 + 1 + 8 + 8 + 8 + 4 + 32 // discriminator + claim_bump + epoch + cumulative + amount + proof_len + one proof hash
+        1 + 1 + 8 + 8 + 8 + 4 + 32 // discriminator + claim_bump + root_version + cumulative + amount + proof_len + one proof hash
     }
 }
 

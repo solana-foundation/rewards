@@ -5,7 +5,7 @@ use crate::{require_len, traits::InstructionData};
 
 pub struct ClaimContinuousMerkleData {
     pub claim_bump: u8,
-    pub epoch: u64,
+    pub root_version: u64,
     pub cumulative_amount: u64,
     pub amount: u64,
     pub proof: Vec<[u8; 32]>,
@@ -16,11 +16,11 @@ impl<'a> TryFrom<&'a [u8]> for ClaimContinuousMerkleData {
 
     #[inline(always)]
     fn try_from(data: &'a [u8]) -> Result<Self, Self::Error> {
-        // claim_bump(1) + epoch(8) + cumulative_amount(8) + amount(8) + proof_len(4)
+        // claim_bump(1) + root_version(8) + cumulative_amount(8) + amount(8) + proof_len(4)
         require_len!(data, Self::LEN);
 
         let claim_bump = data[0];
-        let epoch = u64::from_le_bytes(data[1..9].try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
+        let root_version = u64::from_le_bytes(data[1..9].try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
         let cumulative_amount =
             u64::from_le_bytes(data[9..17].try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
         let amount = u64::from_le_bytes(data[17..25].try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
@@ -40,7 +40,7 @@ impl<'a> TryFrom<&'a [u8]> for ClaimContinuousMerkleData {
             proof.push(hash);
         }
 
-        Ok(Self { claim_bump, epoch, cumulative_amount, amount, proof })
+        Ok(Self { claim_bump, root_version, cumulative_amount, amount, proof })
     }
 }
 
@@ -55,7 +55,7 @@ mod tests {
     fn build_data(amount: u64, proof: &[[u8; 32]]) -> Vec<u8> {
         let mut data = Vec::new();
         data.push(255); // claim bump
-        data.extend_from_slice(&2u64.to_le_bytes()); // epoch
+        data.extend_from_slice(&2u64.to_le_bytes()); // root_version
         data.extend_from_slice(&1000u64.to_le_bytes()); // cumulative_amount
         data.extend_from_slice(&amount.to_le_bytes()); // amount
         data.extend_from_slice(&(proof.len() as u32).to_le_bytes()); // proof_len
@@ -70,7 +70,7 @@ mod tests {
         let data = build_data(0, &[]);
         let parsed = ClaimContinuousMerkleData::try_from(&data[..]).unwrap();
         assert_eq!(parsed.claim_bump, 255);
-        assert_eq!(parsed.epoch, 2);
+        assert_eq!(parsed.root_version, 2);
         assert_eq!(parsed.cumulative_amount, 1000);
         assert_eq!(parsed.amount, 0);
         assert!(parsed.proof.is_empty());

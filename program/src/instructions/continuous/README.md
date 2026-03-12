@@ -50,12 +50,12 @@ The authority creates a `RewardPool` that tracks a token mint (e.g. USD1) and di
 
 For high-scale or off-chain accounting use cases, an authority can publish cumulative snapshots:
 
-1. Authority calls `SetContinuousMerkleRoot` with `(root, epoch)` (epoch must strictly increase)
-2. Users claim with `ClaimContinuousMerkle` by providing `(epoch, cumulative_amount, proof)`
+1. Authority calls `SetContinuousMerkleRoot` with `(root, root_version)` (root_version must strictly increase)
+2. Users claim with `ClaimContinuousMerkle` by providing `(root_version, cumulative_amount, proof)`
 3. Program transfers `cumulative_amount - previously_claimed` (or a partial amount if requested)
 4. Authority rotates root as needed (e.g. hourly or after each snapshot batch)
 
-Once merkle mode is enabled (`epoch > 0`), accumulator-based withdrawal instructions (`ClaimContinuous`, `ContinuousOptOut`, `RevokeContinuousUser`) are blocked to avoid mixed accounting paths.
+Once merkle mode is enabled (`root_version > 0`), accumulator-based withdrawal instructions (`ClaimContinuous`, `ContinuousOptOut`, `RevokeContinuousUser`) are blocked to avoid mixed accounting paths.
 
 ## Reward Accumulator
 

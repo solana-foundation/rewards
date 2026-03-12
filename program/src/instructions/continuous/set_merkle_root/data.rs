@@ -4,7 +4,7 @@ use crate::{errors::RewardsProgramError, require_len, traits::InstructionData};
 
 pub struct SetContinuousMerkleRootData {
     pub merkle_root: [u8; 32],
-    pub epoch: u64,
+    pub root_version: u64,
 }
 
 impl<'a> TryFrom<&'a [u8]> for SetContinuousMerkleRootData {
@@ -15,18 +15,19 @@ impl<'a> TryFrom<&'a [u8]> for SetContinuousMerkleRootData {
         require_len!(data, Self::LEN);
 
         let merkle_root: [u8; 32] = data[0..32].try_into().map_err(|_| ProgramError::InvalidInstructionData)?;
-        let epoch = u64::from_le_bytes(data[32..40].try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
+        let root_version =
+            u64::from_le_bytes(data[32..40].try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
 
-        Ok(Self { merkle_root, epoch })
+        Ok(Self { merkle_root, root_version })
     }
 }
 
 impl<'a> InstructionData<'a> for SetContinuousMerkleRootData {
-    const LEN: usize = 40; // merkle_root(32) + epoch(8)
+    const LEN: usize = 40; // merkle_root(32) + root_version(8)
 
     fn validate(&self) -> Result<(), ProgramError> {
-        if self.epoch == 0 {
-            return Err(RewardsProgramError::InvalidMerkleRootEpoch.into());
+        if self.root_version == 0 {
+            return Err(RewardsProgramError::InvalidMerkleRootVersion.into());
         }
         Ok(())
     }

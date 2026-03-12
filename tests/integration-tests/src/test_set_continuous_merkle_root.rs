@@ -46,19 +46,19 @@ fn test_set_continuous_merkle_root_success() {
 
     let pool = get_reward_pool(&ctx, &setup.pool_setup.reward_pool_pda);
     assert_eq!(pool.merkle_root, setup.merkle_root);
-    assert_eq!(pool.merkle_root_epoch, setup.epoch);
+    assert_eq!(pool.merkle_root_version, setup.root_version);
 }
 
 #[test]
-fn test_set_continuous_merkle_root_requires_monotonic_epoch() {
+fn test_set_continuous_merkle_root_requires_monotonic_root_version() {
     let mut ctx = TestContext::new();
     let setup = SetContinuousMerkleRootSetup::new(&mut ctx);
 
     setup.build_instruction().send_expect_success(&mut ctx);
 
-    let ix = build_set_continuous_merkle_root_instruction(&setup.pool_setup, [22u8; 32], setup.epoch);
+    let ix = build_set_continuous_merkle_root_instruction(&setup.pool_setup, [22u8; 32], setup.root_version);
     let error = ix.send_expect_error(&mut ctx);
-    assert_rewards_error(error, RewardsError::InvalidMerkleRootEpoch);
+    assert_rewards_error(error, RewardsError::InvalidMerkleRootVersion);
 }
 
 #[test]
@@ -69,12 +69,13 @@ fn test_set_continuous_merkle_root_rotation_success() {
     setup.build_instruction().send_expect_success(&mut ctx);
 
     let new_root = [33u8; 32];
-    let new_epoch = setup.epoch + 1;
-    build_set_continuous_merkle_root_instruction(&setup.pool_setup, new_root, new_epoch).send_expect_success(&mut ctx);
+    let new_root_version = setup.root_version + 1;
+    build_set_continuous_merkle_root_instruction(&setup.pool_setup, new_root, new_root_version)
+        .send_expect_success(&mut ctx);
 
     let pool = get_reward_pool(&ctx, &setup.pool_setup.reward_pool_pda);
     assert_eq!(pool.merkle_root, new_root);
-    assert_eq!(pool.merkle_root_epoch, new_epoch);
+    assert_eq!(pool.merkle_root_version, new_root_version);
 }
 
 #[test]
@@ -88,7 +89,7 @@ fn test_set_continuous_merkle_root_unauthorized_authority() {
         .authority(wrong_authority.pubkey())
         .reward_pool(setup.pool_setup.reward_pool_pda)
         .merkle_root(setup.merkle_root)
-        .epoch(setup.epoch);
+        .root_version(setup.root_version);
 
     let ix = TestInstruction {
         instruction: builder.instruction(),
@@ -100,11 +101,11 @@ fn test_set_continuous_merkle_root_unauthorized_authority() {
 }
 
 #[test]
-fn test_set_continuous_merkle_root_epoch_zero_invalid() {
+fn test_set_continuous_merkle_root_version_zero_invalid() {
     let mut ctx = TestContext::new();
     let setup = SetContinuousMerkleRootSetup::new(&mut ctx);
 
     let ix = build_set_continuous_merkle_root_instruction(&setup.pool_setup, [44u8; 32], 0);
     let error = ix.send_expect_error(&mut ctx);
-    assert_rewards_error(error, RewardsError::InvalidMerkleRootEpoch);
+    assert_rewards_error(error, RewardsError::InvalidMerkleRootVersion);
 }

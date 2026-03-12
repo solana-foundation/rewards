@@ -28,18 +28,18 @@ pub fn process_claim_continuous_merkle(
 
     pool.validate_reward_mint(ix.accounts.reward_mint.address())?;
 
-    if pool.merkle_root_epoch == 0 {
+    if pool.merkle_root_version == 0 {
         return Err(RewardsProgramError::MerkleRootNotSet.into());
     }
 
-    if ix.data.epoch != pool.merkle_root_epoch {
-        return Err(RewardsProgramError::MerkleRootEpochMismatch.into());
+    if ix.data.root_version != pool.merkle_root_version {
+        return Err(RewardsProgramError::MerkleRootVersionMismatch.into());
     }
 
     let leaf = compute_continuous_leaf_hash(
         ix.accounts.reward_pool.address(),
         ix.accounts.user.address(),
-        ix.data.epoch,
+        ix.data.root_version,
         ix.data.cumulative_amount,
     );
     verify_proof_or_error(&ix.data.proof, &pool.merkle_root, &leaf)?;

@@ -137,7 +137,7 @@ fn test_claim_continuous_merkle_invalid_proof() {
         setup.claim_pda,
         setup.claim_bump,
         setup.user_reward_token_account,
-        setup.epoch,
+        setup.root_version,
         setup.cumulative_amount,
         0,
         vec![[99u8; 32]],
@@ -148,7 +148,7 @@ fn test_claim_continuous_merkle_invalid_proof() {
 }
 
 #[test]
-fn test_claim_continuous_merkle_wrong_epoch() {
+fn test_claim_continuous_merkle_wrong_root_version() {
     let mut ctx = TestContext::new();
     let setup = ClaimContinuousMerkleSetup::new(&mut ctx);
 
@@ -162,14 +162,14 @@ fn test_claim_continuous_merkle_wrong_epoch() {
         setup.claim_pda,
         setup.claim_bump,
         setup.user_reward_token_account,
-        setup.epoch + 1,
+        setup.root_version + 1,
         setup.cumulative_amount,
         0,
         setup.proof.clone(),
     );
 
     let error = ix.send_expect_error(&mut ctx);
-    assert_rewards_error(error, RewardsError::MerkleRootEpochMismatch);
+    assert_rewards_error(error, RewardsError::MerkleRootVersionMismatch);
 }
 
 #[test]
@@ -209,7 +209,7 @@ fn test_claim_continuous_merkle_user_revoked() {
     let pool_setup = &setup.distribute_setup.opt_in_setup.pool_setup;
     let user = &setup.distribute_setup.opt_in_setup.user;
     let other_claimant = ctx.create_funded_keypair();
-    let epoch = 1;
+    let root_version = 1;
     let cumulative_amount = DEFAULT_REWARD_AMOUNT;
 
     // Revoke before enabling merkle mode; revocation instructions are blocked afterward.
@@ -217,10 +217,16 @@ fn test_claim_continuous_merkle_user_revoked() {
     revoke_ix.send_expect_success(&mut ctx);
 
     let merkle_tree = ContinuousMerkleTree::new(vec![
-        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), epoch, cumulative_amount),
-        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, other_claimant.pubkey(), epoch, cumulative_amount / 2),
+        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), root_version, cumulative_amount),
+        ContinuousMerkleLeaf::new(
+            pool_setup.reward_pool_pda,
+            other_claimant.pubkey(),
+            root_version,
+            cumulative_amount / 2,
+        ),
     ]);
-    build_set_continuous_merkle_root_instruction(pool_setup, merkle_tree.root, epoch).send_expect_success(&mut ctx);
+    build_set_continuous_merkle_root_instruction(pool_setup, merkle_tree.root, root_version)
+        .send_expect_success(&mut ctx);
 
     let (claim_pda, claim_bump) = find_merkle_claim_pda(&pool_setup.reward_pool_pda, &user.pubkey());
     let proof = merkle_tree.get_proof_for_claimant(&user.pubkey()).unwrap_or_default();
@@ -231,7 +237,7 @@ fn test_claim_continuous_merkle_user_revoked() {
         claim_pda,
         claim_bump,
         setup.user_reward_token_account,
-        epoch,
+        root_version,
         cumulative_amount,
         0,
         proof,
@@ -247,27 +253,28 @@ fn test_claim_continuous_merkle_rotation_delta_claim() {
     let setup = ClaimContinuousMerkleSetup::new(&mut ctx);
     setup.build_instruction(&ctx).send_expect_success(&mut ctx);
 
-    // Increase distributed rewards so epoch 2 can claim additional cumulative balance.
+    // Increase distributed rewards so root_version 2 can claim additional cumulative balance.
     ctx.advance_slot();
     setup.distribute_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
 
     let pool_setup = &setup.distribute_setup.opt_in_setup.pool_setup;
     let user = &setup.distribute_setup.opt_in_setup.user;
     let other_claimant = ctx.create_funded_keypair();
-    let next_epoch = setup.epoch + 1;
+    let next_root_version = setup.root_version + 1;
     let next_cumulative = setup.cumulative_amount + (DEFAULT_REWARD_AMOUNT / 2);
 
     let next_tree = ContinuousMerkleTree::new(vec![
-        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), next_epoch, next_cumulative),
+        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), next_root_version, next_cumulative),
         ContinuousMerkleLeaf::new(
             pool_setup.reward_pool_pda,
             other_claimant.pubkey(),
-            next_epoch,
+            next_root_version,
             DEFAULT_REWARD_AMOUNT / 2,
         ),
     ]);
 
-    build_set_continuous_merkle_root_instruction(pool_setup, next_tree.root, next_epoch).send_expect_success(&mut ctx);
+    build_set_continuous_merkle_root_instruction(pool_setup, next_tree.root, next_root_version)
+        .send_expect_success(&mut ctx);
 
     let next_proof = next_tree.get_proof_for_claimant(&user.pubkey()).unwrap_or_default();
     let claim_ix = build_claim_continuous_merkle_instruction(
@@ -277,7 +284,7 @@ fn test_claim_continuous_merkle_rotation_delta_claim() {
         setup.claim_pda,
         setup.claim_bump,
         setup.user_reward_token_account,
-        next_epoch,
+        next_root_version,
         next_cumulative,
         0,
         next_proof,
@@ -301,16 +308,17 @@ fn test_claim_continuous_merkle_rotation_decreased_cumulative_fails() {
     let pool_setup = &setup.distribute_setup.opt_in_setup.pool_setup;
     let user = &setup.distribute_setup.opt_in_setup.user;
     let other_claimant = ctx.create_funded_keypair();
-    let next_epoch = setup.epoch + 1;
+    let next_root_version = setup.root_version + 1;
     let decreased_cumulative =
         setup.cumulative_amount.checked_sub(1).expect("cumulative amount should be greater than zero");
 
     let next_tree = ContinuousMerkleTree::new(vec![
-        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), next_epoch, decreased_cumulative),
-        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, other_claimant.pubkey(), next_epoch, 1),
+        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), next_root_version, decreased_cumulative),
+        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, other_claimant.pubkey(), next_root_version, 1),
     ]);
 
-    build_set_continuous_merkle_root_instruction(pool_setup, next_tree.root, next_epoch).send_expect_success(&mut ctx);
+    build_set_continuous_merkle_root_instruction(pool_setup, next_tree.root, next_root_version)
+        .send_expect_success(&mut ctx);
 
     let next_proof = next_tree.get_proof_for_claimant(&user.pubkey()).unwrap_or_default();
     let claim_ix = build_claim_continuous_merkle_instruction(
@@ -320,7 +328,7 @@ fn test_claim_continuous_merkle_rotation_decreased_cumulative_fails() {
         setup.claim_pda,
         setup.claim_bump,
         setup.user_reward_token_account,
-        next_epoch,
+        next_root_version,
         decreased_cumulative,
         0,
         next_proof,
@@ -337,15 +345,16 @@ fn test_claim_continuous_merkle_insufficient_pool_funds() {
     let pool_setup = &setup.distribute_setup.opt_in_setup.pool_setup;
     let user = &setup.distribute_setup.opt_in_setup.user;
     let other_claimant = ctx.create_funded_keypair();
-    let next_epoch = setup.epoch + 1;
+    let next_root_version = setup.root_version + 1;
     let too_large_cumulative = setup.distribute_setup.amount.checked_add(1).expect("test amount overflow");
 
     let next_tree = ContinuousMerkleTree::new(vec![
-        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), next_epoch, too_large_cumulative),
-        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, other_claimant.pubkey(), next_epoch, 1),
+        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), next_root_version, too_large_cumulative),
+        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, other_claimant.pubkey(), next_root_version, 1),
     ]);
 
-    build_set_continuous_merkle_root_instruction(pool_setup, next_tree.root, next_epoch).send_expect_success(&mut ctx);
+    build_set_continuous_merkle_root_instruction(pool_setup, next_tree.root, next_root_version)
+        .send_expect_success(&mut ctx);
 
     let next_proof = next_tree.get_proof_for_claimant(&user.pubkey()).unwrap_or_default();
     let claim_ix = build_claim_continuous_merkle_instruction(
@@ -355,7 +364,7 @@ fn test_claim_continuous_merkle_insufficient_pool_funds() {
         setup.claim_pda,
         setup.claim_bump,
         setup.user_reward_token_account,
-        next_epoch,
+        next_root_version,
         too_large_cumulative,
         0,
         next_proof,
@@ -386,14 +395,20 @@ fn test_claim_continuous_merkle_success_token_2022() {
     let pool_setup = &distribute_setup.opt_in_setup.pool_setup;
     let user = &distribute_setup.opt_in_setup.user;
     let other_claimant = ctx.create_funded_keypair();
-    let epoch = 1;
+    let root_version = 1;
     let cumulative_amount = DEFAULT_REWARD_AMOUNT;
     let merkle_tree = ContinuousMerkleTree::new(vec![
-        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), epoch, cumulative_amount),
-        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, other_claimant.pubkey(), epoch, cumulative_amount / 2),
+        ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), root_version, cumulative_amount),
+        ContinuousMerkleLeaf::new(
+            pool_setup.reward_pool_pda,
+            other_claimant.pubkey(),
+            root_version,
+            cumulative_amount / 2,
+        ),
     ]);
 
-    build_set_continuous_merkle_root_instruction(pool_setup, merkle_tree.root, epoch).send_expect_success(&mut ctx);
+    build_set_continuous_merkle_root_instruction(pool_setup, merkle_tree.root, root_version)
+        .send_expect_success(&mut ctx);
 
     let (claim_pda, claim_bump) = find_merkle_claim_pda(&pool_setup.reward_pool_pda, &user.pubkey());
     let proof = merkle_tree.get_proof_for_claimant(&user.pubkey()).unwrap_or_default();
@@ -407,7 +422,7 @@ fn test_claim_continuous_merkle_success_token_2022() {
         claim_pda,
         claim_bump,
         user_reward_token_account,
-        epoch,
+        root_version,
         cumulative_amount,
         0,
         proof,
