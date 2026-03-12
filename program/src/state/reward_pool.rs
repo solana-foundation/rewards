@@ -39,6 +39,8 @@ pub struct RewardPool {
     pub total_distributed: u64,
     pub total_claimed: u64,
     pub clawback_ts: i64,
+    pub merkle_root: [u8; 32],
+    pub merkle_root_epoch: u64,
 }
 
 impl Discriminator for RewardPool {
@@ -50,7 +52,7 @@ impl Versioned for RewardPool {
 }
 
 impl AccountSize for RewardPool {
-    const DATA_LEN: usize = 1 + 1 + 1 + 5 + 32 + 32 + 32 + 32 + 16 + 8 + 8 + 8 + 8; // 184
+    const DATA_LEN: usize = 1 + 1 + 1 + 5 + 32 + 32 + 32 + 32 + 16 + 8 + 8 + 8 + 8 + 32 + 8; // 224
 }
 
 impl AccountParse for RewardPool {
@@ -81,6 +83,9 @@ impl AccountParse for RewardPool {
             u64::from_le_bytes(data[168..176].try_into().map_err(|_| RewardsProgramError::InvalidAccountData)?);
         let clawback_ts =
             i64::from_le_bytes(data[176..184].try_into().map_err(|_| RewardsProgramError::InvalidAccountData)?);
+        let merkle_root: [u8; 32] = data[184..216].try_into().map_err(|_| RewardsProgramError::InvalidAccountData)?;
+        let merkle_root_epoch =
+            u64::from_le_bytes(data[216..224].try_into().map_err(|_| RewardsProgramError::InvalidAccountData)?);
 
         Ok(Self {
             bump,
@@ -96,6 +101,8 @@ impl AccountParse for RewardPool {
             total_distributed,
             total_claimed,
             clawback_ts,
+            merkle_root,
+            merkle_root_epoch,
         })
     }
 }
@@ -117,6 +124,8 @@ impl AccountSerialize for RewardPool {
         data.extend_from_slice(&self.total_distributed.to_le_bytes());
         data.extend_from_slice(&self.total_claimed.to_le_bytes());
         data.extend_from_slice(&self.clawback_ts.to_le_bytes());
+        data.extend_from_slice(&self.merkle_root);
+        data.extend_from_slice(&self.merkle_root_epoch.to_le_bytes());
         data
     }
 }
@@ -182,6 +191,8 @@ impl RewardPool {
             total_distributed: 0,
             total_claimed: 0,
             clawback_ts,
+            merkle_root: [0u8; 32],
+            merkle_root_epoch: 0,
         }
     }
 
@@ -263,6 +274,8 @@ mod tests {
         assert_eq!(pool.total_distributed, 0);
         assert_eq!(pool.total_claimed, 0);
         assert_eq!(pool.clawback_ts, 0);
+        assert_eq!(pool.merkle_root, [0u8; 32]);
+        assert_eq!(pool.merkle_root_epoch, 0);
     }
 
     #[test]
@@ -312,6 +325,8 @@ mod tests {
         pool.total_distributed = 1_000_000;
         pool.total_claimed = 250_000;
         pool.clawback_ts = 1700000000;
+        pool.merkle_root = [9u8; 32];
+        pool.merkle_root_epoch = 3;
 
         let bytes = pool.to_bytes();
         let deserialized = RewardPool::parse_from_bytes(&bytes).unwrap();
@@ -321,6 +336,8 @@ mod tests {
         assert_eq!(deserialized.total_distributed, 1_000_000);
         assert_eq!(deserialized.total_claimed, 250_000);
         assert_eq!(deserialized.clawback_ts, 1700000000);
+        assert_eq!(deserialized.merkle_root, [9u8; 32]);
+        assert_eq!(deserialized.merkle_root_epoch, 3);
     }
 
     #[test]

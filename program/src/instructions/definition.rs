@@ -608,6 +608,58 @@ pub enum RewardsProgramInstruction {
         revoke_mode: RevokeMode,
     } = 19,
 
+    /// Set or rotate the continuous-merkle root for a reward pool.
+    #[codama(account(name = "authority", signer, docs = "Pool authority; must match reward_pool.authority"))]
+    #[codama(account(name = "reward_pool", writable, docs = "PDA: RewardPool account"))]
+    #[codama(account(name = "rewards_program", docs = "This program's ID"))]
+    SetContinuousMerkleRoot {
+        /// Merkle root for cumulative continuous claims
+        merkle_root: [u8; 32],
+        /// Monotonically increasing root epoch (must be > current epoch)
+        epoch: u64,
+    } = 20,
+
+    /// Claim rewards from a continuous reward pool using a merkle proof over cumulative amounts.
+    #[codama(account(name = "payer", signer, writable, docs = "Pays for claim PDA creation (if first claim)"))]
+    #[codama(account(name = "user", signer, docs = "User claiming rewards"))]
+    #[codama(account(name = "reward_pool", writable, docs = "PDA: RewardPool account"))]
+    #[codama(account(
+        name = "claim_account",
+        writable,
+        docs = "PDA: [b\"merkle_claim\", reward_pool, user] (created or updated)"
+    ))]
+    #[codama(account(
+        name = "revocation_marker",
+        docs = "PDA: [b\"revocation\", reward_pool, user] (checked for existence)"
+    ))]
+    #[codama(account(name = "reward_mint", docs = "SPL token mint; must match reward_pool.reward_mint"))]
+    #[codama(account(
+        name = "reward_vault",
+        writable,
+        docs = "ATA of reward_pool PDA for reward_mint; source of claimed tokens"
+    ))]
+    #[codama(account(
+        name = "user_reward_token_account",
+        writable,
+        docs = "User's reward token account; destination for claimed tokens"
+    ))]
+    #[codama(account(name = "system_program", docs = "System program"))]
+    #[codama(account(name = "reward_token_program", docs = "SPL Token or Token-2022 program for reward mint"))]
+    #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
+    #[codama(account(name = "rewards_program", docs = "This program's ID"))]
+    ClaimContinuousMerkle {
+        /// Bump for the claim PDA
+        claim_bump: u8,
+        /// Merkle root epoch this proof targets
+        epoch: u64,
+        /// Cumulative amount claimable by user at this epoch
+        cumulative_amount: u64,
+        /// Amount to claim. 0 = claim all available.
+        amount: u64,
+        /// Merkle proof
+        proof: Vec<[u8; 32]>,
+    } = 21,
+
     /// Emit event data via CPI (prevents log truncation).
     #[codama(account(name = "event_authority", signer, docs = "PDA: [b\"__event_authority\"]; validates CPI caller"))]
     EmitEvent {} = 228,

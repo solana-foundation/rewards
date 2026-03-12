@@ -7,6 +7,9 @@ const LEAF_PREFIX: &[u8] = &[0];
 /// Maximum byte length of a leaf's inner hash input:
 /// 32 (claimant) + 8 (total_amount) + 25 (max schedule = CliffLinear)
 const MAX_LEAF_DATA_LEN: usize = 65;
+/// Maximum byte length of a continuous leaf's inner hash input:
+/// 32 (reward_pool) + 32 (claimant) + 8 (epoch) + 8 (cumulative_amount)
+const MAX_CONTINUOUS_LEAF_DATA_LEN: usize = 80;
 
 fn schedule_to_bytes(schedule: &VestingSchedule) -> Vec<u8> {
     match schedule {
@@ -55,6 +58,29 @@ pub fn compute_leaf_hash(claimant: &Pubkey, total_amount: u64, schedule: &Vestin
     inner_data[40..40 + schedule_len].copy_from_slice(&schedule_bytes);
 
     let inner_hash = keccak256(&inner_data[..inner_len]);
+
+    let mut outer_data = [0u8; 1 + 32];
+    outer_data[0..1].copy_from_slice(LEAF_PREFIX);
+    outer_data[1..33].copy_from_slice(&inner_hash);
+
+    keccak256(&outer_data)
+}
+
+/// Compute the merkle leaf hash for a continuous cumulative claim.
+/// Matches the on-chain `compute_continuous_leaf_hash` helper.
+pub fn compute_continuous_leaf_hash(
+    reward_pool: &Pubkey,
+    claimant: &Pubkey,
+    epoch: u64,
+    cumulative_amount: u64,
+) -> [u8; 32] {
+    let mut inner_data = [0u8; MAX_CONTINUOUS_LEAF_DATA_LEN];
+    inner_data[0..32].copy_from_slice(reward_pool.as_ref());
+    inner_data[32..64].copy_from_slice(claimant.as_ref());
+    inner_data[64..72].copy_from_slice(&epoch.to_le_bytes());
+    inner_data[72..80].copy_from_slice(&cumulative_amount.to_le_bytes());
+
+    let inner_hash = keccak256(&inner_data);
 
     let mut outer_data = [0u8; 1 + 32];
     outer_data[0..1].copy_from_slice(LEAF_PREFIX);
@@ -190,6 +216,117 @@ impl MerkleTree {
 
     /// Get the leaf data for a claimant
     pub fn get_leaf(&self, claimant: &Pubkey) -> Option<&MerkleLeaf> {
+        self.leaves.iter().find(|l| l.claimant == *claimant)
+    }
+}
+
+/// Represents a continuous-merkle tree leaf.
+#[derive(Clone, Debug)]
+pub struct ContinuousMerkleLeaf {
+    pub reward_pool: Pubkey,
+    pub claimant: Pubkey,
+    pub epoch: u64,
+    pub cumulative_amount: u64,
+    pub leaf_hash: [u8; 32],
+}
+
+impl ContinuousMerkleLeaf {
+    pub fn new(reward_pool: Pubkey, claimant: Pubkey, epoch: u64, cumulative_amount: u64) -> Self {
+        let leaf_hash = compute_continuous_leaf_hash(&reward_pool, &claimant, epoch, cumulative_amount);
+        Self { reward_pool, claimant, epoch, cumulative_amount, leaf_hash }
+    }
+}
+
+/// A simple continuous-merkle tree builder for testing.
+pub struct ContinuousMerkleTree {
+    pub leaves: Vec<ContinuousMerkleLeaf>,
+    pub root: [u8; 32],
+}
+
+impl ContinuousMerkleTree {
+    pub fn new(leaves: Vec<ContinuousMerkleLeaf>) -> Self {
+        assert!(!leaves.is_empty(), "Merkle tree must have at least one leaf");
+        let root = Self::compute_root(&leaves);
+        Self { leaves, root }
+    }
+
+    fn compute_root(leaves: &[ContinuousMerkleLeaf]) -> [u8; 32] {
+        if leaves.len() == 1 {
+            return leaves[0].leaf_hash;
+        }
+
+        let leaf_hashes: Vec<[u8; 32]> = leaves.iter().map(|l| l.leaf_hash).collect();
+        Self::compute_root_from_hashes(&leaf_hashes)
+    }
+
+    fn compute_root_from_hashes(hashes: &[[u8; 32]]) -> [u8; 32] {
+        if hashes.len() == 1 {
+            return hashes[0];
+        }
+
+        let mut next_level = Vec::new();
+        let mut i = 0;
+        while i < hashes.len() {
+            if i + 1 < hashes.len() {
+                next_level.push(hash_pair(&hashes[i], &hashes[i + 1]));
+            } else {
+                next_level.push(hashes[i]);
+            }
+            i += 2;
+        }
+
+        Self::compute_root_from_hashes(&next_level)
+    }
+
+    pub fn get_proof(&self, index: usize) -> Vec<[u8; 32]> {
+        assert!(index < self.leaves.len(), "Index out of bounds");
+
+        if self.leaves.len() == 1 {
+            return vec![];
+        }
+
+        let leaf_hashes: Vec<[u8; 32]> = self.leaves.iter().map(|l| l.leaf_hash).collect();
+        Self::get_proof_recursive(&leaf_hashes, index)
+    }
+
+    fn get_proof_recursive(hashes: &[[u8; 32]], index: usize) -> Vec<[u8; 32]> {
+        if hashes.len() == 1 {
+            return vec![];
+        }
+
+        let mut proof = Vec::new();
+
+        let sibling_index = if index.is_multiple_of(2) { index + 1 } else { index - 1 };
+        if sibling_index < hashes.len() {
+            proof.push(hashes[sibling_index]);
+        }
+
+        let mut next_level = Vec::new();
+        let mut i = 0;
+        while i < hashes.len() {
+            if i + 1 < hashes.len() {
+                next_level.push(hash_pair(&hashes[i], &hashes[i + 1]));
+            } else {
+                next_level.push(hashes[i]);
+            }
+            i += 2;
+        }
+
+        let next_index = index / 2;
+        proof.extend(Self::get_proof_recursive(&next_level, next_index));
+
+        proof
+    }
+
+    pub fn find_leaf_index(&self, claimant: &Pubkey) -> Option<usize> {
+        self.leaves.iter().position(|l| l.claimant == *claimant)
+    }
+
+    pub fn get_proof_for_claimant(&self, claimant: &Pubkey) -> Option<Vec<[u8; 32]>> {
+        self.find_leaf_index(claimant).map(|idx| self.get_proof(idx))
+    }
+
+    pub fn get_leaf(&self, claimant: &Pubkey) -> Option<&ContinuousMerkleLeaf> {
         self.leaves.iter().find(|l| l.claimant == *claimant)
     }
 }

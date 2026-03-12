@@ -9,6 +9,9 @@ pub const LEAF_PREFIX: &[u8] = &[0];
 /// Maximum byte length of a leaf's inner hash input:
 /// 32 (claimant) + 8 (total_amount) + 25 (max schedule = CliffLinear)
 const MAX_LEAF_DATA_LEN: usize = 65;
+/// Maximum byte length of a continuous merkle leaf's inner hash input:
+/// 32 (reward_pool) + 32 (claimant) + 8 (epoch) + 8 (cumulative_amount)
+const MAX_CONTINUOUS_LEAF_DATA_LEN: usize = 80;
 
 fn keccak256(data: &[u8]) -> [u8; 32] {
     Keccak256::new().update(data).finalize()
@@ -27,6 +30,32 @@ pub fn compute_leaf_hash(claimant: &Address, total_amount: u64, schedule_bytes: 
     inner_data[40..40 + schedule_len].copy_from_slice(schedule_bytes);
 
     let inner_hash = keccak256(&inner_data[..inner_len]);
+
+    // Outer hash: hash(LEAF_PREFIX || inner_hash)
+    let mut outer_data = [0u8; 1 + 32]; // 33 bytes
+    outer_data[0..1].copy_from_slice(LEAF_PREFIX);
+    outer_data[1..33].copy_from_slice(&inner_hash);
+
+    keccak256(&outer_data)
+}
+
+/// Compute the merkle leaf hash for continuous-merkle claims.
+///
+/// The leaf format is:
+/// `hash(LEAF_PREFIX || hash(reward_pool || claimant || epoch || cumulative_amount))`
+pub fn compute_continuous_leaf_hash(
+    reward_pool: &Address,
+    claimant: &Address,
+    epoch: u64,
+    cumulative_amount: u64,
+) -> [u8; 32] {
+    let mut inner_data = [0u8; MAX_CONTINUOUS_LEAF_DATA_LEN];
+    inner_data[0..32].copy_from_slice(reward_pool.as_ref());
+    inner_data[32..64].copy_from_slice(claimant.as_ref());
+    inner_data[64..72].copy_from_slice(&epoch.to_le_bytes());
+    inner_data[72..80].copy_from_slice(&cumulative_amount.to_le_bytes());
+
+    let inner_hash = keccak256(&inner_data);
 
     // Outer hash: hash(LEAF_PREFIX || inner_hash)
     let mut outer_data = [0u8; 1 + 32]; // 33 bytes
@@ -140,6 +169,51 @@ mod tests {
 
         let hash1 = compute_leaf_hash(&claimant, 1000, &sb1);
         let hash2 = compute_leaf_hash(&claimant, 1000, &sb2);
+
+        assert_ne!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_compute_continuous_leaf_hash_deterministic() {
+        let reward_pool = Address::new_from_array([7u8; 32]);
+        let claimant = Address::new_from_array([1u8; 32]);
+
+        let hash1 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
+        let hash2 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
+
+        assert_eq!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_compute_continuous_leaf_hash_different_pools() {
+        let reward_pool_a = Address::new_from_array([7u8; 32]);
+        let reward_pool_b = Address::new_from_array([8u8; 32]);
+        let claimant = Address::new_from_array([1u8; 32]);
+
+        let hash1 = compute_continuous_leaf_hash(&reward_pool_a, &claimant, 1, 1000);
+        let hash2 = compute_continuous_leaf_hash(&reward_pool_b, &claimant, 1, 1000);
+
+        assert_ne!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_compute_continuous_leaf_hash_different_epochs() {
+        let reward_pool = Address::new_from_array([7u8; 32]);
+        let claimant = Address::new_from_array([1u8; 32]);
+
+        let hash1 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
+        let hash2 = compute_continuous_leaf_hash(&reward_pool, &claimant, 2, 1000);
+
+        assert_ne!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_compute_continuous_leaf_hash_different_amounts() {
+        let reward_pool = Address::new_from_array([7u8; 32]);
+        let claimant = Address::new_from_array([1u8; 32]);
+
+        let hash1 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
+        let hash2 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 2000);
 
         assert_ne!(hash1, hash2);
     }

@@ -128,6 +128,22 @@ pub enum RewardsProgramError {
     /// (30) Invalid timestamp value
     #[error("Invalid timestamp value")]
     InvalidTimestamp,
+
+    /// (31) Invalid merkle root epoch value
+    #[error("Invalid merkle root epoch value")]
+    InvalidMerkleRootEpoch,
+
+    /// (32) Merkle root is not configured for this pool
+    #[error("Merkle root is not configured for this pool")]
+    MerkleRootNotSet,
+
+    /// (33) Merkle proof epoch does not match the pool root epoch
+    #[error("Merkle proof epoch does not match the pool root epoch")]
+    MerkleRootEpochMismatch,
+
+    /// (34) This pool is configured for merkle claims
+    #[error("This pool is configured for merkle claims")]
+    ContinuousMerkleModeEnabled,
 }
 
 impl From<RewardsProgramError> for ProgramError {

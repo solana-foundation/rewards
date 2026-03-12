@@ -3,10 +3,11 @@ use pinocchio::{account::AccountView, entrypoint, error::ProgramError, Address, 
 use crate::{
     instructions::{
         continuous::{
-            claim::process_claim_continuous, close_pool::process_close_continuous_pool,
-            create_pool::process_create_continuous_pool, distribute_reward::process_distribute_continuous_reward,
-            opt_in::process_continuous_opt_in, opt_out::process_continuous_opt_out,
-            revoke_user::process_revoke_continuous_user, set_balance::process_set_continuous_balance,
+            claim::process_claim_continuous, claim_merkle::process_claim_continuous_merkle,
+            close_pool::process_close_continuous_pool, create_pool::process_create_continuous_pool,
+            distribute_reward::process_distribute_continuous_reward, opt_in::process_continuous_opt_in,
+            opt_out::process_continuous_opt_out, revoke_user::process_revoke_continuous_user,
+            set_balance::process_set_continuous_balance, set_merkle_root::process_set_continuous_merkle_root,
             sync_balance::process_sync_continuous_balance,
         },
         direct::{
@@ -88,6 +89,12 @@ pub fn process_instruction(program_id: &Address, accounts: &[AccountView], instr
         }
         RewardsInstructionDiscriminators::RevokeContinuousUser => {
             process_revoke_continuous_user(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::SetContinuousMerkleRoot => {
+            process_set_continuous_merkle_root(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::ClaimContinuousMerkle => {
+            process_claim_continuous_merkle(program_id, accounts, instruction_data)
         }
         RewardsInstructionDiscriminators::EmitEvent => process_emit_event(program_id, accounts),
     }

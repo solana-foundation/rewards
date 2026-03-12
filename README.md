@@ -104,6 +104,8 @@ Revocation is opt-in per distribution via the `revocable` bitmask field. A `Revo
 | 16  | SyncContinuousBalance      | Permissionless: sync user's on-chain token balance       |
 | 17  | SetContinuousBalance       | Authority sets user balance (AuthoritySet mode only)     |
 | 15  | ClaimContinuous            | User claims accrued rewards                              |
+| 20  | SetContinuousMerkleRoot    | Authority sets/rotates merkle root for cumulative claims |
+| 21  | ClaimContinuousMerkle      | User claims via merkle proof over cumulative amount      |
 | 19  | RevokeContinuousUser       | Authority revokes user from pool                         |
 | 13  | ContinuousOptOut           | User opts out and claims remaining rewards               |
 | 18  | CloseContinuousPool        | Authority closes pool, reclaims remaining tokens         |

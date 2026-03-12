@@ -30,6 +30,8 @@ pub enum RewardsInstructionDiscriminators {
     SetContinuousBalance = 17,
     CloseContinuousPool = 18,
     RevokeContinuousUser = 19,
+    SetContinuousMerkleRoot = 20,
+    ClaimContinuousMerkle = 21,
 
     // Shared
     EmitEvent = 228,
@@ -64,6 +66,8 @@ impl TryFrom<u8> for RewardsInstructionDiscriminators {
             17 => Ok(Self::SetContinuousBalance),
             18 => Ok(Self::CloseContinuousPool),
             19 => Ok(Self::RevokeContinuousUser),
+            20 => Ok(Self::SetContinuousMerkleRoot),
+            21 => Ok(Self::ClaimContinuousMerkle),
             // Shared
             228 => Ok(Self::EmitEvent),
             _ => Err(ProgramError::InvalidInstructionData),
@@ -227,11 +231,19 @@ mod tests {
         let result = RewardsInstructionDiscriminators::try_from(19u8);
         assert!(result.is_ok());
         assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::RevokeContinuousUser));
+
+        let result = RewardsInstructionDiscriminators::try_from(20u8);
+        assert!(result.is_ok());
+        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::SetContinuousMerkleRoot));
+
+        let result = RewardsInstructionDiscriminators::try_from(21u8);
+        assert!(result.is_ok());
+        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::ClaimContinuousMerkle));
     }
 
     #[test]
     fn test_discriminator_try_from_invalid() {
-        let result = RewardsInstructionDiscriminators::try_from(20u8);
+        let result = RewardsInstructionDiscriminators::try_from(22u8);
         assert!(matches!(result, Err(ProgramError::InvalidInstructionData)));
 
         let result = RewardsInstructionDiscriminators::try_from(255u8);

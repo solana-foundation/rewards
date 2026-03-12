@@ -2,6 +2,7 @@ use crate::define_instruction;
 
 use super::continuous::{
     claim::{ClaimContinuousAccounts, ClaimContinuousData},
+    claim_merkle::{ClaimContinuousMerkleAccounts, ClaimContinuousMerkleData},
     close_pool::{CloseContinuousPoolAccounts, CloseContinuousPoolData},
     create_pool::{CreateContinuousPoolAccounts, CreateContinuousPoolData},
     distribute_reward::{DistributeContinuousRewardAccounts, DistributeContinuousRewardData},
@@ -9,6 +10,7 @@ use super::continuous::{
     opt_out::{ContinuousOptOutAccounts, ContinuousOptOutData},
     revoke_user::{RevokeContinuousUserAccounts, RevokeContinuousUserData},
     set_balance::{SetContinuousBalanceAccounts, SetContinuousBalanceData},
+    set_merkle_root::{SetContinuousMerkleRootAccounts, SetContinuousMerkleRootData},
     sync_balance::{SyncContinuousBalanceAccounts, SyncContinuousBalanceData},
 };
 use super::direct::{
@@ -48,6 +50,8 @@ define_instruction!(ContinuousOptIn, ContinuousOptInAccounts, ContinuousOptInDat
 define_instruction!(ContinuousOptOut, ContinuousOptOutAccounts, ContinuousOptOutData);
 define_instruction!(DistributeContinuousReward, DistributeContinuousRewardAccounts, DistributeContinuousRewardData);
 define_instruction!(ClaimContinuous, ClaimContinuousAccounts, ClaimContinuousData);
+define_instruction!(SetContinuousMerkleRoot, SetContinuousMerkleRootAccounts, SetContinuousMerkleRootData);
+define_instruction!(ClaimContinuousMerkle, ClaimContinuousMerkleAccounts, ClaimContinuousMerkleData);
 define_instruction!(SyncContinuousBalance, SyncContinuousBalanceAccounts, SyncContinuousBalanceData);
 define_instruction!(SetContinuousBalance, SetContinuousBalanceAccounts, SetContinuousBalanceData);
 define_instruction!(CloseContinuousPool, CloseContinuousPoolAccounts, CloseContinuousPoolData);
