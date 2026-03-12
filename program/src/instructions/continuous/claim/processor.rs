@@ -28,10 +28,7 @@ pub fn process_claim_continuous(
 
     pool.validate_tracked_mint(ix.accounts.tracked_mint.address())?;
     pool.validate_reward_mint(ix.accounts.reward_mint.address())?;
-
-    if pool.merkle_root_version != 0 {
-        return Err(RewardsProgramError::ContinuousMerkleModeEnabled.into());
-    }
+    pool.ensure_merkle_mode_disabled()?;
 
     let user_data = ix.accounts.user_reward_account.try_borrow()?;
     let mut user = UserRewardAccount::from_account(

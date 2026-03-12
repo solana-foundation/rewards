@@ -227,6 +227,14 @@ impl RewardPool {
         Ok(())
     }
 
+    #[inline(always)]
+    pub fn ensure_merkle_mode_disabled(&self) -> Result<(), ProgramError> {
+        if self.merkle_root_version != 0 {
+            return Err(RewardsProgramError::ContinuousMerkleModeEnabled.into());
+        }
+        Ok(())
+    }
+
     pub fn with_signer<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&[Signer<'_, '_>]) -> R,
@@ -392,6 +400,19 @@ mod tests {
         let pool = create_test_pool();
         let wrong_mint = Address::new_from_array([99u8; 32]);
         assert!(pool.validate_reward_mint(&wrong_mint).is_err());
+    }
+
+    #[test]
+    fn test_ensure_merkle_mode_disabled_when_not_enabled() {
+        let pool = create_test_pool();
+        assert!(pool.ensure_merkle_mode_disabled().is_ok());
+    }
+
+    #[test]
+    fn test_ensure_merkle_mode_disabled_when_enabled() {
+        let mut pool = create_test_pool();
+        pool.merkle_root_version = 1;
+        assert!(pool.ensure_merkle_mode_disabled().is_err());
     }
 
     #[test]

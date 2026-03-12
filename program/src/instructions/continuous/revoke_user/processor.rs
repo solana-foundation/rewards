@@ -29,10 +29,7 @@ pub fn process_revoke_continuous_user(
     pool.validate_authority(ix.accounts.authority.address())?;
     pool.validate_tracked_mint(ix.accounts.tracked_mint.address())?;
     pool.validate_reward_mint(ix.accounts.reward_mint.address())?;
-
-    if pool.merkle_root_version != 0 {
-        return Err(RewardsProgramError::ContinuousMerkleModeEnabled.into());
-    }
+    pool.ensure_merkle_mode_disabled()?;
 
     if ix.data.revoke_mode.is_disabled_by(pool.revocable) {
         return Err(RewardsProgramError::DistributionNotRevocable.into());
