@@ -111,6 +111,7 @@ Revocation is opt-in per distribution via the `revocable` bitmask field. A `Revo
 | 18  | CloseContinuousPool        | Authority closes pool, reclaims remaining tokens         |
 
 Continuous pools also support cumulative-merkle claims for high-scale distribution accounting:
+
 - Authority rotates snapshots with `SetContinuousMerkleRoot`
 - Users claim deltas with `ClaimContinuousMerkle`
 - Each rotation emits `MerkleRootSet` and each claim emits `Claimed`
