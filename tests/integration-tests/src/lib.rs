@@ -24,6 +24,8 @@ mod test_close_merkle_distribution;
 #[cfg(test)]
 mod test_close_reward_pool;
 #[cfg(test)]
+mod test_confidential_continuous;
+#[cfg(test)]
 mod test_continuous_lifecycle;
 #[cfg(test)]
 mod test_create_direct_distribution;
@@ -47,3 +49,5 @@ mod test_set_balance;
 mod test_set_continuous_merkle_root;
 #[cfg(test)]
 mod test_sync_balance;
+#[cfg(test)]
+mod test_zk_elgamal_probe;

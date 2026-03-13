@@ -32,6 +32,7 @@ pub struct CreateContinuousPoolSetup {
     pub balance_source: BalanceSource,
     pub revocable: u8,
     pub clawback_ts: i64,
+    pub confidential_rewards: u8,
     pub reward_token_program: Pubkey,
 }
 
@@ -80,6 +81,7 @@ impl CreateContinuousPoolSetup {
             balance_source,
             revocable: 0,
             clawback_ts: 0,
+            confidential_rewards: 0,
             reward_token_program,
         }
     }
@@ -101,7 +103,8 @@ impl CreateContinuousPoolSetup {
             .bump(self.bump)
             .balance_source(self.balance_source)
             .revocable(self.revocable)
-            .clawback_ts(self.clawback_ts);
+            .clawback_ts(self.clawback_ts)
+            .confidential_rewards(self.confidential_rewards);
 
         TestInstruction {
             instruction: builder.instruction(),
@@ -138,7 +141,7 @@ impl InstructionTestFixture for CreateContinuousPoolFixture {
     }
 
     fn data_len() -> usize {
-        1 + 1 + 1 + 1 + 8 // discriminator + bump + balance_source + revocable + clawback_ts
+        1 + 1 + 1 + 1 + 8 + 1 // discriminator + bump + balance_source + revocable + clawback_ts + confidential_rewards
     }
 }
 

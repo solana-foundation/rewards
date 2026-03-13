@@ -358,11 +358,20 @@
             },
             {
               "kind": "structFieldTypeNode",
+              "name": "confidentialRewards",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
               "name": "padding",
               "type": {
                 "count": {
                   "kind": "fixedCountNode",
-                  "value": 5
+                  "value": 4
                 },
                 "item": {
                   "endian": "le",
@@ -3106,6 +3115,15 @@
             "type": {
               "endian": "le",
               "format": "i64",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "confidentialRewards",
+            "type": {
+              "endian": "le",
+              "format": "u8",
               "kind": "numberTypeNode"
             }
           }

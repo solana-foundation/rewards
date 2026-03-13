@@ -394,6 +394,8 @@ pub enum RewardsProgramInstruction {
         revocable: u8,
         /// Timestamp after which authority can close the pool (0 = no gate)
         clawback_ts: i64,
+        /// Non-zero to enable confidential reward transfers via Token-2022 ConfidentialTransfer.
+        confidential_rewards: u8,
     } = 11,
 
     /// Opt in to a continuous reward pool. Creates a UserRewardAccount.

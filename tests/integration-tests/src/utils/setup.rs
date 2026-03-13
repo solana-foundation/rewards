@@ -37,6 +37,15 @@ impl TestContext {
             unix_timestamp: current_time,
         });
 
+        // Override the default Token-2022 with a ZK-ops-enabled build (from Surfpool's
+        // zk-edge cluster). The default LiteSVM binary is compiled without --features zk-ops,
+        // so ConfidentialDeposit and ConfidentialTransfer would fail.
+        svm.add_program(
+            solana_sdk::pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
+            include_bytes!("../programs/spl_token_2022_zk.so"),
+        )
+        .unwrap();
+
         let program_bytes = include_bytes!("../../../../target/deploy/rewards_program.so");
         let _ = svm.add_program(PROGRAM_ID, program_bytes);
 

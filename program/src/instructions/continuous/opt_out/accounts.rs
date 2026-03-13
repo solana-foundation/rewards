@@ -21,6 +21,12 @@ pub struct ContinuousOptOutAccounts<'a> {
     pub reward_token_program: &'a AccountView,
     pub event_authority: &'a AccountView,
     pub program: &'a AccountView,
+    /// Required when `pool.confidential_rewards != 0`.
+    pub equality_proof_context: Option<&'a AccountView>,
+    /// Required when `pool.confidential_rewards != 0`.
+    pub ciphertext_validity_proof_context: Option<&'a AccountView>,
+    /// Required when `pool.confidential_rewards != 0`.
+    pub range_proof_context: Option<&'a AccountView>,
 }
 
 impl<'a> TryFrom<&'a [AccountView]> for ContinuousOptOutAccounts<'a> {
@@ -28,11 +34,22 @@ impl<'a> TryFrom<&'a [AccountView]> for ContinuousOptOutAccounts<'a> {
 
     #[inline(always)]
     fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
-        let [user, reward_pool, user_reward_account, user_tracked_token_account, reward_vault, user_reward_token_account, tracked_mint, reward_mint, tracked_token_program, reward_token_program, event_authority, program] =
-            accounts
-        else {
+        if accounts.len() < 12 {
             return Err(ProgramError::NotEnoughAccountKeys);
-        };
+        }
+
+        let user = &accounts[0];
+        let reward_pool = &accounts[1];
+        let user_reward_account = &accounts[2];
+        let user_tracked_token_account = &accounts[3];
+        let reward_vault = &accounts[4];
+        let user_reward_token_account = &accounts[5];
+        let tracked_mint = &accounts[6];
+        let reward_mint = &accounts[7];
+        let tracked_token_program = &accounts[8];
+        let reward_token_program = &accounts[9];
+        let event_authority = &accounts[10];
+        let program = &accounts[11];
 
         verify_signer(user, true)?;
 
@@ -66,6 +83,12 @@ impl<'a> TryFrom<&'a [AccountView]> for ContinuousOptOutAccounts<'a> {
             tracked_token_program,
         )?;
 
+        let (equality_proof_context, ciphertext_validity_proof_context, range_proof_context) = if accounts.len() >= 15 {
+            (Some(&accounts[12]), Some(&accounts[13]), Some(&accounts[14]))
+        } else {
+            (None, None, None)
+        };
+
         Ok(Self {
             user,
             reward_pool,
@@ -79,6 +102,9 @@ impl<'a> TryFrom<&'a [AccountView]> for ContinuousOptOutAccounts<'a> {
             reward_token_program,
             event_authority,
             program,
+            equality_proof_context,
+            ciphertext_validity_proof_context,
+            range_proof_context,
         })
     }
 }

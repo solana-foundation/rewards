@@ -29,7 +29,9 @@ pub struct RewardPool {
     pub bump: u8,
     pub balance_source: BalanceSource,
     pub revocable: u8,
-    _padding: [u8; 5],
+    /// Non-zero if reward transfers use Token-2022 ConfidentialTransfer extension.
+    pub confidential_rewards: u8,
+    _padding: [u8; 4],
     pub authority: Address,
     pub tracked_mint: Address,
     pub reward_mint: Address,
@@ -52,7 +54,7 @@ impl Versioned for RewardPool {
 }
 
 impl AccountSize for RewardPool {
-    const DATA_LEN: usize = 1 + 1 + 1 + 5 + 32 + 32 + 32 + 32 + 16 + 8 + 8 + 8 + 8 + 32 + 8; // 224
+    const DATA_LEN: usize = 1 + 1 + 1 + 1 + 4 + 32 + 32 + 32 + 32 + 16 + 8 + 8 + 8 + 8 + 32 + 8; // 224
 }
 
 impl AccountParse for RewardPool {
@@ -65,6 +67,7 @@ impl AccountParse for RewardPool {
         let bump = data[0];
         let balance_source = BalanceSource::try_from(data[1])?;
         let revocable = data[2];
+        let confidential_rewards = data[3];
         let authority =
             Address::new_from_array(data[8..40].try_into().map_err(|_| RewardsProgramError::InvalidAccountData)?);
         let tracked_mint =
@@ -91,7 +94,8 @@ impl AccountParse for RewardPool {
             bump,
             balance_source,
             revocable,
-            _padding: [0u8; 5],
+            confidential_rewards,
+            _padding: [0u8; 4],
             authority,
             tracked_mint,
             reward_mint,
@@ -114,7 +118,8 @@ impl AccountSerialize for RewardPool {
         data.push(self.bump);
         data.push(self.balance_source.to_byte());
         data.push(self.revocable);
-        data.extend_from_slice(&[0u8; 5]);
+        data.push(self.confidential_rewards);
+        data.extend_from_slice(&[0u8; 4]);
         data.extend_from_slice(self.authority.as_ref());
         data.extend_from_slice(self.tracked_mint.as_ref());
         data.extend_from_slice(self.reward_mint.as_ref());
@@ -172,6 +177,7 @@ impl RewardPool {
         balance_source: BalanceSource,
         revocable: u8,
         clawback_ts: i64,
+        confidential_rewards: u8,
         authority: Address,
         tracked_mint: Address,
         reward_mint: Address,
@@ -181,7 +187,8 @@ impl RewardPool {
             bump,
             balance_source,
             revocable,
-            _padding: [0u8; 5],
+            confidential_rewards,
+            _padding: [0u8; 4],
             authority,
             tracked_mint,
             reward_mint,
@@ -294,6 +301,7 @@ mod tests {
             BalanceSource::OnChain,
             0,
             0,
+            0,
             Address::new_from_array([1u8; 32]),
             Address::new_from_array([2u8; 32]),
             Address::new_from_array([3u8; 32]),
@@ -307,6 +315,7 @@ mod tests {
         assert_eq!(pool.bump, 255);
         assert_eq!(pool.balance_source, BalanceSource::OnChain);
         assert_eq!(pool.revocable, 0);
+        assert_eq!(pool.confidential_rewards, 0);
         assert_eq!(pool.reward_per_token, 0);
         assert_eq!(pool.opted_in_supply, 0);
         assert_eq!(pool.total_distributed, 0);
@@ -344,6 +353,7 @@ mod tests {
         assert_eq!(deserialized.bump, pool.bump);
         assert_eq!(deserialized.balance_source, pool.balance_source);
         assert_eq!(deserialized.revocable, pool.revocable);
+        assert_eq!(deserialized.confidential_rewards, pool.confidential_rewards);
         assert_eq!(deserialized.authority, pool.authority);
         assert_eq!(deserialized.tracked_mint, pool.tracked_mint);
         assert_eq!(deserialized.reward_mint, pool.reward_mint);
@@ -376,6 +386,24 @@ mod tests {
         assert_eq!(deserialized.clawback_ts, 1700000000);
         assert_eq!(deserialized.merkle_root, [9u8; 32]);
         assert_eq!(deserialized.merkle_root_version, 3);
+    }
+
+    #[test]
+    fn test_confidential_rewards_roundtrip() {
+        let pool = RewardPool::new(
+            255,
+            BalanceSource::OnChain,
+            0,
+            0,
+            1,
+            Address::new_from_array([1u8; 32]),
+            Address::new_from_array([2u8; 32]),
+            Address::new_from_array([3u8; 32]),
+            Address::new_from_array([4u8; 32]),
+        );
+        let bytes = pool.to_bytes();
+        let deserialized = RewardPool::parse_from_bytes(&bytes).unwrap();
+        assert_eq!(deserialized.confidential_rewards, 1);
     }
 
     #[test]
@@ -518,6 +546,7 @@ mod tests {
         let pool = RewardPool::new(
             200,
             BalanceSource::AuthoritySet,
+            0,
             0,
             0,
             Address::new_from_array([1u8; 32]),

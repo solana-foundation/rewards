@@ -8,7 +8,7 @@ use crate::{
     traits::{AccountSerialize, EventSerialize},
     utils::{
         close_pda_account, emit_event, get_mint_decimals, get_token_account_balance, sync_user_balance,
-        update_user_rewards, BalanceSource,
+        update_user_rewards, BalanceSource, ConfidentialTransferCpi, ConfidentialTransferData,
     },
     ID,
 };
@@ -52,23 +52,49 @@ pub fn process_continuous_opt_out(
     let rewards_to_claim = user.accrued_rewards;
 
     if rewards_to_claim > 0 {
-        let decimals = get_mint_decimals(ix.accounts.reward_mint)?;
-
         pool.total_claimed =
             pool.total_claimed.checked_add(rewards_to_claim).ok_or(RewardsProgramError::MathOverflow)?;
 
-        pool.with_signer(|signers| {
-            TransferChecked {
-                from: ix.accounts.reward_vault,
-                mint: ix.accounts.reward_mint,
-                to: ix.accounts.user_reward_token_account,
-                authority: ix.accounts.reward_pool,
-                amount: rewards_to_claim,
-                decimals,
-                token_program: ix.accounts.reward_token_program.address(),
-            }
-            .invoke_signed(signers)
-        })?;
+        if pool.confidential_rewards != 0 {
+            let ct_bytes =
+                ix.data.confidential_transfer_bytes.as_ref().ok_or(RewardsProgramError::InvalidAccountData)?;
+            let ct_data =
+                ConfidentialTransferData::try_from_bytes(ct_bytes).ok_or(RewardsProgramError::InvalidAccountData)?;
+
+            let eq_ctx = ix.accounts.equality_proof_context.ok_or(RewardsProgramError::InvalidAccountData)?;
+            let cv_ctx =
+                ix.accounts.ciphertext_validity_proof_context.ok_or(RewardsProgramError::InvalidAccountData)?;
+            let rp_ctx = ix.accounts.range_proof_context.ok_or(RewardsProgramError::InvalidAccountData)?;
+
+            pool.with_signer(|signers| {
+                ConfidentialTransferCpi {
+                    source: ix.accounts.reward_vault,
+                    mint: ix.accounts.reward_mint,
+                    destination: ix.accounts.user_reward_token_account,
+                    equality_proof_context: eq_ctx,
+                    ciphertext_validity_proof_context: cv_ctx,
+                    range_proof_context: rp_ctx,
+                    authority: ix.accounts.reward_pool,
+                    transfer_data: &ct_data,
+                    signers,
+                }
+                .invoke()
+            })?;
+        } else {
+            let decimals = get_mint_decimals(ix.accounts.reward_mint)?;
+            pool.with_signer(|signers| {
+                TransferChecked {
+                    from: ix.accounts.reward_vault,
+                    mint: ix.accounts.reward_mint,
+                    to: ix.accounts.user_reward_token_account,
+                    authority: ix.accounts.reward_pool,
+                    amount: rewards_to_claim,
+                    decimals,
+                    token_program: ix.accounts.reward_token_program.address(),
+                }
+                .invoke_signed(signers)
+            })?;
+        }
     }
 
     pool.opted_in_supply =

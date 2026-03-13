@@ -5,7 +5,9 @@ use crate::{
     events::OptInEvent,
     state::{RewardPool, UserRewardAccount, UserRewardAccountSeeds},
     traits::{AccountSerialize, AccountSize, EventSerialize, PdaSeeds},
-    utils::{create_pda_account, emit_event, get_token_account_balance, verify_not_revoked, BalanceSource},
+    utils::{
+        create_pda_account, emit_event, get_token_account_balance, verify_not_revoked, verify_owned_by, BalanceSource,
+    },
     ID,
 };
 
@@ -23,6 +25,17 @@ pub fn process_continuous_opt_in(
     drop(pool_data);
 
     pool.validate_tracked_mint(ix.accounts.tracked_mint.address())?;
+
+    if pool.confidential_rewards != 0 {
+        let reward_ata = ix.accounts.user_reward_token_account.ok_or(RewardsProgramError::InvalidAccountData)?;
+        // The ATA must be owned by Token-2022 and large enough to hold the ConfidentialTransfer
+        // extension (~295 bytes on top of the 165-byte base). Any account this size that is
+        // owned by Token-2022 has had ConfigureAccount called on it.
+        verify_owned_by(reward_ata, &pinocchio_token_2022::ID)?;
+        if reward_ata.data_len() <= 165 {
+            return Err(RewardsProgramError::InvalidAccountData.into());
+        }
+    }
 
     verify_not_revoked(
         ix.accounts.reward_pool.address(),

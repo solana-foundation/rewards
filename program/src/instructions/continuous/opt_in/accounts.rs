@@ -21,6 +21,9 @@ pub struct ContinuousOptInAccounts<'a> {
     pub tracked_token_program: &'a AccountView,
     pub event_authority: &'a AccountView,
     pub program: &'a AccountView,
+    /// Required when `pool.confidential_rewards != 0`.
+    /// Must be the user's reward token ATA, configured for confidential transfers.
+    pub user_reward_token_account: Option<&'a AccountView>,
 }
 
 impl<'a> TryFrom<&'a [AccountView]> for ContinuousOptInAccounts<'a> {
@@ -28,11 +31,21 @@ impl<'a> TryFrom<&'a [AccountView]> for ContinuousOptInAccounts<'a> {
 
     #[inline(always)]
     fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
-        let [payer, user, reward_pool, user_reward_account, revocation_marker, user_tracked_token_account, tracked_mint, system_program, tracked_token_program, event_authority, program] =
-            accounts
-        else {
+        if accounts.len() < 11 {
             return Err(ProgramError::NotEnoughAccountKeys);
-        };
+        }
+
+        let payer = &accounts[0];
+        let user = &accounts[1];
+        let reward_pool = &accounts[2];
+        let user_reward_account = &accounts[3];
+        let revocation_marker = &accounts[4];
+        let user_tracked_token_account = &accounts[5];
+        let tracked_mint = &accounts[6];
+        let system_program = &accounts[7];
+        let tracked_token_program = &accounts[8];
+        let event_authority = &accounts[9];
+        let program = &accounts[10];
 
         verify_signer(payer, true)?;
         verify_signer(user, false)?;
@@ -61,6 +74,8 @@ impl<'a> TryFrom<&'a [AccountView]> for ContinuousOptInAccounts<'a> {
             tracked_token_program,
         )?;
 
+        let user_reward_token_account = accounts.get(11);
+
         Ok(Self {
             payer,
             user,
@@ -73,6 +88,7 @@ impl<'a> TryFrom<&'a [AccountView]> for ContinuousOptInAccounts<'a> {
             tracked_token_program,
             event_authority,
             program,
+            user_reward_token_account,
         })
     }
 }

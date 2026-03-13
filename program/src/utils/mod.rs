@@ -1,6 +1,7 @@
 pub mod account_utils;
 pub mod balance_source;
 pub mod claim_utils;
+pub mod confidential_transfer;
 pub mod continuous_utils;
 pub mod event_utils;
 pub mod macros;
@@ -15,6 +16,7 @@ pub mod vesting_utils;
 pub use account_utils::*;
 pub use balance_source::*;
 pub use claim_utils::*;
+pub use confidential_transfer::*;
 pub use continuous_utils::*;
 pub use event_utils::*;
 pub use merkle_utils::*;

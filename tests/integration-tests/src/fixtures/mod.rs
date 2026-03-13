@@ -5,6 +5,7 @@ pub mod close_direct_distribution;
 pub mod close_direct_recipient;
 pub mod close_merkle_claim;
 pub mod close_merkle_distribution;
+pub mod confidential;
 pub mod continuous;
 pub mod create_direct_distribution;
 pub mod create_merkle_distribution;
@@ -18,6 +19,7 @@ pub use close_direct_distribution::{CloseDirectDistributionFixture, CloseDirectD
 pub use close_direct_recipient::{CloseDirectRecipientFixture, CloseDirectRecipientSetup};
 pub use close_merkle_claim::{CloseMerkleClaimFixture, CloseMerkleClaimSetup};
 pub use close_merkle_distribution::{CloseMerkleDistributionFixture, CloseMerkleDistributionSetup};
+pub use confidential::*;
 pub use continuous::*;
 pub use create_direct_distribution::{CreateDirectDistributionFixture, CreateDirectDistributionSetup};
 pub use create_merkle_distribution::{

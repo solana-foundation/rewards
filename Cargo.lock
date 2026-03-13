@@ -3290,6 +3290,7 @@ dependencies = [
  "solana-instruction",
  "solana-program-error",
  "solana-pubkey 4.0.0",
+ "solana-zk-sdk",
  "thiserror 2.0.18",
 ]
 
@@ -6427,6 +6428,8 @@ dependencies = [
 name = "tests-rewards-program"
 version = "0.1.0"
 dependencies = [
+ "agave-feature-set",
+ "bytemuck",
  "litesvm",
  "rewards-program-client",
  "solana-account",
@@ -6434,8 +6437,11 @@ dependencies = [
  "solana-program",
  "solana-sdk",
  "solana-system-interface 3.0.0",
+ "solana-zk-sdk",
  "spl-associated-token-account",
  "spl-token-2022",
+ "spl-token-2022-interface",
+ "spl-token-confidential-transfer-proof-generation",
  "spl-token-interface",
  "tiny-keccak",
 ]

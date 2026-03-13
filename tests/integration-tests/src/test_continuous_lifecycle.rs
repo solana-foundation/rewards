@@ -8,9 +8,10 @@ use crate::fixtures::{
     DEFAULT_TRACKED_BALANCE,
 };
 use crate::utils::{
-    assert_account_closed, assert_reward_pool, find_revocation_pda, find_user_reward_account_pda, get_reward_pool,
-    get_user_reward_account, test_empty_data, test_missing_signer, test_not_writable, test_truncated_data,
-    test_wrong_current_program, test_wrong_system_program, TestContext,
+    assert_account_closed, assert_reward_pool, assert_rewards_error, find_revocation_pda, find_user_reward_account_pda,
+    get_reward_pool, get_user_reward_account, test_empty_data, test_missing_signer, test_not_writable,
+    test_truncated_data, test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext,
+    TOKEN_2022_PROGRAM_ID,
 };
 
 // ─── CreateContinuousPool generic tests ───
@@ -692,4 +693,64 @@ fn test_sync_balance_after_distribution() {
 
     let pool = get_reward_pool(&ctx, &setup.opt_in_setup.pool_setup.reward_pool_pda);
     assert_eq!(pool.opted_in_supply, new_balance);
+}
+
+// ─── Confidential pool tests ───
+
+#[test]
+fn test_create_confidential_pool_stores_flag() {
+    let mut ctx = TestContext::new();
+    let mut setup = CreateContinuousPoolSetup::new(&mut ctx);
+    setup.confidential_rewards = 1;
+    setup.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    let pool = get_reward_pool(&ctx, &setup.reward_pool_pda);
+    assert_eq!(pool.confidential_rewards, 1);
+}
+
+#[test]
+fn test_opt_in_confidential_pool_missing_ata_fails() {
+    let mut ctx = TestContext::new();
+    let mut pool_setup = CreateContinuousPoolSetup::new(&mut ctx);
+    pool_setup.confidential_rewards = 1;
+    pool_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    let opt_in_setup = ContinuousOptInSetup::new_from_pool(&mut ctx, pool_setup);
+    let error = opt_in_setup.build_instruction(&ctx).send_expect_error(&mut ctx);
+    assert_rewards_error(error, RewardsError::InvalidAccountData);
+}
+
+#[test]
+fn test_opt_in_confidential_pool_with_large_token_2022_ata() {
+    use solana_sdk::{account::Account, instruction::AccountMeta};
+    use spl_associated_token_account::get_associated_token_address_with_program_id;
+
+    let mut ctx = TestContext::new();
+    let mut pool_setup = CreateContinuousPoolSetup::new(&mut ctx);
+    pool_setup.confidential_rewards = 1;
+    pool_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    let opt_in_setup = ContinuousOptInSetup::new_from_pool(&mut ctx, pool_setup);
+
+    let reward_ata = get_associated_token_address_with_program_id(
+        &opt_in_setup.user.pubkey(),
+        &opt_in_setup.pool_setup.reward_mint.pubkey(),
+        &TOKEN_2022_PROGRAM_ID,
+    );
+    ctx.svm
+        .set_account(
+            reward_ata,
+            Account {
+                lamports: ctx.svm.minimum_balance_for_rent_exemption(300),
+                data: vec![0u8; 300],
+                owner: TOKEN_2022_PROGRAM_ID,
+                executable: false,
+                rent_epoch: 0,
+            },
+        )
+        .unwrap();
+
+    let mut test_ix = opt_in_setup.build_instruction(&ctx);
+    test_ix.instruction.accounts.push(AccountMeta { pubkey: reward_ata, is_signer: false, is_writable: false });
+    test_ix.send_expect_success(&mut ctx);
 }

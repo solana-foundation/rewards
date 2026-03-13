@@ -6,7 +6,10 @@ use crate::{
     events::RewardDistributedEvent,
     state::RewardPool,
     traits::{AccountSerialize, EventSerialize, InstructionData},
-    utils::{continuous_utils::REWARD_PRECISION, emit_event, get_mint_decimals},
+    utils::{
+        continuous_utils::REWARD_PRECISION, emit_event, get_mint_decimals, ConfidentialApplyPendingBalance,
+        ConfidentialDeposit,
+    },
     ID,
 };
 
@@ -70,6 +73,34 @@ pub fn process_distribute_continuous_reward(
         token_program: ix.accounts.reward_token_program.address(),
     }
     .invoke()?;
+
+    // For confidential pools: deposit plaintext balance into CT pending, then
+    // immediately apply pending → available so the vault is claimable.
+    if pool.confidential_rewards != 0 {
+        let new_decryptable =
+            ix.data.new_decryptable_available_balance.as_ref().ok_or(RewardsProgramError::InvalidAccountData)?;
+
+        pool.with_signer(|signers| {
+            ConfidentialDeposit {
+                token_account: ix.accounts.reward_vault,
+                mint: ix.accounts.reward_mint,
+                authority: ix.accounts.reward_pool,
+                amount: effective_amount,
+                decimals,
+                signers,
+            }
+            .invoke()?;
+
+            ConfidentialApplyPendingBalance {
+                token_account: ix.accounts.reward_vault,
+                authority: ix.accounts.reward_pool,
+                expected_pending_balance_credit_counter: 0,
+                new_decryptable_available_balance: new_decryptable,
+                signers,
+            }
+            .invoke()
+        })?;
+    }
 
     let mut pool_data = ix.accounts.reward_pool.try_borrow_mut()?;
     pool.write_to_slice(&mut pool_data)?;

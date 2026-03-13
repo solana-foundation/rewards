@@ -24,6 +24,7 @@ pub fn process_create_continuous_pool(
         ix.data.balance_source,
         ix.data.revocable,
         ix.data.clawback_ts,
+        ix.data.confidential_rewards,
         *ix.accounts.authority.address(),
         *ix.accounts.tracked_mint.address(),
         *ix.accounts.reward_mint.address(),
