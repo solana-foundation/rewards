@@ -10,4 +10,5 @@ pub use generated::accounts::*;
 pub use generated::errors::*;
 pub use generated::programs::*;
 
+pub mod builder_extensions;
 pub mod confidential_helpers;
