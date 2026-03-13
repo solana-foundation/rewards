@@ -39,6 +39,8 @@ pub struct RewardPool {
     pub total_distributed: u64,
     pub total_claimed: u64,
     pub clawback_ts: i64,
+    pub merkle_root: [u8; 32],
+    pub merkle_root_version: u64,
 }
 
 impl Discriminator for RewardPool {
@@ -50,7 +52,7 @@ impl Versioned for RewardPool {
 }
 
 impl AccountSize for RewardPool {
-    const DATA_LEN: usize = 1 + 1 + 1 + 5 + 32 + 32 + 32 + 32 + 16 + 8 + 8 + 8 + 8; // 184
+    const DATA_LEN: usize = 1 + 1 + 1 + 5 + 32 + 32 + 32 + 32 + 16 + 8 + 8 + 8 + 8 + 32 + 8; // 224
 }
 
 impl AccountParse for RewardPool {
@@ -81,6 +83,9 @@ impl AccountParse for RewardPool {
             u64::from_le_bytes(data[168..176].try_into().map_err(|_| RewardsProgramError::InvalidAccountData)?);
         let clawback_ts =
             i64::from_le_bytes(data[176..184].try_into().map_err(|_| RewardsProgramError::InvalidAccountData)?);
+        let merkle_root: [u8; 32] = data[184..216].try_into().map_err(|_| RewardsProgramError::InvalidAccountData)?;
+        let merkle_root_version =
+            u64::from_le_bytes(data[216..224].try_into().map_err(|_| RewardsProgramError::InvalidAccountData)?);
 
         Ok(Self {
             bump,
@@ -96,6 +101,8 @@ impl AccountParse for RewardPool {
             total_distributed,
             total_claimed,
             clawback_ts,
+            merkle_root,
+            merkle_root_version,
         })
     }
 }
@@ -117,6 +124,8 @@ impl AccountSerialize for RewardPool {
         data.extend_from_slice(&self.total_distributed.to_le_bytes());
         data.extend_from_slice(&self.total_claimed.to_le_bytes());
         data.extend_from_slice(&self.clawback_ts.to_le_bytes());
+        data.extend_from_slice(&self.merkle_root);
+        data.extend_from_slice(&self.merkle_root_version.to_le_bytes());
         data
     }
 }
@@ -182,6 +191,8 @@ impl RewardPool {
             total_distributed: 0,
             total_claimed: 0,
             clawback_ts,
+            merkle_root: [0u8; 32],
+            merkle_root_version: 0,
         }
     }
 
@@ -212,6 +223,44 @@ impl RewardPool {
     pub fn validate_reward_mint(&self, mint: &Address) -> Result<(), ProgramError> {
         if &self.reward_mint != mint {
             return Err(RewardsProgramError::RewardMintMismatch.into());
+        }
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn validate_merkle_root_version(&self, new_version: u64) -> Result<(), ProgramError> {
+        if new_version <= self.merkle_root_version {
+            return Err(RewardsProgramError::InvalidMerkleRootVersion.into());
+        }
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn validate_claim_root_version(&self, claim_version: u64) -> Result<(), ProgramError> {
+        if self.merkle_root_version == 0 {
+            return Err(RewardsProgramError::MerkleRootNotSet.into());
+        }
+
+        if claim_version != self.merkle_root_version {
+            return Err(RewardsProgramError::MerkleRootVersionMismatch.into());
+        }
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn validate_total_claim(&self, claim_amount: u64) -> Result<u64, ProgramError> {
+        let new_total_claimed =
+            self.total_claimed.checked_add(claim_amount).ok_or(RewardsProgramError::MathOverflow)?;
+        if new_total_claimed > self.total_distributed {
+            return Err(RewardsProgramError::InsufficientFunds.into());
+        }
+        Ok(new_total_claimed)
+    }
+
+    #[inline(always)]
+    pub fn ensure_merkle_mode_disabled(&self) -> Result<(), ProgramError> {
+        if self.merkle_root_version != 0 {
+            return Err(RewardsProgramError::ContinuousMerkleModeEnabled.into());
         }
         Ok(())
     }
@@ -263,6 +312,8 @@ mod tests {
         assert_eq!(pool.total_distributed, 0);
         assert_eq!(pool.total_claimed, 0);
         assert_eq!(pool.clawback_ts, 0);
+        assert_eq!(pool.merkle_root, [0u8; 32]);
+        assert_eq!(pool.merkle_root_version, 0);
     }
 
     #[test]
@@ -312,6 +363,8 @@ mod tests {
         pool.total_distributed = 1_000_000;
         pool.total_claimed = 250_000;
         pool.clawback_ts = 1700000000;
+        pool.merkle_root = [9u8; 32];
+        pool.merkle_root_version = 3;
 
         let bytes = pool.to_bytes();
         let deserialized = RewardPool::parse_from_bytes(&bytes).unwrap();
@@ -321,6 +374,8 @@ mod tests {
         assert_eq!(deserialized.total_distributed, 1_000_000);
         assert_eq!(deserialized.total_claimed, 250_000);
         assert_eq!(deserialized.clawback_ts, 1700000000);
+        assert_eq!(deserialized.merkle_root, [9u8; 32]);
+        assert_eq!(deserialized.merkle_root_version, 3);
     }
 
     #[test]
@@ -375,6 +430,81 @@ mod tests {
         let pool = create_test_pool();
         let wrong_mint = Address::new_from_array([99u8; 32]);
         assert!(pool.validate_reward_mint(&wrong_mint).is_err());
+    }
+
+    #[test]
+    fn test_validate_merkle_root_version_accepts_strictly_increasing() {
+        let mut pool = create_test_pool();
+        pool.merkle_root_version = 3;
+        assert!(pool.validate_merkle_root_version(4).is_ok());
+    }
+
+    #[test]
+    fn test_validate_merkle_root_version_rejects_equal_or_lower() {
+        let mut pool = create_test_pool();
+        pool.merkle_root_version = 3;
+        assert!(pool.validate_merkle_root_version(3).is_err());
+        assert!(pool.validate_merkle_root_version(2).is_err());
+    }
+
+    #[test]
+    fn test_validate_claim_root_version_rejects_when_not_set() {
+        let pool = create_test_pool();
+        assert_eq!(pool.validate_claim_root_version(1).err(), Some(RewardsProgramError::MerkleRootNotSet.into()));
+    }
+
+    #[test]
+    fn test_validate_claim_root_version_rejects_mismatch() {
+        let mut pool = create_test_pool();
+        pool.merkle_root_version = 2;
+        assert_eq!(
+            pool.validate_claim_root_version(1).err(),
+            Some(RewardsProgramError::MerkleRootVersionMismatch.into())
+        );
+    }
+
+    #[test]
+    fn test_validate_claim_root_version_accepts_match() {
+        let mut pool = create_test_pool();
+        pool.merkle_root_version = 2;
+        assert!(pool.validate_claim_root_version(2).is_ok());
+    }
+
+    #[test]
+    fn test_validate_total_claim_accepts_when_within_distributed() {
+        let mut pool = create_test_pool();
+        pool.total_distributed = 1_000;
+        pool.total_claimed = 100;
+        assert_eq!(pool.validate_total_claim(200).unwrap(), 300);
+    }
+
+    #[test]
+    fn test_validate_total_claim_rejects_insufficient_funds() {
+        let mut pool = create_test_pool();
+        pool.total_distributed = 250;
+        pool.total_claimed = 100;
+        assert_eq!(pool.validate_total_claim(200).err(), Some(RewardsProgramError::InsufficientFunds.into()));
+    }
+
+    #[test]
+    fn test_validate_total_claim_rejects_overflow() {
+        let mut pool = create_test_pool();
+        pool.total_distributed = u64::MAX;
+        pool.total_claimed = u64::MAX;
+        assert_eq!(pool.validate_total_claim(1).err(), Some(RewardsProgramError::MathOverflow.into()));
+    }
+
+    #[test]
+    fn test_ensure_merkle_mode_disabled_when_not_enabled() {
+        let pool = create_test_pool();
+        assert!(pool.ensure_merkle_mode_disabled().is_ok());
+    }
+
+    #[test]
+    fn test_ensure_merkle_mode_disabled_when_enabled() {
+        let mut pool = create_test_pool();
+        pool.merkle_root_version = 1;
+        assert!(pool.ensure_merkle_mode_disabled().is_err());
     }
 
     #[test]

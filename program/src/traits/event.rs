@@ -18,6 +18,7 @@ pub enum EventDiscriminators {
     OptedIn = 7,
     OptedOut = 8,
     BalanceSynced = 9,
+    MerkleRootSet = 10,
 }
 
 /// Event discriminator with Anchor-compatible prefix

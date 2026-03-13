@@ -1,18 +1,21 @@
 use rewards_program_client::instructions::{
-    ClaimContinuousBuilder, CloseContinuousPoolBuilder, ContinuousOptInBuilder, ContinuousOptOutBuilder,
-    CreateContinuousPoolBuilder, DistributeContinuousRewardBuilder, RevokeContinuousUserBuilder,
-    SetContinuousBalanceBuilder, SyncContinuousBalanceBuilder,
+    ClaimContinuousBuilder, ClaimContinuousMerkleBuilder, CloseContinuousPoolBuilder, ContinuousOptInBuilder,
+    ContinuousOptOutBuilder, CreateContinuousPoolBuilder, DistributeContinuousRewardBuilder,
+    RevokeContinuousUserBuilder, SetContinuousBalanceBuilder, SetContinuousMerkleRootBuilder,
+    SyncContinuousBalanceBuilder,
 };
 use rewards_program_client::types::{BalanceSource, RevokeMode};
 use solana_sdk::{
     pubkey::Pubkey,
     signature::{Keypair, Signer},
 };
+use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 use spl_token_interface::ID as TOKEN_PROGRAM_ID;
 
 use crate::utils::{
-    find_event_authority_pda, find_revocation_pda, find_reward_pool_pda, find_user_reward_account_pda,
-    InstructionTestFixture, TestContext, TestInstruction,
+    find_event_authority_pda, find_merkle_claim_pda, find_revocation_pda, find_reward_pool_pda,
+    find_user_reward_account_pda, ContinuousMerkleLeaf, ContinuousMerkleTree, InstructionTestFixture, TestContext,
+    TestInstruction,
 };
 
 pub const DEFAULT_TRACKED_BALANCE: u64 = 1_000_000;
@@ -37,16 +40,27 @@ impl CreateContinuousPoolSetup {
         Self::new_with_balance_source(ctx, BalanceSource::OnChain)
     }
 
+    pub fn new_token_2022(ctx: &mut TestContext) -> Self {
+        Self::new_with_balance_source_and_program(ctx, BalanceSource::OnChain, TOKEN_2022_PROGRAM_ID)
+    }
+
     pub fn new_authority_set(ctx: &mut TestContext) -> Self {
         Self::new_with_balance_source(ctx, BalanceSource::AuthoritySet)
     }
 
     fn new_with_balance_source(ctx: &mut TestContext, balance_source: BalanceSource) -> Self {
+        Self::new_with_balance_source_and_program(ctx, balance_source, TOKEN_PROGRAM_ID)
+    }
+
+    fn new_with_balance_source_and_program(
+        ctx: &mut TestContext,
+        balance_source: BalanceSource,
+        reward_token_program: Pubkey,
+    ) -> Self {
         let authority = ctx.create_funded_keypair();
         let seed = Keypair::new();
         let tracked_mint = Keypair::new();
         let reward_mint = Keypair::new();
-        let reward_token_program = TOKEN_PROGRAM_ID;
 
         ctx.create_mint_for_program(&tracked_mint, &ctx.payer.pubkey(), 6, &TOKEN_PROGRAM_ID);
         ctx.create_mint_for_program(&reward_mint, &ctx.payer.pubkey(), 6, &reward_token_program);
@@ -360,6 +374,68 @@ pub fn build_claim_continuous_instruction(
     }
 }
 
+pub fn build_set_continuous_merkle_root_instruction(
+    pool_setup: &CreateContinuousPoolSetup,
+    merkle_root: [u8; 32],
+    root_version: u64,
+) -> TestInstruction {
+    let (event_authority, _) = find_event_authority_pda();
+    let mut builder = SetContinuousMerkleRootBuilder::new();
+    builder
+        .authority(pool_setup.authority.pubkey())
+        .reward_pool(pool_setup.reward_pool_pda)
+        .event_authority(event_authority)
+        .merkle_root(merkle_root)
+        .root_version(root_version);
+
+    TestInstruction {
+        instruction: builder.instruction(),
+        signers: vec![pool_setup.authority.insecure_clone()],
+        name: "SetContinuousMerkleRoot",
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn build_claim_continuous_merkle_instruction(
+    ctx: &TestContext,
+    pool_setup: &CreateContinuousPoolSetup,
+    user: &Keypair,
+    claim_pda: Pubkey,
+    claim_bump: u8,
+    user_reward_token_account: Pubkey,
+    root_version: u64,
+    cumulative_amount: u64,
+    amount: u64,
+    proof: Vec<[u8; 32]>,
+) -> TestInstruction {
+    let (event_authority, _) = find_event_authority_pda();
+    let (revocation_pda, _) = find_revocation_pda(&pool_setup.reward_pool_pda, &user.pubkey());
+
+    let mut builder = ClaimContinuousMerkleBuilder::new();
+    builder
+        .payer(ctx.payer.pubkey())
+        .user(user.pubkey())
+        .reward_pool(pool_setup.reward_pool_pda)
+        .claim_account(claim_pda)
+        .revocation_marker(revocation_pda)
+        .reward_mint(pool_setup.reward_mint.pubkey())
+        .reward_vault(pool_setup.reward_vault)
+        .user_reward_token_account(user_reward_token_account)
+        .reward_token_program(pool_setup.reward_token_program)
+        .event_authority(event_authority)
+        .claim_bump(claim_bump)
+        .root_version(root_version)
+        .cumulative_amount(cumulative_amount)
+        .amount(amount)
+        .proof(proof);
+
+    TestInstruction {
+        instruction: builder.instruction(),
+        signers: vec![user.insecure_clone()],
+        name: "ClaimContinuousMerkle",
+    }
+}
+
 pub fn build_opt_out_instruction(
     _ctx: &TestContext,
     pool_setup: &CreateContinuousPoolSetup,
@@ -463,6 +539,157 @@ pub fn build_close_reward_pool_instruction(
 pub struct ClaimContinuousSetup {
     pub distribute_setup: DistributeContinuousRewardSetup,
     pub user_reward_token_account: Pubkey,
+}
+
+pub struct SetContinuousMerkleRootSetup {
+    pub pool_setup: CreateContinuousPoolSetup,
+    pub merkle_root: [u8; 32],
+    pub root_version: u64,
+}
+
+impl SetContinuousMerkleRootSetup {
+    pub fn new(ctx: &mut TestContext) -> Self {
+        let pool_setup = CreateContinuousPoolSetup::new(ctx);
+        pool_setup.build_instruction(ctx).send_expect_success(ctx);
+
+        Self { pool_setup, merkle_root: [11u8; 32], root_version: 1 }
+    }
+
+    pub fn build_instruction(&self) -> TestInstruction {
+        build_set_continuous_merkle_root_instruction(&self.pool_setup, self.merkle_root, self.root_version)
+    }
+}
+
+pub struct SetContinuousMerkleRootFixture;
+
+impl InstructionTestFixture for SetContinuousMerkleRootFixture {
+    const INSTRUCTION_NAME: &'static str = "SetContinuousMerkleRoot";
+
+    fn build_valid(ctx: &mut TestContext) -> TestInstruction {
+        let setup = SetContinuousMerkleRootSetup::new(ctx);
+        setup.build_instruction()
+    }
+
+    fn required_signers() -> &'static [usize] {
+        &[0] // authority
+    }
+
+    fn required_writable() -> &'static [usize] {
+        &[1] // reward_pool
+    }
+
+    fn current_program_index() -> Option<usize> {
+        Some(3)
+    }
+
+    fn data_len() -> usize {
+        1 + 32 + 8 // discriminator + merkle_root + root_version
+    }
+}
+
+pub struct ClaimContinuousMerkleSetup {
+    pub distribute_setup: DistributeContinuousRewardSetup,
+    pub user_reward_token_account: Pubkey,
+    pub claim_pda: Pubkey,
+    pub claim_bump: u8,
+    pub root_version: u64,
+    pub cumulative_amount: u64,
+    pub proof: Vec<[u8; 32]>,
+    pub merkle_tree: ContinuousMerkleTree,
+}
+
+impl ClaimContinuousMerkleSetup {
+    pub fn new(ctx: &mut TestContext) -> Self {
+        let distribute_setup = DistributeContinuousRewardSetup::new(ctx);
+        distribute_setup.build_instruction(ctx).send_expect_success(ctx);
+
+        let pool_setup = &distribute_setup.opt_in_setup.pool_setup;
+        let user = &distribute_setup.opt_in_setup.user;
+        let other_claimant = ctx.create_funded_keypair();
+        let root_version = 1;
+        let cumulative_amount = DEFAULT_REWARD_AMOUNT;
+
+        let leaves = vec![
+            ContinuousMerkleLeaf::new(pool_setup.reward_pool_pda, user.pubkey(), root_version, cumulative_amount),
+            ContinuousMerkleLeaf::new(
+                pool_setup.reward_pool_pda,
+                other_claimant.pubkey(),
+                root_version,
+                cumulative_amount / 2,
+            ),
+        ];
+        let merkle_tree = ContinuousMerkleTree::new(leaves);
+
+        build_set_continuous_merkle_root_instruction(pool_setup, merkle_tree.root, root_version)
+            .send_expect_success(ctx);
+
+        let (claim_pda, claim_bump) = find_merkle_claim_pda(&pool_setup.reward_pool_pda, &user.pubkey());
+        let proof = merkle_tree.get_proof_for_claimant(&user.pubkey()).unwrap_or_default();
+        let user_reward_token_account = ctx.create_token_account(&user.pubkey(), &pool_setup.reward_mint.pubkey());
+
+        Self {
+            distribute_setup,
+            user_reward_token_account,
+            claim_pda,
+            claim_bump,
+            root_version,
+            cumulative_amount,
+            proof,
+            merkle_tree,
+        }
+    }
+
+    pub fn build_instruction(&self, ctx: &TestContext) -> TestInstruction {
+        self.build_instruction_with_amount(ctx, 0)
+    }
+
+    pub fn build_instruction_with_amount(&self, ctx: &TestContext, amount: u64) -> TestInstruction {
+        let pool_setup = &self.distribute_setup.opt_in_setup.pool_setup;
+        let user = &self.distribute_setup.opt_in_setup.user;
+        build_claim_continuous_merkle_instruction(
+            ctx,
+            pool_setup,
+            user,
+            self.claim_pda,
+            self.claim_bump,
+            self.user_reward_token_account,
+            self.root_version,
+            self.cumulative_amount,
+            amount,
+            self.proof.clone(),
+        )
+    }
+}
+
+pub struct ClaimContinuousMerkleFixture;
+
+impl InstructionTestFixture for ClaimContinuousMerkleFixture {
+    const INSTRUCTION_NAME: &'static str = "ClaimContinuousMerkle";
+
+    fn build_valid(ctx: &mut TestContext) -> TestInstruction {
+        let setup = ClaimContinuousMerkleSetup::new(ctx);
+        setup.build_instruction(ctx)
+    }
+
+    fn required_signers() -> &'static [usize] {
+        &[0, 1] // payer, user (payer signed by test context)
+    }
+
+    fn required_writable() -> &'static [usize] {
+        &[0, 2, 3, 6, 7] // payer, reward_pool, claim_account, reward_vault, user_reward_token_account
+    }
+
+    fn system_program_index() -> Option<usize> {
+        Some(8)
+    }
+
+    fn current_program_index() -> Option<usize> {
+        Some(11)
+    }
+
+    fn data_len() -> usize {
+        1 + 1 + 8 + 8 + 8 + 4 + 32 // discriminator + claim_bump + root_version + cumulative + amount + proof_len + one proof hash
+    }
 }
 
 impl ClaimContinuousSetup {

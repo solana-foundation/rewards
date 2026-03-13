@@ -17,6 +17,7 @@ The authority creates a `RewardPool` that tracks a token mint (e.g. USD1) and di
 | ------------------- | ------------------------------------------------------------- | --------------------------------------------- |
 | `RewardPool`        | `["reward_pool", reward_mint, tracked_mint, authority, seed]` | Pool config and reward accumulator            |
 | `UserRewardAccount` | `["user_reward", reward_pool, user]`                          | Tracks user participation and accrued rewards |
+| `MerkleClaim`       | `["merkle_claim", reward_pool, user]`                         | Tracks cumulative merkle-claimed rewards      |
 | `Revocation`        | `["revocation", reward_pool, user]`                           | Marker PDA blocking revoked users             |
 
 ## Instructions
@@ -29,6 +30,8 @@ The authority creates a `RewardPool` that tracks a token mint (e.g. USD1) and di
 | 16  | `SyncContinuousBalance`      | Permissionless | Sync user's on-chain token balance                       |
 | 17  | `SetContinuousBalance`       | Authority      | Set user balance (AuthoritySet mode only)                |
 | 15  | `ClaimContinuous`            | User           | Claim accrued rewards                                    |
+| 20  | `SetContinuousMerkleRoot`    | Authority      | Set/rotate merkle root for cumulative claims             |
+| 21  | `ClaimContinuousMerkle`      | User           | Claim via merkle proof over cumulative amount            |
 | 19  | `RevokeContinuousUser`       | Authority      | Revoke user from pool                                    |
 | 13  | `ContinuousOptOut`           | User           | Opt out and claim remaining rewards                      |
 | 18  | `CloseContinuousPool`        | Authority      | Close pool, reclaim remaining tokens                     |
@@ -42,6 +45,38 @@ The authority creates a `RewardPool` that tracks a token mint (e.g. USD1) and di
 5. Balance syncs happen via `SyncContinuousBalance` (OnChain) or `SetContinuousBalance` (AuthoritySet)
 6. Users call `ContinuousOptOut` to leave the pool and claim remaining rewards
 7. Authority calls `CloseContinuousPool` after `clawback_ts` to reclaim remaining tokens
+
+## Merkle Claim Mode
+
+For high-scale or off-chain accounting use cases, an authority can publish cumulative snapshots:
+
+1. Authority calls `SetContinuousMerkleRoot` with `(root, root_version)` (root_version must strictly increase)
+2. Users claim with `ClaimContinuousMerkle` by providing `(root_version, cumulative_amount, proof)`
+3. Program transfers `cumulative_amount - previously_claimed` (or a partial amount if requested)
+4. Authority rotates root as needed (e.g. hourly or after each snapshot batch)
+
+Once merkle mode is enabled (`root_version > 0`), accumulator-based withdrawal instructions (`ClaimContinuous`, `ContinuousOptOut`, `RevokeContinuousUser`) are blocked to avoid mixed accounting paths.
+
+### Root Rotation Rules
+
+- `merkle_root` must be non-zero (`[0u8; 32]` is rejected).
+- `root_version` must be strictly increasing (`new_version > current_version`).
+- Root updates emit `MerkleRootSetEvent { reward_pool, authority, merkle_root, root_version }`.
+
+### Claim Semantics
+
+- Continuous-merkle leaves are computed from `reward_pool`, `claimant`, `root_version`, and `cumulative_amount`.
+- On each claim, claimable delta is `claimable = cumulative_amount - previously_claimed`.
+- `amount = 0` means "claim full delta". Non-zero `amount` must be `<= claimable`.
+- Proof parsing is defensive: max proof length is `64` nodes, and checked arithmetic is used for proof length/offset calculations.
+- Successful claims emit `ClaimedEvent { distribution, claimant, amount }`.
+
+### Operational Pattern (Authority)
+
+1. Build snapshot off-chain with cumulative amounts per user.
+2. Publish root via `SetContinuousMerkleRoot`.
+3. Users submit proofs and claim deltas via `ClaimContinuousMerkle`.
+4. Repeat with higher `root_version` as balances/rewards evolve.
 
 ## Reward Accumulator
 

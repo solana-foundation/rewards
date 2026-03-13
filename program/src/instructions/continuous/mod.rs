@@ -1,4 +1,5 @@
 pub mod claim;
+pub mod claim_merkle;
 pub mod close_pool;
 pub mod create_pool;
 pub mod distribute_reward;
@@ -6,4 +7,5 @@ pub mod opt_in;
 pub mod opt_out;
 pub mod revoke_user;
 pub mod set_balance;
+pub mod set_merkle_root;
 pub mod sync_balance;

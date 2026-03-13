@@ -5,10 +5,15 @@ use crate::errors::RewardsProgramError;
 
 /// Leaf prefix to prevent second preimage attacks.
 pub const LEAF_PREFIX: &[u8] = &[0];
+pub const HASH_SIZE: usize = 32;
+pub const VEC_PREFIX_LEN: usize = 4;
 
 /// Maximum byte length of a leaf's inner hash input:
 /// 32 (claimant) + 8 (total_amount) + 25 (max schedule = CliffLinear)
 const MAX_LEAF_DATA_LEN: usize = 65;
+/// Maximum byte length of a continuous merkle leaf's inner hash input:
+/// 32 (reward_pool) + 32 (claimant) + 8 (root_version) + 8 (cumulative_amount)
+const MAX_CONTINUOUS_LEAF_DATA_LEN: usize = 80;
 
 fn keccak256(data: &[u8]) -> [u8; 32] {
     Keccak256::new().update(data).finalize()
@@ -20,18 +25,44 @@ fn keccak256(data: &[u8]) -> [u8; 32] {
 /// `hash(LEAF_PREFIX || hash(claimant || total_amount || schedule_bytes))`
 pub fn compute_leaf_hash(claimant: &Address, total_amount: u64, schedule_bytes: &[u8]) -> [u8; 32] {
     let schedule_len = schedule_bytes.len();
-    let inner_len = 32 + 8 + schedule_len;
+    let inner_len = HASH_SIZE + 8 + schedule_len;
     let mut inner_data = [0u8; MAX_LEAF_DATA_LEN];
-    inner_data[0..32].copy_from_slice(claimant.as_ref());
-    inner_data[32..40].copy_from_slice(&total_amount.to_le_bytes());
-    inner_data[40..40 + schedule_len].copy_from_slice(schedule_bytes);
+    inner_data[0..HASH_SIZE].copy_from_slice(claimant.as_ref());
+    inner_data[HASH_SIZE..HASH_SIZE + 8].copy_from_slice(&total_amount.to_le_bytes());
+    inner_data[HASH_SIZE + 8..HASH_SIZE + 8 + schedule_len].copy_from_slice(schedule_bytes);
 
     let inner_hash = keccak256(&inner_data[..inner_len]);
 
     // Outer hash: hash(LEAF_PREFIX || inner_hash)
-    let mut outer_data = [0u8; 1 + 32]; // 33 bytes
+    let mut outer_data = [0u8; 1 + HASH_SIZE]; // 33 bytes
     outer_data[0..1].copy_from_slice(LEAF_PREFIX);
-    outer_data[1..33].copy_from_slice(&inner_hash);
+    outer_data[1..1 + HASH_SIZE].copy_from_slice(&inner_hash);
+
+    keccak256(&outer_data)
+}
+
+/// Compute the merkle leaf hash for continuous-merkle claims.
+///
+/// The leaf format is:
+/// `hash(LEAF_PREFIX || hash(reward_pool || claimant || root_version || cumulative_amount))`
+pub fn compute_continuous_leaf_hash(
+    reward_pool: &Address,
+    claimant: &Address,
+    root_version: u64,
+    cumulative_amount: u64,
+) -> [u8; 32] {
+    let mut inner_data = [0u8; MAX_CONTINUOUS_LEAF_DATA_LEN];
+    inner_data[0..32].copy_from_slice(reward_pool.as_ref());
+    inner_data[32..64].copy_from_slice(claimant.as_ref());
+    inner_data[64..72].copy_from_slice(&root_version.to_le_bytes());
+    inner_data[72..80].copy_from_slice(&cumulative_amount.to_le_bytes());
+
+    let inner_hash = keccak256(&inner_data);
+
+    // Outer hash: hash(LEAF_PREFIX || inner_hash)
+    let mut outer_data = [0u8; 1 + HASH_SIZE]; // 33 bytes
+    outer_data[0..1].copy_from_slice(LEAF_PREFIX);
+    outer_data[1..1 + HASH_SIZE].copy_from_slice(&inner_hash);
 
     keccak256(&outer_data)
 }
@@ -55,13 +86,13 @@ pub fn verify_proof(proof: &[[u8; 32]], root: &[u8; 32], leaf: &[u8; 32]) -> boo
 /// Hash two nodes together in sorted order (smaller first).
 /// This ensures deterministic tree construction regardless of proof ordering.
 fn hash_pair(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
-    let mut data = [0u8; 64];
+    let mut data = [0u8; HASH_SIZE * 2];
     if a < b {
-        data[0..32].copy_from_slice(a);
-        data[32..64].copy_from_slice(b);
+        data[0..HASH_SIZE].copy_from_slice(a);
+        data[HASH_SIZE..HASH_SIZE * 2].copy_from_slice(b);
     } else {
-        data[0..32].copy_from_slice(b);
-        data[32..64].copy_from_slice(a);
+        data[0..HASH_SIZE].copy_from_slice(b);
+        data[HASH_SIZE..HASH_SIZE * 2].copy_from_slice(a);
     }
     keccak256(&data)
 }
@@ -140,6 +171,51 @@ mod tests {
 
         let hash1 = compute_leaf_hash(&claimant, 1000, &sb1);
         let hash2 = compute_leaf_hash(&claimant, 1000, &sb2);
+
+        assert_ne!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_compute_continuous_leaf_hash_deterministic() {
+        let reward_pool = Address::new_from_array([7u8; 32]);
+        let claimant = Address::new_from_array([1u8; 32]);
+
+        let hash1 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
+        let hash2 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
+
+        assert_eq!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_compute_continuous_leaf_hash_different_pools() {
+        let reward_pool_a = Address::new_from_array([7u8; 32]);
+        let reward_pool_b = Address::new_from_array([8u8; 32]);
+        let claimant = Address::new_from_array([1u8; 32]);
+
+        let hash1 = compute_continuous_leaf_hash(&reward_pool_a, &claimant, 1, 1000);
+        let hash2 = compute_continuous_leaf_hash(&reward_pool_b, &claimant, 1, 1000);
+
+        assert_ne!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_compute_continuous_leaf_hash_different_root_versions() {
+        let reward_pool = Address::new_from_array([7u8; 32]);
+        let claimant = Address::new_from_array([1u8; 32]);
+
+        let hash1 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
+        let hash2 = compute_continuous_leaf_hash(&reward_pool, &claimant, 2, 1000);
+
+        assert_ne!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_compute_continuous_leaf_hash_different_amounts() {
+        let reward_pool = Address::new_from_array([7u8; 32]);
+        let claimant = Address::new_from_array([1u8; 32]);
+
+        let hash1 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
+        let hash2 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 2000);
 
         assert_ne!(hash1, hash2);
     }

@@ -6,6 +6,8 @@ mod test_add_direct_recipient;
 #[cfg(test)]
 mod test_claim_continuous;
 #[cfg(test)]
+mod test_claim_continuous_merkle;
+#[cfg(test)]
 mod test_claim_direct;
 #[cfg(test)]
 mod test_claim_merkle;
@@ -41,5 +43,7 @@ mod test_revoke_merkle_claim;
 mod test_revoke_user;
 #[cfg(test)]
 mod test_set_balance;
+#[cfg(test)]
+mod test_set_continuous_merkle_root;
 #[cfg(test)]
 mod test_sync_balance;

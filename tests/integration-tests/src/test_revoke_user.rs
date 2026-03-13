@@ -1,7 +1,9 @@
 use rewards_program_client::types::RevokeMode;
 use solana_sdk::signature::Signer;
 
-use crate::fixtures::{RevokeContinuousUserFixture, RevokeContinuousUserSetup};
+use crate::fixtures::{
+    build_revoke_user_instruction, ClaimContinuousMerkleSetup, RevokeContinuousUserFixture, RevokeContinuousUserSetup,
+};
 use crate::utils::{
     assert_account_closed, assert_rewards_error, find_event_authority_pda, get_reward_pool, test_empty_data,
     test_missing_signer, test_not_writable, test_truncated_data, test_wrong_current_program, test_wrong_system_program,
@@ -146,6 +148,34 @@ fn test_revoke_user_full_rejected_when_only_non_vested_bit_set() {
 
     let error = ix.send_expect_error(&mut ctx);
     assert_rewards_error(error, RewardsError::DistributionNotRevocable);
+}
+
+#[test]
+fn test_revoke_user_disabled_when_merkle_mode_enabled() {
+    let mut ctx = TestContext::new();
+    let setup = ClaimContinuousMerkleSetup::new(&mut ctx);
+
+    let pool_setup = &setup.distribute_setup.opt_in_setup.pool_setup;
+    let user = &setup.distribute_setup.opt_in_setup.user;
+    let user_reward_pda = &setup.distribute_setup.opt_in_setup.user_reward_pda;
+    let user_tracked_ta = &setup.distribute_setup.opt_in_setup.user_tracked_token_account;
+
+    let authority_reward_ta =
+        ctx.create_token_account(&pool_setup.authority.pubkey(), &pool_setup.reward_mint.pubkey());
+
+    let ix = build_revoke_user_instruction(
+        &ctx,
+        pool_setup,
+        user,
+        user_reward_pda,
+        user_tracked_ta,
+        &setup.user_reward_token_account,
+        &authority_reward_ta,
+        RevokeMode::NonVested,
+    );
+
+    let error = ix.send_expect_error(&mut ctx);
+    assert_rewards_error(error, RewardsError::ContinuousMerkleModeEnabled);
 }
 
 #[test]
