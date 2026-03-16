@@ -33,3 +33,5 @@
 
 # Keyfiles
 .keypairs/
+.vercel
+.env*.local

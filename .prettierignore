@@ -3,11 +3,14 @@ idl/
 
 # Generated files
 clients/typescript/src/generated/
+apps/web/next-env.d.ts
 
 # Build outputs
 dist/
 build/
 target/
+apps/web/.next/
+apps/web/out/
 
 # Dependencies
 node_modules/
