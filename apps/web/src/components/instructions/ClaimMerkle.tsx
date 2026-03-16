@@ -116,7 +116,9 @@ export function ClaimMerkle() {
     return (
         <form onSubmit={e => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-                <Badge variant="info">Claimant signer is your connected wallet: {account?.address ?? 'Not connected'}</Badge>
+                <Badge variant="info">
+                    Claimant signer is your connected wallet: {account?.address ?? 'Not connected'}
+                </Badge>
             </div>
             <FormField
                 label="Distribution Address"
@@ -162,8 +164,8 @@ export function ClaimMerkle() {
                 label="Merkle Proof"
                 value={proof}
                 onChange={setProof}
-                placeholder='JSON arrays or one 32-byte hex node per line'
-                hint='Example JSON: [[1,2,...32],[...]]'
+                placeholder="JSON arrays or one 32-byte hex node per line"
+                hint="Example JSON: [[1,2,...32],[...]]"
             />
             <SendButton sending={sending} />
             <TxResult signature={signature} error={formError ?? error} />

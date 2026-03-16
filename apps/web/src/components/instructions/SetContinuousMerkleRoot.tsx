@@ -5,7 +5,13 @@ import { getSetContinuousMerkleRootInstruction } from '@solana/rewards-client';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useSendTx } from '@/hooks/useSendTx';
-import { firstValidationError, parseBigIntValue, parseByteArray32, validateAddress, validatePositiveInteger } from '@/lib/validation';
+import {
+    firstValidationError,
+    parseBigIntValue,
+    parseByteArray32,
+    validateAddress,
+    validatePositiveInteger,
+} from '@/lib/validation';
 import { TxResult } from '@/components/TxResult';
 import { FormField, SendButton } from './shared';
 import { asAddress, getProgramConfig } from './common';

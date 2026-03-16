@@ -143,7 +143,9 @@ export default function HomePage() {
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-accent)' }}>Rewards Program</span>
+                    <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-accent)' }}>
+                        Rewards Program
+                    </span>
                     <RpcBadge />
                     <ProgramBadge />
                 </div>

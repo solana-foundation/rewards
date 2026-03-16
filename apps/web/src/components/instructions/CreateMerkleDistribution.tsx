@@ -67,7 +67,12 @@ export function CreateMerkleDistribution() {
         const seedSigner = await generateKeyPairSigner();
         setGeneratedSeed(seedSigner.address);
 
-        const [distribution, bump] = deriveMerkleDistributionPda(mint, signer.address, seedSigner.address, programAddress);
+        const [distribution, bump] = deriveMerkleDistributionPda(
+            mint,
+            signer.address,
+            seedSigner.address,
+            programAddress,
+        );
         setGeneratedDistribution(distribution);
 
         const distributionVault = deriveAta(distribution, mint, tokenProgramAddress);

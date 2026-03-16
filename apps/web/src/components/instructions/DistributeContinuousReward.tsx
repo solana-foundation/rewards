@@ -97,13 +97,7 @@ export function DistributeContinuousReward() {
                 placeholder="Reward mint"
                 required
             />
-            <FormField
-                label="Amount (base units)"
-                value={amount}
-                onChange={setAmount}
-                type="number"
-                required
-            />
+            <FormField label="Amount (base units)" value={amount} onChange={setAmount} type="number" required />
             <FormField
                 label="Reward Token Program"
                 value={rewardTokenProgram}

@@ -54,7 +54,10 @@ export function parseBigIntValue(value: string) {
     return BigInt(value.trim());
 }
 
-export function parseByteArray32(value: string, label: string): { ok: true; value: number[] } | { ok: false; error: string } {
+export function parseByteArray32(
+    value: string,
+    label: string,
+): { ok: true; value: number[] } | { ok: false; error: string } {
     const normalized = value.trim();
     if (!normalized) return { ok: false, error: `${label} is required.` };
 

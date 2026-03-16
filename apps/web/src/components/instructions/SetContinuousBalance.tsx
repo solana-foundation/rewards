@@ -76,13 +76,7 @@ export function SetContinuousBalance() {
                 required
             />
             <FormField label="User Address" value={user} onChange={setUser} placeholder="User wallet" required />
-            <FormField
-                label="Balance (base units)"
-                value={balance}
-                onChange={setBalance}
-                type="number"
-                required
-            />
+            <FormField label="Balance (base units)" value={balance} onChange={setBalance} type="number" required />
             <SendButton sending={sending} />
             <TxResult signature={signature} error={formError ?? error} />
         </form>

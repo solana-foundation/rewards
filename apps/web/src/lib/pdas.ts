@@ -17,16 +17,35 @@ export function deriveEventAuthority(programId = getProgramAddress()) {
     return deriveAddress([Buffer.from('__event_authority')], programId)[0] as Address;
 }
 
-export function deriveDirectDistributionPda(mint: string, authority: string, seed: string, programId = getProgramAddress()) {
-    return deriveAddress([Buffer.from('direct_distribution'), pk(mint).toBuffer(), pk(authority).toBuffer(), pk(seed).toBuffer()], programId);
+export function deriveDirectDistributionPda(
+    mint: string,
+    authority: string,
+    seed: string,
+    programId = getProgramAddress(),
+) {
+    return deriveAddress(
+        [Buffer.from('direct_distribution'), pk(mint).toBuffer(), pk(authority).toBuffer(), pk(seed).toBuffer()],
+        programId,
+    );
 }
 
 export function deriveDirectRecipientPda(distribution: string, recipient: string, programId = getProgramAddress()) {
-    return deriveAddress([Buffer.from('direct_recipient'), pk(distribution).toBuffer(), pk(recipient).toBuffer()], programId);
+    return deriveAddress(
+        [Buffer.from('direct_recipient'), pk(distribution).toBuffer(), pk(recipient).toBuffer()],
+        programId,
+    );
 }
 
-export function deriveMerkleDistributionPda(mint: string, authority: string, seed: string, programId = getProgramAddress()) {
-    return deriveAddress([Buffer.from('merkle_distribution'), pk(mint).toBuffer(), pk(authority).toBuffer(), pk(seed).toBuffer()], programId);
+export function deriveMerkleDistributionPda(
+    mint: string,
+    authority: string,
+    seed: string,
+    programId = getProgramAddress(),
+) {
+    return deriveAddress(
+        [Buffer.from('merkle_distribution'), pk(mint).toBuffer(), pk(authority).toBuffer(), pk(seed).toBuffer()],
+        programId,
+    );
 }
 
 export function deriveMerkleClaimPda(parent: string, user: string, programId = getProgramAddress()) {

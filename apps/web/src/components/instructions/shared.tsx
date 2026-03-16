@@ -191,9 +191,9 @@ export function VestingScheduleField({
     );
 }
 
-export function buildVestingSchedule(value: VestingScheduleState):
-    | { ok: true; value: VestingScheduleArgs }
-    | { ok: false; error: string } {
+export function buildVestingSchedule(
+    value: VestingScheduleState,
+): { ok: true; value: VestingScheduleArgs } | { ok: false; error: string } {
     if (value.kind === 'Immediate') {
         return { ok: true, value: { __kind: 'Immediate' } };
     }

@@ -162,8 +162,8 @@ export function RevokeMerkleClaim() {
                 label="Merkle Proof"
                 value={proof}
                 onChange={setProof}
-                placeholder='JSON arrays or one 32-byte hex node per line'
-                hint='Proof for the claimant leaf containing claimant + total amount + schedule'
+                placeholder="JSON arrays or one 32-byte hex node per line"
+                hint="Proof for the claimant leaf containing claimant + total amount + schedule"
             />
             <SendButton sending={sending} />
             <TxResult signature={signature} error={formError ?? error} />

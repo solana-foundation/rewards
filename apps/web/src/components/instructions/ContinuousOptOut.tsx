@@ -15,8 +15,14 @@ import { asAddress, getProgramConfig } from './common';
 export function ContinuousOptOut() {
     const { account, createSigner } = useWallet();
     const { send, sending, signature, error, reset } = useSendTx();
-    const { defaultRewardPool, defaultTrackedMint, defaultRewardMint, rememberRewardPool, rememberTrackedMint, rememberRewardMint } =
-        useSavedValues();
+    const {
+        defaultRewardPool,
+        defaultTrackedMint,
+        defaultRewardMint,
+        rememberRewardPool,
+        rememberTrackedMint,
+        rememberRewardMint,
+    } = useSavedValues();
     const [rewardPool, setRewardPool] = useState('');
     const [trackedMint, setTrackedMint] = useState('');
     const [rewardMint, setRewardMint] = useState('');
@@ -86,7 +92,9 @@ export function ContinuousOptOut() {
     return (
         <form onSubmit={e => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-                <Badge variant="info">User signer is your connected wallet: {account?.address ?? 'Not connected'}</Badge>
+                <Badge variant="info">
+                    User signer is your connected wallet: {account?.address ?? 'Not connected'}
+                </Badge>
             </div>
             <FormField
                 label="Reward Pool"

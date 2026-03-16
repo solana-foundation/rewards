@@ -75,8 +75,7 @@ function readStoredTransactions(): RecentTransaction[] {
                           ? signatureValue
                           : fallbackId;
                 const action = typeof actionValue === 'string' ? actionValue : 'Transaction';
-                const error =
-                    typeof errorValue === 'string' ? formatTransactionError(errorValue) : undefined;
+                const error = typeof errorValue === 'string' ? formatTransactionError(errorValue) : undefined;
                 const timestamp =
                     typeof timestampValue === 'number'
                         ? timestampValue
@@ -91,9 +90,7 @@ function readStoredTransactions(): RecentTransaction[] {
                     signature: typeof signatureValue === 'string' ? signatureValue : null,
                     status: statusValue === 'failed' ? ('failed' as const) : ('success' as const),
                     timestamp,
-                    values: isRecord(valuesValue)
-                        ? normalizeValues(valuesValue as RecentTransactionValues)
-                        : undefined,
+                    values: isRecord(valuesValue) ? normalizeValues(valuesValue as RecentTransactionValues) : undefined,
                 };
             })
             .slice(0, MAX_RECENT_TRANSACTIONS);

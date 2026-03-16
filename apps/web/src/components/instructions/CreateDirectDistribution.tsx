@@ -7,7 +7,13 @@ import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useSendTx } from '@/hooks/useSendTx';
 import { deriveAta, deriveDirectDistributionPda } from '@/lib/pdas';
-import { parseBigIntValue, validateAddress, validateInteger, validateOptionalAddress, firstValidationError } from '@/lib/validation';
+import {
+    parseBigIntValue,
+    validateAddress,
+    validateInteger,
+    validateOptionalAddress,
+    firstValidationError,
+} from '@/lib/validation';
 import { TxResult } from '@/components/TxResult';
 import { FormField, SelectField, SendButton } from './shared';
 import { asAddress, getProgramConfig, normalizeTokenProgramInput } from './common';
@@ -47,7 +53,12 @@ export function CreateDirectDistribution() {
         const seedSigner = await generateKeyPairSigner();
         setGeneratedSeed(seedSigner.address);
 
-        const [distribution, bump] = deriveDirectDistributionPda(mint, signer.address, seedSigner.address, programAddress);
+        const [distribution, bump] = deriveDirectDistributionPda(
+            mint,
+            signer.address,
+            seedSigner.address,
+            programAddress,
+        );
         setGeneratedDistribution(distribution);
 
         const distributionVault = deriveAta(distribution, mint, tokenProgramAddress);

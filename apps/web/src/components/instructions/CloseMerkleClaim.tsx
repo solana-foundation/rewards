@@ -55,7 +55,9 @@ export function CloseMerkleClaim() {
     return (
         <form onSubmit={e => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-                <Badge variant="info">Claimant signer is your connected wallet: {account?.address ?? 'Not connected'}</Badge>
+                <Badge variant="info">
+                    Claimant signer is your connected wallet: {account?.address ?? 'Not connected'}
+                </Badge>
             </div>
             <FormField
                 label="Distribution Address"

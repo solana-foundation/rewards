@@ -14,8 +14,14 @@ import { asAddress, getProgramConfig } from './common';
 export function RevokeContinuousUser() {
     const { account, createSigner } = useWallet();
     const { send, sending, signature, error, reset } = useSendTx();
-    const { defaultRewardPool, defaultTrackedMint, defaultRewardMint, rememberRewardPool, rememberTrackedMint, rememberRewardMint } =
-        useSavedValues();
+    const {
+        defaultRewardPool,
+        defaultTrackedMint,
+        defaultRewardMint,
+        rememberRewardPool,
+        rememberTrackedMint,
+        rememberRewardMint,
+    } = useSavedValues();
     const [rewardPool, setRewardPool] = useState('');
     const [user, setUser] = useState('');
     const [rentDestination, setRentDestination] = useState('');

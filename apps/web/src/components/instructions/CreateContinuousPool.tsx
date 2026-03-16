@@ -155,12 +155,7 @@ export function CreateContinuousPool() {
                 />
             )}
             {generatedPool && (
-                <FormField
-                    label="Generated Reward Pool PDA"
-                    value={generatedPool}
-                    onChange={() => {}}
-                    readOnly
-                />
+                <FormField label="Generated Reward Pool PDA" value={generatedPool} onChange={() => {}} readOnly />
             )}
             <SendButton sending={sending} />
             <TxResult signature={signature} error={formError ?? error} />

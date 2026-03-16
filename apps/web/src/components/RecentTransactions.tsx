@@ -75,7 +75,9 @@ export function RecentTransactions() {
                                 >
                                     <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>{tx.action}</span>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <Badge variant={tx.status === 'failed' ? 'danger' : 'success'}>{tx.status}</Badge>
+                                        <Badge variant={tx.status === 'failed' ? 'danger' : 'success'}>
+                                            {tx.status}
+                                        </Badge>
                                         <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
                                             {new Date(tx.timestamp).toLocaleString()}
                                         </span>

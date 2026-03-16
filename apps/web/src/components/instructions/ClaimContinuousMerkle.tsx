@@ -104,7 +104,9 @@ export function ClaimContinuousMerkle() {
     return (
         <form onSubmit={e => void handleSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-                <Badge variant="info">User signer is your connected wallet: {account?.address ?? 'Not connected'}</Badge>
+                <Badge variant="info">
+                    User signer is your connected wallet: {account?.address ?? 'Not connected'}
+                </Badge>
             </div>
             <FormField
                 label="Reward Pool"
@@ -149,8 +151,8 @@ export function ClaimContinuousMerkle() {
                 label="Merkle Proof"
                 value={proof}
                 onChange={setProof}
-                placeholder='JSON arrays or one 32-byte hex node per line'
-                hint='Proof nodes for (reward_pool, user, root_version, cumulative_amount) leaf'
+                placeholder="JSON arrays or one 32-byte hex node per line"
+                hint="Proof nodes for (reward_pool, user, root_version, cumulative_amount) leaf"
             />
             <SendButton sending={sending} />
             <TxResult signature={signature} error={formError ?? error} />

@@ -35,10 +35,7 @@ function WalletStateProvider({ children }: { children: React.ReactNode }) {
 
     const signer = useMemo<TransactionSigner | null>(() => {
         if (!publicKey || !signTransaction) return null;
-        return createWalletAdapterTransactionSigner(
-            publicKey.toBase58() as Address,
-            tx => signTransaction(tx),
-        );
+        return createWalletAdapterTransactionSigner(publicKey.toBase58() as Address, tx => signTransaction(tx));
     }, [publicKey, signTransaction]);
 
     const createSigner = useCallback((): TransactionSigner | null => signer, [signer]);

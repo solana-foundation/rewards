@@ -8,6 +8,8 @@ clients/typescript/src/generated/
 dist/
 build/
 target/
+apps/web/.next/
+apps/web/out/
 
 # Dependencies
 node_modules/
