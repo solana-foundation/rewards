@@ -651,3 +651,183 @@ fn test_multi_distribute_confidential_claim() {
     let pool = get_reward_pool(&ctx, &pool_setup.reward_pool_pda);
     assert_eq!(pool.total_claimed, DEFAULT_REWARD_AMOUNT * 2, "total_claimed should equal both distributions");
 }
+
+// ─── Test 6: Close confidential pool with unclaimed rewards ───────────────────
+
+/// Distribute rewards, skip claiming, then close the pool.
+/// The close instruction must emit a `ConfidentialWithdraw` CPI that converts the
+/// vault's CT available balance back to plaintext, allowing the sweep + CloseAccount.
+#[test]
+fn test_close_confidential_pool_with_unclaimed_rewards() {
+    use bytemuck::bytes_of;
+    use solana_zk_sdk::zk_elgamal_proof_program::proof_data::ZeroCiphertextProofContext;
+    use spl_token_confidential_transfer_proof_generation::withdraw::withdraw_proof_data;
+
+    let mut ctx = TestContext::new();
+    let (pool_setup, vault_elgamal_kp, vault_aes_key, initial_vault_enc) = make_confidential_pool(&mut ctx);
+    pool_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    // ── 1. User opts in ───────────────────────────────────────────────────────
+    let user = ctx.create_funded_keypair();
+    let user_tracked_ta =
+        ctx.create_token_account_with_balance(&user.pubkey(), &pool_setup.tracked_mint.pubkey(), 1_000_000);
+    let (user_reward_pda, user_reward_bump) = find_user_reward_account_pda(&pool_setup.reward_pool_pda, &user.pubkey());
+    let (user_reward_ata, _, _) = create_and_configure_ct_account(&mut ctx, &user, &pool_setup.reward_mint.pubkey());
+
+    let (event_authority, _) = find_event_authority_pda();
+    let (revocation_pda, _) = find_revocation_pda(&pool_setup.reward_pool_pda, &user.pubkey());
+    let mut opt_in_builder = rewards_program_client::instructions::ContinuousOptInBuilder::new();
+    opt_in_builder
+        .payer(ctx.payer.pubkey())
+        .user(user.pubkey())
+        .reward_pool(pool_setup.reward_pool_pda)
+        .user_reward_account(user_reward_pda)
+        .revocation_marker(revocation_pda)
+        .user_tracked_token_account(user_tracked_ta)
+        .tracked_mint(pool_setup.tracked_mint.pubkey())
+        .tracked_token_program(spl_token_interface::ID)
+        .event_authority(event_authority)
+        .bump(user_reward_bump);
+    let mut opt_in_ix = opt_in_builder.instruction();
+    opt_in_ix.accounts.push(solana_sdk::instruction::AccountMeta {
+        pubkey: user_reward_ata,
+        is_signer: false,
+        is_writable: false,
+    });
+    let bh = ctx.svm.latest_blockhash();
+    ctx.svm
+        .send_transaction(Transaction::new_signed_with_payer(
+            &[opt_in_ix],
+            Some(&ctx.payer.pubkey()),
+            &[&ctx.payer, &user],
+            bh,
+        ))
+        .expect("opt-in");
+
+    // ── 2. Distribute rewards (do NOT claim) ─────────────────────────────────
+    let authority_ta = ctx.create_ata_for_program_with_balance(
+        &pool_setup.authority.pubkey(),
+        &pool_setup.reward_mint.pubkey(),
+        DEFAULT_REWARD_AMOUNT * 10,
+        &TOKEN_2022_PROGRAM_ID,
+    );
+
+    let mut vault_state = rewards_program_client::confidential_helpers::ConfidentialVaultState::new(initial_vault_enc);
+    let (decryptable_bytes, _) = vault_state.prepare_distribute(DEFAULT_REWARD_AMOUNT, &vault_aes_key);
+
+    let dist_ix = rewards_program_client::instructions::DistributeContinuousRewardBuilder::new()
+        .authority(pool_setup.authority.pubkey())
+        .reward_pool(pool_setup.reward_pool_pda)
+        .reward_mint(pool_setup.reward_mint.pubkey())
+        .reward_vault(pool_setup.reward_vault)
+        .authority_token_account(authority_ta)
+        .reward_token_program(TOKEN_2022_PROGRAM_ID)
+        .event_authority(event_authority)
+        .amount(DEFAULT_REWARD_AMOUNT)
+        .expected_pending_balance_credit_counter(1)
+        .new_decryptable_available_balance(decryptable_bytes);
+
+    let bh = ctx.svm.latest_blockhash();
+    ctx.svm
+        .send_transaction(Transaction::new_signed_with_payer(
+            &[dist_ix],
+            Some(&ctx.payer.pubkey()),
+            &[&ctx.payer, &pool_setup.authority],
+            bh,
+        ))
+        .expect("distribute");
+
+    let pool = get_reward_pool(&ctx, &pool_setup.reward_pool_pda);
+    let withdrawal_amount = pool.total_distributed - pool.total_claimed;
+    assert!(withdrawal_amount > 0);
+
+    // ── 3. Write vault_available_ct to the vault so proofs match on-chain state ─
+    {
+        use spl_token_2022_interface::extension::{
+            confidential_transfer::ConfidentialTransferAccount, BaseStateWithExtensionsMut, PodStateWithExtensionsMut,
+        };
+        let mut acc = ctx.svm.get_account(&pool_setup.reward_vault).unwrap();
+        {
+            let mut state = PodStateWithExtensionsMut::<PodAccount>::unpack(&mut acc.data).unwrap();
+            let ct_ext = state.get_extension_mut::<ConfidentialTransferAccount>().unwrap();
+            ct_ext.available_balance = PodElGamalCiphertext::from(vault_state.vault_available_ct);
+        }
+        ctx.svm.set_account(pool_setup.reward_vault, acc).unwrap();
+    }
+
+    // ── 4. Generate withdraw proofs ───────────────────────────────────────────
+    let proof_data = withdraw_proof_data(
+        &vault_state.vault_available_ct,
+        vault_state.cumulative_available,
+        withdrawal_amount,
+        &vault_elgamal_kp,
+    )
+    .expect("withdraw proof generation failed");
+
+    let proof_authority = solana_sdk::signature::Keypair::new();
+
+    let eq_ctx_kp = create_proof_context_state(
+        &mut ctx,
+        solana_zk_sdk::zk_elgamal_proof_program::instruction::ProofInstruction::VerifyCiphertextCommitmentEquality,
+        bytes_of(&proof_data.equality_proof_data),
+        std::mem::size_of::<CiphertextCommitmentEqualityProofContext>(),
+        &proof_authority,
+    );
+
+    let range_ctx_kp = create_proof_context_state(
+        &mut ctx,
+        solana_zk_sdk::zk_elgamal_proof_program::instruction::ProofInstruction::VerifyBatchedRangeProofU64,
+        bytes_of(&proof_data.range_proof_data),
+        std::mem::size_of::<BatchedRangeProofContext>(),
+        &proof_authority,
+    );
+
+    // After ConfidentialWithdraw(withdrawal_amount), the vault's available balance will be
+    // vault_available_ct - Enc(withdrawal_amount, 0) = Enc(0, r0). Generate a ZeroCiphertext
+    // proof for this remaining ciphertext so EmptyAccount can zero out the bytes.
+    use solana_zk_sdk::encryption::elgamal::ElGamal;
+    let remaining_ct = vault_state.vault_available_ct - ElGamal::encode(withdrawal_amount);
+    let zero_ct_proof_data = solana_zk_sdk::zk_elgamal_proof_program::proof_data::ZeroCiphertextProofData::new(
+        &vault_elgamal_kp,
+        &remaining_ct,
+    )
+    .expect("zero ciphertext proof generation failed");
+
+    let zero_ctx_kp = create_proof_context_state(
+        &mut ctx,
+        solana_zk_sdk::zk_elgamal_proof_program::instruction::ProofInstruction::VerifyZeroCiphertext,
+        bytes_of(&zero_ct_proof_data),
+        std::mem::size_of::<ZeroCiphertextProofContext>(),
+        &proof_authority,
+    );
+
+    // ── 5. Build CloseContinuousPool with CT withdraw data ────────────────────
+    let new_decryptable = vault_state.prepare_close(&vault_aes_key);
+
+    let authority_close_ta =
+        ctx.create_token_2022_account(&pool_setup.authority.pubkey(), &pool_setup.reward_mint.pubkey());
+
+    let close_ix = rewards_program_client::instructions::CloseContinuousPoolBuilder::new()
+        .authority(pool_setup.authority.pubkey())
+        .reward_pool(pool_setup.reward_pool_pda)
+        .reward_mint(pool_setup.reward_mint.pubkey())
+        .reward_vault(pool_setup.reward_vault)
+        .authority_token_account(authority_close_ta)
+        .reward_token_program(TOKEN_2022_PROGRAM_ID)
+        .event_authority(event_authority)
+        .confidential_close(new_decryptable, eq_ctx_kp.pubkey(), range_ctx_kp.pubkey(), zero_ctx_kp.pubkey());
+
+    let bh = ctx.svm.latest_blockhash();
+    ctx.svm
+        .send_transaction(Transaction::new_signed_with_payer(
+            &[close_ix],
+            Some(&ctx.payer.pubkey()),
+            &[&ctx.payer, &pool_setup.authority],
+            bh,
+        ))
+        .expect("close with unclaimed CT rewards should succeed");
+
+    // Verify the authority received the unclaimed tokens.
+    let close_ta_balance = ctx.get_token_balance(&authority_close_ta);
+    assert_eq!(close_ta_balance, withdrawal_amount, "authority should have received unclaimed rewards");
+}

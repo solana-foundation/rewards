@@ -141,7 +141,7 @@ pub struct ConfidentialVaultState {
     /// Starts as `Enc(0, r0)` and accumulates: `initial + Σ ElGamal::encode(amount_i)`.
     pub vault_available_ct: solana_zk_sdk::encryption::elgamal::ElGamalCiphertext,
     /// Running total of all distributed amounts (= current decryptable plaintext).
-    cumulative_available: u64,
+    pub cumulative_available: u64,
 }
 
 #[cfg(feature = "confidential")]
@@ -150,6 +150,22 @@ impl ConfidentialVaultState {
     /// `create_ct_vault` (or equivalent vault setup).
     pub fn new(initial_enc: solana_zk_sdk::encryption::elgamal::ElGamalCiphertext) -> Self {
         Self { vault_available_ct: initial_enc, cumulative_available: 0 }
+    }
+
+    /// Computes the `new_decryptable_available_balance` bytes for a confidential
+    /// `CloseContinuousPool` call when unclaimed rewards remain in the vault.
+    ///
+    /// Returns `[u8; 36]`: AES-GCM ciphertext of 0 (vault's balance after withdrawing all).
+    /// Pass to `CloseContinuousPoolBuilder::confidential_close`.
+    ///
+    /// The caller must also generate `WithdrawProofData` using
+    /// `spl_token_confidential_transfer_proof_generation::withdraw::withdraw_proof_data` with:
+    /// - `current_available_balance = self.vault_available_ct`
+    /// - `current_balance = self.cumulative_available`
+    /// - `withdraw_amount = pool.total_distributed - pool.total_claimed`
+    /// - `elgamal_keypair = vault_elgamal_keypair`
+    pub fn prepare_close(&self, vault_aes_key: &solana_zk_sdk::encryption::auth_encryption::AeKey) -> [u8; 36] {
+        vault_aes_key.encrypt(0u64).to_bytes()
     }
 
     /// Computes the data needed for a confidential `DistributeContinuousReward` call.

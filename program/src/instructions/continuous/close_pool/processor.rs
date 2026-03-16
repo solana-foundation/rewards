@@ -6,7 +6,10 @@ use crate::{
     events::DistributionClosedEvent,
     state::RewardPool,
     traits::EventSerialize,
-    utils::{close_pda_account, emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance},
+    utils::{
+        close_pda_account, emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance,
+        ConfidentialEmptyAccount, ConfidentialWithdraw,
+    },
     ID,
 };
 
@@ -33,17 +36,47 @@ pub fn process_close_continuous_pool(
         }
     }
 
-    // For confidential pools the vault's plaintext balance is always 0, so TransferChecked
-    // would be a no-op but CloseAccount fails if CT available balance > 0. Require all
-    // rewards to be claimed before closing so the vault is truly empty.
+    let decimals = get_mint_decimals(ix.accounts.reward_mint)?;
+
+    // For confidential pools with unclaimed rewards: convert the vault's CT available
+    // balance back to plaintext so the existing TransferChecked sweep can handle it.
     if pool.confidential_rewards != 0 && pool.total_distributed != pool.total_claimed {
-        return Err(RewardsProgramError::ConfidentialPoolNotDrained.into());
+        let withdrawal_amount =
+            pool.total_distributed.checked_sub(pool.total_claimed).ok_or(RewardsProgramError::MathOverflow)?;
+
+        let new_decryptable =
+            ix.data.new_decryptable_available_balance.as_ref().ok_or(RewardsProgramError::InvalidAccountData)?;
+        let eq_ctx = ix.accounts.equality_proof_context.ok_or(RewardsProgramError::InvalidAccountData)?;
+        let range_ctx = ix.accounts.range_proof_context.ok_or(RewardsProgramError::InvalidAccountData)?;
+        let zero_ctx = ix.accounts.zero_ciphertext_proof_context.ok_or(RewardsProgramError::InvalidAccountData)?;
+
+        pool.with_signer(|signers| {
+            ConfidentialWithdraw {
+                token_account: ix.accounts.reward_vault,
+                mint: ix.accounts.reward_mint,
+                equality_proof_context: eq_ctx,
+                range_proof_context: range_ctx,
+                authority: ix.accounts.reward_pool,
+                amount: withdrawal_amount,
+                decimals,
+                new_decryptable_available_balance: new_decryptable,
+                signers,
+            }
+            .invoke()?;
+
+            ConfidentialEmptyAccount {
+                token_account: ix.accounts.reward_vault,
+                zero_ciphertext_proof_context: zero_ctx,
+                authority: ix.accounts.reward_pool,
+                signers,
+            }
+            .invoke()
+        })?;
     }
 
-    // Intentionally does not check unclaimed == 0 for non-CT pools. Authority can sweep
-    // remaining vault funds after clawback_ts.
+    // After ConfidentialWithdraw (if any), the vault's plaintext balance equals the
+    // withdrawn amount. For non-CT pools this reads the vault balance directly.
     let remaining_amount = get_token_account_balance(ix.accounts.reward_vault)?;
-    let decimals = get_mint_decimals(ix.accounts.reward_mint)?;
 
     if remaining_amount > 0 {
         pool.with_signer(|signers| {
