@@ -37,4 +37,3 @@ This runs all integration tests with `CU_TRACKING=1` enabled and updates the tab
 - CU values may vary slightly between runs due to account state differences
 - The Solana runtime has a per-instruction limit of 200,000 CUs
 - Lower CU consumption means lower transaction fees for users
-
