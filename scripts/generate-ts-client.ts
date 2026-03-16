@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { createRewardsCodamaBuilder } from './lib/rewards-codama-builder';
-import { addTypescriptClientHelpers, preserveConfigFiles } from './lib/utils';
+import { preserveConfigFiles } from './lib/utils';
 
 const projectRoot = path.join(__dirname, '..');
 const idlDir = path.join(projectRoot, 'idl');
@@ -37,7 +37,6 @@ async function main() {
                 }),
             ),
         );
-        addTypescriptClientHelpers(typescriptClientsDir);
     } finally {
         configPreserver.restore();
     }
