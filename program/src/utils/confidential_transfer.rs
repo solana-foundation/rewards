@@ -329,6 +329,7 @@ impl ConfidentialTransferCpi<'_, '_> {
 
 /// Transfer reward tokens from vault to destination, dispatching to either
 /// `TransferChecked` (plain pool) or `ConfidentialTransfer` (CT pool).
+#[allow(clippy::too_many_arguments)]
 pub fn transfer_reward_tokens<'a>(
     pool: &RewardPool,
     vault: &'a AccountView,
@@ -378,6 +379,7 @@ pub fn transfer_reward_tokens<'a>(
 /// After a `TransferChecked` into the vault, convert the plaintext deposit into
 /// confidential pending balance and immediately apply it to available balance.
 /// No-op for non-confidential pools.
+#[allow(clippy::too_many_arguments)]
 pub fn maybe_confidential_deposit<'a>(
     pool: &RewardPool,
     vault: &'a AccountView,
