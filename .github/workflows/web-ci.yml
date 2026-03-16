@@ -19,10 +19,10 @@ jobs:
       - run: pnpm install
       - name: Check formatting
         run: pnpm run format:check
-      - name: Lint web frontend
-        run: pnpm eslint apps/web
       - name: Prepare web build dependencies
         run: pnpm --filter @solana/rewards-program-web prebuild
+      - name: Lint web frontend
+        run: pnpm eslint apps/web
       - name: Typecheck web frontend
         run: pnpm --filter @solana/rewards-program-web typecheck
       - name: Build web frontend
