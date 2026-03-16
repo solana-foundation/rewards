@@ -3,6 +3,7 @@ idl/
 
 # Generated files
 clients/typescript/src/generated/
+apps/web/next-env.d.ts
 
 # Build outputs
 dist/
