@@ -73,7 +73,8 @@ fn test_distribute_reward_unauthorized_authority() {
         .authority_token_account(setup.authority_token_account)
         .reward_token_program(pool.reward_token_program)
         .event_authority(event_authority)
-        .amount(DEFAULT_REWARD_AMOUNT);
+        .amount(DEFAULT_REWARD_AMOUNT)
+        .expected_pending_balance_credit_counter(0);
 
     let ix = TestInstruction {
         instruction: builder.instruction(),
@@ -117,7 +118,8 @@ fn test_distribute_reward_no_opted_in_users() {
         .authority_token_account(authority_token_account)
         .reward_token_program(pool_setup.reward_token_program)
         .event_authority(event_authority)
-        .amount(100_000);
+        .amount(100_000)
+        .expected_pending_balance_credit_counter(0);
 
     let ix = TestInstruction {
         instruction: builder.instruction(),

@@ -307,7 +307,8 @@ impl DistributeContinuousRewardSetup {
             .authority_token_account(self.authority_token_account)
             .reward_token_program(pool.reward_token_program)
             .event_authority(event_authority)
-            .amount(self.amount);
+            .amount(self.amount)
+            .expected_pending_balance_credit_counter(0);
 
         TestInstruction {
             instruction: builder.instruction(),
@@ -340,7 +341,7 @@ impl InstructionTestFixture for DistributeContinuousRewardFixture {
     }
 
     fn data_len() -> usize {
-        1 + 8 // discriminator + amount
+        1 + 8 + 8 // discriminator + amount + expected_pending_balance_credit_counter
     }
 }
 

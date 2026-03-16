@@ -475,6 +475,10 @@ pub enum RewardsProgramInstruction {
     DistributeContinuousReward {
         /// Amount of reward tokens to distribute
         amount: u64,
+        /// Expected pending balance credit counter for confidential pools.
+        /// Must be `vault_counter + 1` (one ConfidentialDeposit fires in this tx).
+        /// Ignored for non-confidential pools.
+        expected_pending_balance_credit_counter: u64,
     } = 14,
 
     /// Claim accumulated rewards from a continuous reward pool.

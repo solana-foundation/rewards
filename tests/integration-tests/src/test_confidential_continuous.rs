@@ -204,6 +204,7 @@ fn test_distribute_confidential_pool() {
         .reward_token_program(pool_setup.reward_token_program)
         .event_authority(event_authority)
         .amount(DEFAULT_REWARD_AMOUNT)
+        .expected_pending_balance_credit_counter(1)
         .new_decryptable_available_balance(decryptable);
 
     let bh = ctx.svm.latest_blockhash();
@@ -295,6 +296,7 @@ fn test_claim_confidential_full_flow() {
         .reward_token_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority)
         .amount(DEFAULT_REWARD_AMOUNT)
+        .expected_pending_balance_credit_counter(1)
         .new_decryptable_available_balance(decryptable_bytes);
 
     let bh = ctx.svm.latest_blockhash();
@@ -500,6 +502,7 @@ fn test_multi_distribute_confidential_claim() {
         .reward_token_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority)
         .amount(DEFAULT_REWARD_AMOUNT)
+        .expected_pending_balance_credit_counter(1)
         .new_decryptable_available_balance(decryptable_bytes_1);
 
     let bh = ctx.svm.latest_blockhash();
@@ -524,6 +527,7 @@ fn test_multi_distribute_confidential_claim() {
         .reward_token_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority)
         .amount(DEFAULT_REWARD_AMOUNT)
+        .expected_pending_balance_credit_counter(1)
         .new_decryptable_available_balance(decryptable_bytes_2);
 
     let bh = ctx.svm.latest_blockhash();

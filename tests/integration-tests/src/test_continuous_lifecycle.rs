@@ -504,7 +504,8 @@ fn test_full_lifecycle_on_chain_balance() {
         .authority_token_account(authority_ta)
         .reward_token_program(pool_setup.reward_token_program)
         .event_authority(event_authority)
-        .amount(150_000);
+        .amount(150_000)
+        .expected_pending_balance_credit_counter(0);
     let dist_ix = crate::utils::TestInstruction {
         instruction: dist_builder.instruction(),
         signers: vec![pool_setup.authority.insecure_clone()],
@@ -642,7 +643,8 @@ fn test_lifecycle_authority_set_balance() {
         .authority_token_account(authority_ta)
         .reward_token_program(pool_setup.reward_token_program)
         .event_authority(event_authority)
-        .amount(100_000);
+        .amount(100_000)
+        .expected_pending_balance_credit_counter(0);
     let dist_ix = crate::utils::TestInstruction {
         instruction: dist_builder.instruction(),
         signers: vec![pool_setup.authority.insecure_clone()],
@@ -741,8 +743,8 @@ fn test_opt_in_confidential_pool_with_large_token_2022_ata() {
         .set_account(
             reward_ata,
             Account {
-                lamports: ctx.svm.minimum_balance_for_rent_exemption(300),
-                data: vec![0u8; 300],
+                lamports: ctx.svm.minimum_balance_for_rent_exemption(460),
+                data: vec![0u8; 460],
                 owner: TOKEN_2022_PROGRAM_ID,
                 executable: false,
                 rent_epoch: 0,

@@ -3516,6 +3516,15 @@
               "format": "u64",
               "kind": "numberTypeNode"
             }
+          },
+          {
+            "kind": "instructionArgumentNode",
+            "name": "expectedPendingBalanceCreditCounter",
+            "type": {
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
           }
         ],
         "discriminators": [
