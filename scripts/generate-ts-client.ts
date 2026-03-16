@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { createRewardsCodamaBuilder } from './lib/rewards-codama-builder';
-import { preserveConfigFiles } from './lib/utils';
+import { addTypescriptClientHelpers, preserveConfigFiles } from './lib/utils';
 
 const projectRoot = path.join(__dirname, '..');
 const idlDir = path.join(projectRoot, 'idl');
@@ -27,11 +27,20 @@ const rewardsCodama = createRewardsCodamaBuilder(rewardsIdl)
 
 const configPreserver = preserveConfigFiles(typescriptClientsDir);
 
-void rewardsCodama.accept(
-    renderJavaScriptVisitor(path.join(typescriptClientsDir, 'src', 'generated'), {
-        deleteFolderBeforeRendering: true,
-        formatCode: true,
-    }),
-);
+async function main() {
+    try {
+        await Promise.resolve(
+            rewardsCodama.accept(
+                renderJavaScriptVisitor(path.join(typescriptClientsDir, 'src', 'generated'), {
+                    deleteFolderBeforeRendering: true,
+                    formatCode: true,
+                }),
+            ),
+        );
+        addTypescriptClientHelpers(typescriptClientsDir);
+    } finally {
+        configPreserver.restore();
+    }
+}
 
-configPreserver.restore();
+void main();
