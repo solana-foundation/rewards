@@ -38,17 +38,3 @@ This runs all integration tests with `CU_TRACKING=1` enabled and updates the tab
 - The Solana runtime has a per-instruction limit of 200,000 CUs
 - Lower CU consumption means lower transaction fees for users
 
-## Confidential Transfer Overhead
-
-When `pool.confidential_rewards != 0`, the following instructions incur additional CU cost
-relative to the standard `TransferChecked` path:
-
-| Instruction                  | Additional cost source                                            | Estimated overhead |
-| ---------------------------- | ----------------------------------------------------------------- | ------------------ |
-| `DistributeContinuousReward` | Extra `ConfidentialTransfer::Deposit` CPI after `TransferChecked` | ~5k–10k CUs        |
-| `ClaimContinuous`            | `ConfidentialTransfer::Transfer` replaces `TransferChecked`       | ~15k–25k CUs       |
-| `ContinuousOptOut`           | Same as `ClaimContinuous` when accrued rewards > 0                | ~15k–25k CUs       |
-
-These estimates assume pre-verified proof context accounts (all instruction offsets = 0).
-Actual values will be recorded here once integration tests run against a test validator
-with the ZK ElGamal Proof program re-enabled (`--feature zk-elgamal-proof`).
