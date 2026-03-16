@@ -1,11 +1,8 @@
-use core::mem::MaybeUninit;
-use core::slice::from_raw_parts;
-
 use pinocchio::{
     account::AccountView,
     cpi::Signer,
     instruction::{InstructionAccount, InstructionView},
-    ProgramResult,
+    Address, ProgramResult,
 };
 use pinocchio_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 
@@ -16,6 +13,12 @@ use pinocchio_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 const CT_EXT: u8 = 27;
 const CT_DEPOSIT: u8 = 5;
 const CT_TRANSFER: u8 = 7;
+
+// `ZkE1Gama1Proof11111111111111111111111111111` in base58
+pub const ZK_ELGAMAL_PROOF_PROGRAM_ID: Address = Address::new_from_array([
+    0x08, 0x63, 0x75, 0xac, 0xe2, 0xae, 0xea, 0x28, 0x1a, 0x6b, 0x37, 0x4d, 0x68, 0x1b, 0xa7, 0x6a, 0x53, 0xcc, 0xf6,
+    0x38, 0xc0, 0x74, 0x55, 0x93, 0x6c, 0x05, 0xd0, 0x65, 0x40, 0x00, 0x00, 0x00,
+]);
 
 /// Raw `TransferInstructionData` fields passed by the client.
 ///
@@ -83,14 +86,12 @@ impl ConfidentialDeposit<'_, '_> {
     #[inline(always)]
     pub fn invoke(&self) -> ProgramResult {
         // Instruction data: [CT_EXT, CT_DEPOSIT, amount(8 LE), decimals(1)] = 11 bytes
-        let mut data = [MaybeUninit::<u8>::uninit(); 11];
-        data[0].write(CT_EXT);
-        data[1].write(CT_DEPOSIT);
+        let mut data = [0u8; 11];
+        data[0] = CT_EXT;
+        data[1] = CT_DEPOSIT;
         let amount_bytes = self.amount.to_le_bytes();
-        for (i, b) in amount_bytes.iter().enumerate() {
-            data[2 + i].write(*b);
-        }
-        data[10].write(self.decimals);
+        data[2..10].copy_from_slice(&amount_bytes);
+        data[10] = self.decimals;
 
         let instruction_accounts = [
             InstructionAccount::writable(self.token_account.address()),
@@ -98,11 +99,8 @@ impl ConfidentialDeposit<'_, '_> {
             InstructionAccount::readonly_signer(self.authority.address()),
         ];
 
-        let instruction = InstructionView {
-            program_id: &TOKEN_2022_PROGRAM_ID,
-            accounts: &instruction_accounts,
-            data: unsafe { from_raw_parts(data.as_ptr() as *const u8, 11) },
-        };
+        let instruction =
+            InstructionView { program_id: &TOKEN_2022_PROGRAM_ID, accounts: &instruction_accounts, data: &data };
 
         pinocchio::cpi::invoke_signed(&instruction, &[self.token_account, self.mint, self.authority], self.signers)
     }
@@ -120,8 +118,10 @@ impl ConfidentialDeposit<'_, '_> {
 pub struct ConfidentialApplyPendingBalance<'a, 'b> {
     pub token_account: &'a AccountView,
     pub authority: &'a AccountView,
-    /// Informational: the credit counter value the client expected before this
-    /// apply. Token-2022 stores it but does not validate it.
+    /// The vault's `pending_balance_credit_counter` value before this distribute.
+    /// One `ConfidentialDeposit` happens in the same tx, so Token-2022 will see
+    /// counter+1 when it processes `ApplyPendingBalance`. Pass the value read
+    /// off-chain before building the transaction (`counter + 1`).
     pub expected_pending_balance_credit_counter: u64,
     /// AES-GCM ciphertext of the vault's new available balance (deposit amount
     /// + previous available), computed by the authority off-chain.
@@ -135,26 +135,19 @@ impl ConfidentialApplyPendingBalance<'_, '_> {
     #[inline(always)]
     pub fn invoke(&self) -> ProgramResult {
         // [CT_EXT, CT_APPLY_PENDING, counter(8 LE), new_decryptable(36)] = 46 bytes
-        let mut data = [MaybeUninit::<u8>::uninit(); 46];
-        data[0].write(CT_EXT);
-        data[1].write(CT_APPLY_PENDING);
-        for (i, b) in self.expected_pending_balance_credit_counter.to_le_bytes().iter().enumerate() {
-            data[2 + i].write(*b);
-        }
-        for (i, b) in self.new_decryptable_available_balance.iter().enumerate() {
-            data[10 + i].write(*b);
-        }
+        let mut data = [0u8; 46];
+        data[0] = CT_EXT;
+        data[1] = CT_APPLY_PENDING;
+        data[2..10].copy_from_slice(&self.expected_pending_balance_credit_counter.to_le_bytes());
+        data[10..46].copy_from_slice(self.new_decryptable_available_balance);
 
         let instruction_accounts = [
             InstructionAccount::writable(self.token_account.address()),
             InstructionAccount::readonly_signer(self.authority.address()),
         ];
 
-        let instruction = InstructionView {
-            program_id: &TOKEN_2022_PROGRAM_ID,
-            accounts: &instruction_accounts,
-            data: unsafe { from_raw_parts(data.as_ptr() as *const u8, 46) },
-        };
+        let instruction =
+            InstructionView { program_id: &TOKEN_2022_PROGRAM_ID, accounts: &instruction_accounts, data: &data };
 
         pinocchio::cpi::invoke_signed(&instruction, &[self.token_account, self.authority], self.signers)
     }
@@ -190,26 +183,20 @@ impl ConfidentialTransferCpi<'_, '_> {
     #[inline(always)]
     pub fn invoke(&self) -> ProgramResult {
         // Instruction data: [CT_EXT, CT_TRANSFER, ...TransferInstructionData(167)] = 169 bytes
-        let mut data = [MaybeUninit::<u8>::uninit(); 169];
-        data[0].write(CT_EXT);
-        data[1].write(CT_TRANSFER);
+        let mut data = [0u8; 169];
+        data[0] = CT_EXT;
+        data[1] = CT_TRANSFER;
 
         // new_source_decryptable_available_balance (36 bytes)
-        for (i, b) in self.transfer_data.new_source_decryptable_available_balance.iter().enumerate() {
-            data[2 + i].write(*b);
-        }
+        data[2..38].copy_from_slice(self.transfer_data.new_source_decryptable_available_balance);
         // transfer_amount_auditor_ciphertext_lo (64 bytes)
-        for (i, b) in self.transfer_data.transfer_amount_auditor_ciphertext_lo.iter().enumerate() {
-            data[38 + i].write(*b);
-        }
+        data[38..102].copy_from_slice(self.transfer_data.transfer_amount_auditor_ciphertext_lo);
         // transfer_amount_auditor_ciphertext_hi (64 bytes)
-        for (i, b) in self.transfer_data.transfer_amount_auditor_ciphertext_hi.iter().enumerate() {
-            data[102 + i].write(*b);
-        }
+        data[102..166].copy_from_slice(self.transfer_data.transfer_amount_auditor_ciphertext_hi);
         // proof instruction offsets
-        data[166].write(self.transfer_data.equality_proof_instruction_offset as u8);
-        data[167].write(self.transfer_data.ciphertext_validity_proof_instruction_offset as u8);
-        data[168].write(self.transfer_data.range_proof_instruction_offset as u8);
+        data[166] = self.transfer_data.equality_proof_instruction_offset as u8;
+        data[167] = self.transfer_data.ciphertext_validity_proof_instruction_offset as u8;
+        data[168] = self.transfer_data.range_proof_instruction_offset as u8;
 
         let instruction_accounts = [
             InstructionAccount::writable(self.source.address()),
@@ -221,11 +208,8 @@ impl ConfidentialTransferCpi<'_, '_> {
             InstructionAccount::readonly_signer(self.authority.address()),
         ];
 
-        let instruction = InstructionView {
-            program_id: &TOKEN_2022_PROGRAM_ID,
-            accounts: &instruction_accounts,
-            data: unsafe { from_raw_parts(data.as_ptr() as *const u8, 169) },
-        };
+        let instruction =
+            InstructionView { program_id: &TOKEN_2022_PROGRAM_ID, accounts: &instruction_accounts, data: &data };
 
         pinocchio::cpi::invoke_signed(
             &instruction,

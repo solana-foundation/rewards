@@ -162,6 +162,10 @@ impl ConfidentialVaultState {
     ///
     /// Call this immediately before building the distribute instruction. The internal state
     /// advances so the next call reflects the cumulative balance.
+    ///
+    /// **`effective_amount` ≠ raw instruction `amount`**: pass the back-computed effective
+    /// amount (`delta_rpt * opted_in_supply / REWARD_PRECISION`), not the raw `amount` input.
+    /// The program computes this same value and deposits only `effective_amount` into the vault.
     pub fn prepare_distribute(
         &mut self,
         effective_amount: u64,

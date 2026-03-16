@@ -6,6 +6,11 @@ const NEW_DECRYPTABLE_LEN: usize = 36;
 
 pub struct DistributeContinuousRewardData {
     pub amount: u64,
+    /// Required when `pool.confidential_rewards != 0`. Must be `counter + 1`
+    /// where `counter` is the vault's current `pending_balance_credit_counter`
+    /// read off-chain before building the transaction (one `ConfidentialDeposit`
+    /// increments it in the same tx).
+    pub expected_pending_balance_credit_counter: u64,
     /// Required when `pool.confidential_rewards != 0`.
     /// AES-GCM ciphertext of the vault's new available balance after applying
     /// the pending deposit — computed by the authority off-chain.
@@ -20,6 +25,8 @@ impl<'a> TryFrom<&'a [u8]> for DistributeContinuousRewardData {
         require_len!(data, Self::LEN);
 
         let amount = u64::from_le_bytes(data[0..8].try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
+        let expected_pending_balance_credit_counter =
+            u64::from_le_bytes(data[8..16].try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
 
         let new_decryptable_available_balance = if data.len() >= Self::LEN + NEW_DECRYPTABLE_LEN {
             Some(
@@ -31,12 +38,12 @@ impl<'a> TryFrom<&'a [u8]> for DistributeContinuousRewardData {
             None
         };
 
-        Ok(Self { amount, new_decryptable_available_balance })
+        Ok(Self { amount, expected_pending_balance_credit_counter, new_decryptable_available_balance })
     }
 }
 
 impl<'a> InstructionData<'a> for DistributeContinuousRewardData {
-    const LEN: usize = 8;
+    const LEN: usize = 16;
 
     fn validate(&self) -> Result<(), ProgramError> {
         if self.amount == 0 {

@@ -144,6 +144,10 @@ pub enum RewardsProgramError {
     /// (34) This pool is configured for merkle claims
     #[error("This pool is configured for merkle claims")]
     ContinuousMerkleModeEnabled,
+
+    /// (35) Confidential pool has unclaimed rewards; all rewards must be claimed before closing
+    #[error("Confidential pool has unclaimed rewards; all rewards must be claimed before closing")]
+    ConfidentialPoolNotDrained,
 }
 
 impl From<RewardsProgramError> for ProgramError {

@@ -94,7 +94,7 @@ pub fn process_distribute_continuous_reward(
             ConfidentialApplyPendingBalance {
                 token_account: ix.accounts.reward_vault,
                 authority: ix.accounts.reward_pool,
-                expected_pending_balance_credit_counter: 0,
+                expected_pending_balance_credit_counter: ix.data.expected_pending_balance_credit_counter,
                 new_decryptable_available_balance: new_decryptable,
                 signers,
             }

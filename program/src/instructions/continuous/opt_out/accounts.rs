@@ -5,6 +5,7 @@ use crate::{
     utils::{
         validate_associated_token_account, verify_current_program, verify_current_program_account,
         verify_event_authority, verify_owned_by, verify_readonly, verify_signer, verify_token_program, verify_writable,
+        ZK_ELGAMAL_PROOF_PROGRAM_ID,
     },
 };
 
@@ -84,7 +85,13 @@ impl<'a> TryFrom<&'a [AccountView]> for ContinuousOptOutAccounts<'a> {
         )?;
 
         let (equality_proof_context, ciphertext_validity_proof_context, range_proof_context) = if accounts.len() >= 15 {
-            (Some(&accounts[12]), Some(&accounts[13]), Some(&accounts[14]))
+            let eq_ctx = &accounts[12];
+            let cv_ctx = &accounts[13];
+            let rp_ctx = &accounts[14];
+            verify_owned_by(eq_ctx, &ZK_ELGAMAL_PROOF_PROGRAM_ID)?;
+            verify_owned_by(cv_ctx, &ZK_ELGAMAL_PROOF_PROGRAM_ID)?;
+            verify_owned_by(rp_ctx, &ZK_ELGAMAL_PROOF_PROGRAM_ID)?;
+            (Some(eq_ctx), Some(cv_ctx), Some(rp_ctx))
         } else {
             (None, None, None)
         };

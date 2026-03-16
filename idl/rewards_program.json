@@ -1409,6 +1409,12 @@
         "kind": "errorNode",
         "message": "This pool is configured for merkle claims",
         "name": "continuousMerkleModeEnabled"
+      },
+      {
+        "code": 35,
+        "kind": "errorNode",
+        "message": "Confidential pool has unclaimed rewards; all rewards must be claimed before closing",
+        "name": "confidentialPoolNotDrained"
       }
     ],
     "instructions": [

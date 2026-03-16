@@ -29,10 +29,10 @@ pub fn process_continuous_opt_in(
     if pool.confidential_rewards != 0 {
         let reward_ata = ix.accounts.user_reward_token_account.ok_or(RewardsProgramError::InvalidAccountData)?;
         // The ATA must be owned by Token-2022 and large enough to hold the ConfidentialTransfer
-        // extension (~295 bytes on top of the 165-byte base). Any account this size that is
-        // owned by Token-2022 has had ConfigureAccount called on it.
+        // extension (base 165 bytes + CT extension ~295 bytes = ~460 bytes minimum). Accounts
+        // smaller than this cannot have had ConfigureAccount called on them.
         verify_owned_by(reward_ata, &pinocchio_token_2022::ID)?;
-        if reward_ata.data_len() <= 165 {
+        if reward_ata.data_len() < 460 {
             return Err(RewardsProgramError::InvalidAccountData.into());
         }
     }

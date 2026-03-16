@@ -33,8 +33,15 @@ pub fn process_close_continuous_pool(
         }
     }
 
-    // Intentionally does not check unclaimed == 0. Authority can sweep remaining vault
-    // funds after clawback_ts.
+    // For confidential pools the vault's plaintext balance is always 0, so TransferChecked
+    // would be a no-op but CloseAccount fails if CT available balance > 0. Require all
+    // rewards to be claimed before closing so the vault is truly empty.
+    if pool.confidential_rewards != 0 && pool.total_distributed != pool.total_claimed {
+        return Err(RewardsProgramError::ConfidentialPoolNotDrained.into());
+    }
+
+    // Intentionally does not check unclaimed == 0 for non-CT pools. Authority can sweep
+    // remaining vault funds after clawback_ts.
     let remaining_amount = get_token_account_balance(ix.accounts.reward_vault)?;
     let decimals = get_mint_decimals(ix.accounts.reward_mint)?;
 
