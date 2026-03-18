@@ -7,7 +7,9 @@
     "build": "next build",
     "dev": "next dev",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
@@ -28,10 +30,15 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@noble/hashes": "^1.7.2",
+    "@playwright/test": "^1.50.0",
+    "@solana/spl-token": "^0.4.12",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "bs58": "^4.0.1",
+    "dotenv": "^16.4.7",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3"
   }

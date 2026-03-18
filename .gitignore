@@ -13,10 +13,16 @@
 # Javascript / Typescript
 **/node_modules/
 **/dist/
+**/.next/
 
 # AI
 .claude/*
 !.claude/commands/
+
+# Playwright
+**/playwright-report/
+**/test-results/
+**/e2e/.e2e-state.json
 
 # Solana Test Validator
 **/test-ledger
