@@ -54,6 +54,14 @@ coverage:
 coverage-open: coverage
     open .coverage/html
 
+# Deploy the web UI to Vercel production
+deploy-web:
+    vercel deploy --prod
+
+# Run E2E tests against the live devnet UI (requires PLAYRIGHT_WALLET in .env)
+e2e-test:
+    pnpm --filter @solana/rewards-program-web test:e2e
+
 # Build Client for Examples
 build-client:
     pnpm run generate-clients

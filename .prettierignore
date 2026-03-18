@@ -11,6 +11,8 @@ build/
 target/
 apps/web/.next/
 apps/web/out/
+**/playwright-report/
+**/test-results/
 
 # Dependencies
 node_modules/

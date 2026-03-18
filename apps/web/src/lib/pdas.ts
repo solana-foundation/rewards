@@ -14,7 +14,7 @@ function deriveAddress(seeds: Buffer[], programId: string) {
 }
 
 export function deriveEventAuthority(programId = getProgramAddress()) {
-    return deriveAddress([Buffer.from('__event_authority')], programId)[0] as Address;
+    return deriveAddress([Buffer.from('event_authority')], programId)[0] as Address;
 }
 
 export function deriveDirectDistributionPda(
