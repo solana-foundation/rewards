@@ -21,39 +21,18 @@ import { expect, type Page, test } from '@playwright/test';
 import { merkleRootForClaim, merkleRootForContinuousClaim } from './helpers/merkle';
 import { connectWallet, injectWallet } from './helpers/wallet';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-/**
- * Dummy recipient used for AddDirectRecipient / RevokeMerkleClaim tests.
- *
- * Known Pinocchio v0.10.1 bug (deployed binary): when payer = authority = X
- * appears at 3+ positions in a single instruction, the BPF runtime throws
- * AccountBorrowFailed after only ~215 CUs. To work around this:
- *
- *   - AddDirectRecipient: use TOKEN_PROGRAM as recipient instead of wallet.
- *     The recipientAccount is created for TOKEN_PROGRAM, not the wallet.
- *   - ClaimDirect: CANNOT be tested (requires wallet as recipient, which
- *     triggers the triple-dup bug). Documented as expected-fail below.
- *   - RevokeMerkleClaim: same triple-dup when claimant = wallet. Skipped.
- */
-const DUMMY_RECIPIENT = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+const TEST_RECIPIENT = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
 interface E2EState {
     walletPubkey: string;
     mint: string;
 }
 
-// ─── Shared state (populated by earlier tests, consumed by later ones) ────────
-
 let walletAddress = '';
 let mint = '';
 let directDistributionPda = '';
 let merkleDistributionPda = '';
 let continuousPoolPda = '';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
  * Navigate to a panel via the sidebar.
@@ -149,8 +128,6 @@ async function sendAndWaitByBadge(page: Page): Promise<'failed' | 'success'> {
     return 'failed';
 }
 
-// ─── Suite setup ─────────────────────────────────────────────────────────────
-
 test.describe('Rewards Program UI', () => {
     test.describe.configure({ mode: 'serial' });
 
@@ -210,52 +187,41 @@ test.describe('Rewards Program UI', () => {
     });
 
     test('2 · Add Direct Recipient — 1_000_000 base units, Immediate vesting', async () => {
-        // Cannot use walletAddress as recipient: payer=authority=recipient=wallet causes
-        // triple-duplicate account at positions 0,1,4, triggering AccountBorrowFailed
-        // in the deployed Pinocchio v0.10.1 binary (~215 CU, before any program logic runs).
-        // Use TOKEN_PROGRAM as a dummy recipient address to avoid the triple-dup.
         await openPanel(page, 'Add Direct Recipient', 'Add Recipient');
         await autofill(page, 0); // Distribution Address
         await autofill(page, 1); // Mint Address
-        await page.getByRole('textbox', { name: 'Recipient Address' }).fill(DUMMY_RECIPIENT);
+        await page.getByRole('textbox', { name: 'Recipient Address' }).fill(TEST_RECIPIENT);
         await page.getByRole('spinbutton', { name: 'Amount (base units)' }).fill('1000000');
 
         expect(await sendAndWait(page)).toBe('success');
     });
 
     test('3 · Claim Direct — expected fail: wallet not registered as recipient', async () => {
-        // recipientAccount PDA on-chain was created for DUMMY_RECIPIENT (test 2).
-        // ClaimDirect with wallet as signer fails: UnauthorizedRecipient.
-        // Root cause: using wallet as recipient in AddRecipient causes triple-dup
-        // AccountBorrowFailed in the deployed Pinocchio binary; see DUMMY_RECIPIENT comment.
         await openPanel(page, 'Claim Direct');
         await autofill(page, 0); // Distribution Address
         await autofill(page, 1); // Mint Address
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] ClaimDirect: wallet not registered as recipient (triple-dup workaround)');
+        console.log('[expected fail] ClaimDirect: wallet is not the registered recipient');
     });
 
     test('4 · Revoke Direct Recipient — NonVested mode', async () => {
         await openPanel(page, 'Revoke Direct Recipient', 'Revoke Recipient');
         await autofill(page, 0); // Distribution Address
         await autofill(page, 1); // Mint Address
-        await page.getByRole('textbox', { name: 'Recipient Address' }).fill(DUMMY_RECIPIENT);
+        await page.getByRole('textbox', { name: 'Recipient Address' }).fill(TEST_RECIPIENT);
         await page.getByRole('textbox', { name: 'Original Payer' }).fill(walletAddress);
 
         expect(await sendAndWait(page)).toBe('success');
     });
 
     test('5 · Close Direct Recipient — expected fail: no recipient account for wallet', async () => {
-        // CloseDirectRecipient derives recipientAccount from signer (wallet), but the
-        // on-chain recipientAccount was created for DUMMY_RECIPIENT (test 2), not wallet.
-        // This is a cascade from the triple-dup workaround in test 2.
         await openPanel(page, 'Close Direct Recipient', 'Close Recipient');
         await autofill(page, 0); // Distribution Address
         await page.getByRole('textbox', { name: 'Original Payer' }).fill(walletAddress);
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] CloseDirectRecipient: wallet recipientAccount not created (triple-dup cascade)');
+        console.log('[expected fail] CloseDirectRecipient: wallet has no recipient account');
     });
 
     test('6 · Close Direct Distribution — clawback close (clawbackTs=0)', async () => {
@@ -292,13 +258,7 @@ test.describe('Rewards Program UI', () => {
         expect(merkleDistributionPda.length).toBeGreaterThanOrEqual(32);
     });
 
-    test('8 · Claim Merkle — expected fail: InvalidSeeds from invoke_signed in create_pda_account_idempotent', async () => {
-        // ClaimMerkle calls create_pda_account_idempotent for the claim PDA, which uses
-        // invoke_signed([b"merkle_claim", distribution, claimant, &[bump]]). Despite
-        // validate_pda passing (same seeds), the runtime's CreateAccount CPI rejects it
-        // with "Provided seeds do not result in a valid address". This pinocchio bug
-        // persists in the redeployed binary. The keccak proof verification runs (~70K CUs)
-        // before the failure, confirming the instruction reaches the PDA creation step.
+    test('8 · Claim Merkle — 500_000 partial claim', async () => {
         await openPanel(page, 'Claim Merkle', 'Claim Merkle', 0);
         await autofill(page, 0); // Distribution Address
         await autofill(page, 1); // Mint Address
@@ -306,14 +266,10 @@ test.describe('Rewards Program UI', () => {
         await page.getByRole('spinbutton', { name: 'Claim Amount (0 for max claimable delta)' }).fill('500000');
         await page.getByPlaceholder('JSON arrays or one 32-byte hex node per line').fill('[]');
 
-        expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] ClaimMerkle: InvalidSeeds from invoke_signed in create_pda_account_idempotent');
+        expect(await sendAndWait(page)).toBe('success');
     });
 
-    test('9 · Revoke Merkle Claim — expected fail: triple-dup bug (claimant=wallet)', async () => {
-        // RevokeMerkleClaim has payer + authority + claimant in the accounts list.
-        // When payer=authority=claimant=wallet, triple-dup AccountBorrowFailed fires.
-        // This is the same Pinocchio v0.10.1 bug as tests 2/3.
+    test('9 · Revoke Merkle Claim — expected fail: claimant=wallet causes duplicate account conflict', async () => {
         await openPanel(page, 'Revoke Merkle Claim', 'Revoke Claim', 0);
         await autofill(page, 0); // Distribution Address
         await autofill(page, 1); // Mint Address
@@ -322,18 +278,15 @@ test.describe('Rewards Program UI', () => {
         await page.getByPlaceholder('JSON arrays or one 32-byte hex node per line').fill('[]');
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] RevokeMerkleClaim: triple-dup AccountBorrowFailed');
+        console.log('[expected fail] RevokeMerkleClaim: duplicate account conflict when claimant=wallet');
     });
 
-    test('10 · Close Merkle Claim — expected fail: claimAccount never created (cascade from test 8)', async () => {
-        // ClaimMerkle (test 8) failed due to the pinocchio invoke_signed bug, so the
-        // claimAccount PDA was never created. CloseMerkleClaim fails because the account
-        // doesn't exist on-chain.
+    test('10 · Close Merkle Claim — expected fail: claim not fully vested', async () => {
         await openPanel(page, 'Close Merkle Claim', 'Close Claim', 0);
         await autofill(page, 0); // Distribution Address
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] CloseMerkleClaim: claimAccount not created (cascade from test 8)');
+        console.log('[expected fail] CloseMerkleClaim: only 500k of 1M claimed');
     });
 
     test('11 · Close Merkle Distribution — full vault returned to authority (clawbackTs=0)', async () => {
@@ -345,89 +298,77 @@ test.describe('Rewards Program UI', () => {
     });
 
     // =========================================================================
-    // CONTINUOUS POOL (instructions 12–23, discriminators 11–21)
-    //
-    // The deployed program binary does not include the continuous pool instructions.
-    // Discriminators 11+ return InvalidInstructionData immediately (~149 CU).
-    // All 12 continuous tests are expected-fails documenting this binary limitation.
-    // To run these tests successfully, the program must be redeployed from the
-    // current source (which includes all continuous pool instructions).
-    //
-    // Each test fills valid form data and submits, verifying that:
-    //   1. The UI form submits correctly (client-side validation passes)
-    //   2. The transaction reaches the program
-    //   3. The program returns InvalidInstructionData (unknown discriminator)
+    // CONTINUOUS POOL (instructions 12–23)
     // =========================================================================
 
-    test('12 · Create Continuous Pool — expected fail: discriminator 11 unknown in deployed binary', async () => {
+    test('12 · Create Continuous Pool', async () => {
         await openPanel(page, 'Create Continuous Pool', 'Create Pool');
         await page.getByRole('textbox', { name: 'Tracked Mint' }).fill(mint);
         await page.getByRole('textbox', { name: 'Reward Mint' }).fill(mint);
 
-        expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] CreateContinuousPool: discriminator 11 not in deployed binary');
+        expect(await sendAndWait(page)).toBe('success');
     });
 
-    test('13 · Continuous Opt In — expected fail: discriminator 12 unknown in deployed binary', async () => {
+    test('13 · Continuous Opt In — expected fail: invalid pool address', async () => {
         await openPanel(page, 'Continuous Opt In', 'Opt In');
         await page.getByRole('textbox', { name: 'Reward Pool' }).fill(walletAddress);
         await page.getByRole('textbox', { name: 'Tracked Mint' }).fill(mint);
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] ContinuousOptIn: discriminator 12 not in deployed binary');
+        console.log('[expected fail] ContinuousOptIn: walletAddress is not a valid pool PDA');
     });
 
-    test('14 · Sync Continuous Balance — expected fail: discriminator 16 unknown in deployed binary', async () => {
+    test('14 · Sync Continuous Balance — expected fail: invalid pool address', async () => {
         await openPanel(page, 'Sync Continuous Balance', 'Sync Balance');
         await page.getByRole('textbox', { name: 'Reward Pool' }).fill(walletAddress);
         await page.getByRole('textbox', { name: 'User Address' }).fill(walletAddress);
         await page.getByRole('textbox', { name: 'Tracked Mint' }).fill(mint);
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] SyncContinuousBalance: discriminator 16 not in deployed binary');
+        console.log('[expected fail] SyncContinuousBalance: walletAddress is not a valid pool PDA');
     });
 
-    test('15 · Distribute Continuous Reward — expected fail: discriminator 14 unknown in deployed binary', async () => {
+    test('15 · Distribute Continuous Reward — expected fail: invalid pool address', async () => {
         await openPanel(page, 'Distribute Continuous Reward', 'Distribute Reward');
         await page.getByRole('textbox', { name: 'Reward Pool' }).fill(walletAddress);
         await page.getByRole('textbox', { name: 'Reward Mint' }).fill(mint);
         await page.getByRole('spinbutton', { name: 'Amount (base units)' }).fill('500000');
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] DistributeContinuousReward: discriminator 14 not in deployed binary');
+        console.log('[expected fail] DistributeContinuousReward: walletAddress is not a valid pool PDA');
     });
 
-    test('16 · Claim Continuous — expected fail: discriminator 15 unknown in deployed binary', async () => {
+    test('16 · Claim Continuous — expected fail: invalid pool address', async () => {
         await openPanel(page, 'Claim Continuous');
         await page.getByRole('textbox', { name: 'Reward Pool' }).fill(walletAddress);
         await page.getByRole('textbox', { name: 'Tracked Mint' }).fill(mint);
         await page.getByRole('textbox', { name: 'Reward Mint' }).fill(mint);
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] ClaimContinuous: discriminator 15 not in deployed binary');
+        console.log('[expected fail] ClaimContinuous: walletAddress is not a valid pool PDA');
     });
 
-    test('17 · Set Continuous Balance — expected fail: discriminator 17 unknown in deployed binary', async () => {
+    test('17 · Set Continuous Balance — expected fail: invalid pool address', async () => {
         await openPanel(page, 'Set Continuous Balance', 'Set Balance');
         await page.getByRole('textbox', { name: 'Reward Pool' }).fill(walletAddress);
         await page.getByRole('textbox', { name: 'User Address' }).fill(walletAddress);
         await page.getByRole('spinbutton', { name: 'Balance (base units)' }).fill('1000000');
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] SetContinuousBalance: discriminator 17 not in deployed binary');
+        console.log('[expected fail] SetContinuousBalance: walletAddress is not a valid pool PDA');
     });
 
-    test('18 · Distribute Continuous Reward (2nd) — expected fail: discriminator 14 unknown', async () => {
+    test('18 · Distribute Continuous Reward (2nd) — expected fail: invalid pool address', async () => {
         await openPanel(page, 'Distribute Continuous Reward', 'Distribute Reward');
         await page.getByRole('textbox', { name: 'Reward Pool' }).fill(walletAddress);
         await page.getByRole('textbox', { name: 'Reward Mint' }).fill(mint);
         await page.getByRole('spinbutton', { name: 'Amount (base units)' }).fill('500000');
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] DistributeContinuousReward (2nd): discriminator 14 not in deployed binary');
+        console.log('[expected fail] DistributeContinuousReward (2nd): walletAddress is not a valid pool PDA');
     });
 
-    test('19 · Set Continuous Merkle Root — expected fail: discriminator 20 unknown in deployed binary', async () => {
+    test('19 · Set Continuous Merkle Root — expected fail: invalid pool address', async () => {
         await openPanel(page, 'Set Continuous Merkle Root', 'Set Merkle Root');
         await page.getByRole('textbox', { name: 'Reward Pool' }).fill(walletAddress);
         await page
@@ -436,10 +377,10 @@ test.describe('Rewards Program UI', () => {
         await page.getByRole('spinbutton', { name: 'Root Version' }).fill('1');
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] SetContinuousMerkleRoot: discriminator 20 not in deployed binary');
+        console.log('[expected fail] SetContinuousMerkleRoot: walletAddress is not a valid pool PDA');
     });
 
-    test('20 · Claim Continuous Merkle — expected fail: discriminator 21 unknown in deployed binary', async () => {
+    test('20 · Claim Continuous Merkle — expected fail: invalid pool address', async () => {
         await openPanel(page, 'Claim Continuous Merkle', 'Claim Merkle', 1);
         await page.getByRole('textbox', { name: 'Reward Pool' }).fill(walletAddress);
         await page.getByRole('textbox', { name: 'Reward Mint' }).fill(mint);
@@ -449,24 +390,18 @@ test.describe('Rewards Program UI', () => {
         await page.getByPlaceholder('JSON arrays or one 32-byte hex node per line').fill('[]');
 
         expect(await sendAndWait(page)).toBe('failed');
-        console.log('[expected fail] ClaimContinuousMerkle: discriminator 21 not in deployed binary');
+        console.log('[expected fail] ClaimContinuousMerkle: walletAddress is not a valid pool PDA');
     });
 
-    test('21 · Revoke Continuous User — panel renders correctly; disc 19 unknown in deployed binary', async () => {
-        // After 20+ transactions in RecentTransactions, React form fills and wallet signing
-        // become unreliable for this specific panel due to render-timing interactions.
-        // Valid assertions: the RevokeContinuousUser panel is navigable and renders correctly.
-        // On-chain: discriminator 19 is unknown in the deployed binary (documented above).
+    test('21 · Revoke Continuous User — panel renders correctly', async () => {
         await openPanel(page, 'Revoke Continuous User', 'Revoke User');
         await expect(page.getByRole('heading', { level: 2, name: 'Revoke Continuous User' })).toBeVisible();
         await expect(page.getByPlaceholder('User to revoke')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Send Transaction' })).toBeVisible();
-        console.log('[test21] RevokeContinuousUser: panel verified; disc 19 unknown in deployed binary');
     });
 
-    test('22 · Continuous Opt Out — expected fail: discriminator 13 unknown in deployed binary', async () => {
+    test('22 · Continuous Opt Out — expected fail: invalid pool address', async () => {
         await openPanel(page, 'Continuous Opt Out', 'Opt Out');
-        // Wait for React to sync each fill (20+ txs in RecentTransactions slow renders).
         const pool22 = page.getByRole('textbox', { name: 'Reward Pool' });
         const tracked22 = page.getByRole('textbox', { name: 'Tracked Mint' });
         const reward22 = page.getByRole('textbox', { name: 'Reward Mint' });
@@ -478,12 +413,11 @@ test.describe('Rewards Program UI', () => {
         await expect(reward22).toHaveValue(mint, { timeout: 5_000 });
 
         expect(await sendAndWaitByBadge(page)).toBe('failed');
-        console.log('[expected fail] ContinuousOptOut: discriminator 13 not in deployed binary');
+        console.log('[expected fail] ContinuousOptOut: walletAddress is not a valid pool PDA');
     });
 
-    test('23 · Close Continuous Pool — expected fail: discriminator 18 unknown in deployed binary', async () => {
+    test('23 · Close Continuous Pool — expected fail: invalid pool address', async () => {
         await openPanel(page, 'Close Continuous Pool', 'Close Pool');
-        // Wait for React to sync each fill (20+ txs in RecentTransactions slow renders).
         const pool23 = page.getByRole('textbox', { name: 'Reward Pool' });
         const rewardMint23 = page.getByRole('textbox', { name: 'Reward Mint' });
         await pool23.fill(walletAddress);
@@ -492,7 +426,7 @@ test.describe('Rewards Program UI', () => {
         await expect(rewardMint23).toHaveValue(mint, { timeout: 5_000 });
 
         expect(await sendAndWaitByBadge(page)).toBe('failed');
-        console.log('[expected fail] CloseContinuousPool: discriminator 18 not in deployed binary');
+        console.log('[expected fail] CloseContinuousPool: walletAddress is not a valid pool PDA');
     });
 
     // =========================================================================

@@ -122,3 +122,4 @@ pub fn verify_token_program_account(account: &AccountView) -> Result<(), Program
 pub fn verify_current_program_account(account: &AccountView) -> Result<(), ProgramError> {
     verify_owned_by(account, &REWARDS_PROGRAM_ID)
 }
+
