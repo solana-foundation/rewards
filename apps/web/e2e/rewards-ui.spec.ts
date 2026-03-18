@@ -111,9 +111,7 @@ async function sendAndWait(page: Page): Promise<'failed' | 'success'> {
     // On failure, print the View Explorer URL so we can check program logs.
     // RecentTransactions puts newest first, so index 0 = most recent (AddRecipient failed).
     const explorerLinks = await page.locator('a[href*="explorer.solana.com"]').all();
-    const firstHref = explorerLinks.length > 0
-        ? await explorerLinks[0].getAttribute('href')
-        : null;
+    const firstHref = explorerLinks.length > 0 ? await explorerLinks[0].getAttribute('href') : null;
     console.log('[tx failed] explorer links:', explorerLinks.length, '| first (newest) href:', firstHref ?? 'none');
 
     return 'failed';
@@ -142,7 +140,7 @@ async function sendAndWaitByBadge(page: Page): Promise<'failed' | 'success'> {
         expect(f + s).toBeGreaterThan(beforeFailed + beforeSuccess);
     }).toPass({ intervals: [500, 1000, 2000], timeout: 45_000 });
 
-    if (await successLoc.count() > beforeSuccess) return 'success';
+    if ((await successLoc.count()) > beforeSuccess) return 'success';
 
     const explorerLinks = await page.locator('a[href*="explorer.solana.com"]').all();
     const firstHref = explorerLinks.length > 0 ? await explorerLinks[0].getAttribute('href') : null;
@@ -432,7 +430,9 @@ test.describe('Rewards Program UI', () => {
     test('19 · Set Continuous Merkle Root — expected fail: discriminator 20 unknown in deployed binary', async () => {
         await openPanel(page, 'Set Continuous Merkle Root', 'Set Merkle Root');
         await page.getByRole('textbox', { name: 'Reward Pool' }).fill(walletAddress);
-        await page.getByRole('textbox', { name: 'Merkle Root' }).fill('0000000000000000000000000000000000000000000000000000000000000001');
+        await page
+            .getByRole('textbox', { name: 'Merkle Root' })
+            .fill('0000000000000000000000000000000000000000000000000000000000000001');
         await page.getByRole('spinbutton', { name: 'Root Version' }).fill('1');
 
         expect(await sendAndWait(page)).toBe('failed');
