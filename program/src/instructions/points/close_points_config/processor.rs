@@ -23,6 +23,8 @@ pub fn process_close_points_config(
 
     config.validate_authority(ix.accounts.authority.address())?;
 
+    // Intentionally does not check outstanding balances. Authority has full discretion
+    // to close the config at any time. Use revoke_points to clean up user accounts first.
     close_pda_account(ix.accounts.points_config, ix.accounts.destination)?;
 
     let event = PointsConfigClosedEvent::new(*ix.accounts.points_config.address());

@@ -23,7 +23,7 @@ use crate::{
         },
         points::{
             close_points_account::process_close_points_account, close_points_config::process_close_points_config,
-            init_points::process_init_points, issue_points::process_issue_points,
+            init_points::process_init_points, issue_points::process_issue_points, revoke_points::process_revoke_points,
             transfer_points::process_transfer_points, use_points::process_use_points,
         },
     },
@@ -113,6 +113,7 @@ pub fn process_instruction(program_id: &Address, accounts: &[AccountView], instr
         RewardsInstructionDiscriminators::ClosePointsConfig => {
             process_close_points_config(program_id, accounts, instruction_data)
         }
+        RewardsInstructionDiscriminators::RevokePoints => process_revoke_points(program_id, accounts, instruction_data),
         RewardsInstructionDiscriminators::EmitEvent => process_emit_event(program_id, accounts),
     }
 }

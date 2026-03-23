@@ -40,6 +40,7 @@ pub enum RewardsInstructionDiscriminators {
     TransferPoints = 25,
     ClosePointsAccount = 26,
     ClosePointsConfig = 27,
+    RevokePoints = 28,
 
     // Shared
     EmitEvent = 228,
@@ -83,6 +84,7 @@ impl TryFrom<u8> for RewardsInstructionDiscriminators {
             25 => Ok(Self::TransferPoints),
             26 => Ok(Self::ClosePointsAccount),
             27 => Ok(Self::ClosePointsConfig),
+            28 => Ok(Self::RevokePoints),
             // Shared
             228 => Ok(Self::EmitEvent),
             _ => Err(ProgramError::InvalidInstructionData),
@@ -281,11 +283,15 @@ mod tests {
         let result = RewardsInstructionDiscriminators::try_from(27u8);
         assert!(result.is_ok());
         assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::ClosePointsConfig));
+
+        let result = RewardsInstructionDiscriminators::try_from(28u8);
+        assert!(result.is_ok());
+        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::RevokePoints));
     }
 
     #[test]
     fn test_discriminator_try_from_invalid() {
-        let result = RewardsInstructionDiscriminators::try_from(28u8);
+        let result = RewardsInstructionDiscriminators::try_from(29u8);
         assert!(matches!(result, Err(ProgramError::InvalidInstructionData)));
 
         let result = RewardsInstructionDiscriminators::try_from(255u8);

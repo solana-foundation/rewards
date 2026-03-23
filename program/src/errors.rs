@@ -160,6 +160,10 @@ pub enum RewardsProgramError {
     /// (38) Points account balance not zero
     #[error("Points account balance not zero")]
     PointsBalanceNotZero,
+
+    /// (39) Points config is not revocable
+    #[error("Points config is not revocable")]
+    PointsNotRevocable,
 }
 
 impl From<RewardsProgramError> for ProgramError {

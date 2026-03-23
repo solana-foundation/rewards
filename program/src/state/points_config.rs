@@ -177,6 +177,14 @@ impl PointsConfig {
         Ok(())
     }
 
+    #[inline(always)]
+    pub fn validate_revocable(&self) -> Result<(), ProgramError> {
+        if self.revocable == 0 {
+            return Err(RewardsProgramError::PointsNotRevocable.into());
+        }
+        Ok(())
+    }
+
     pub fn with_signer<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&[Signer<'_, '_>]) -> R,
@@ -328,6 +336,19 @@ mod tests {
             0,
         );
         assert!(config.validate_transferable().is_err());
+    }
+
+    #[test]
+    fn test_validate_revocable_enabled() {
+        let config =
+            PointsConfig::new(255, 1, 1, Address::new_from_array([1u8; 32]), Address::new_from_array([2u8; 32]), 0);
+        assert!(config.validate_revocable().is_ok());
+    }
+
+    #[test]
+    fn test_validate_revocable_disabled() {
+        let config = create_test_config(); // revocable = 0
+        assert!(config.validate_revocable().is_err());
     }
 
     #[test]

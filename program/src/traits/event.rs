@@ -25,6 +25,7 @@ pub enum EventDiscriminators {
     PointsTransferred = 14,
     PointsAccountClosed = 15,
     PointsConfigClosed = 16,
+    PointsRevoked = 17,
 }
 
 /// Event discriminator with Anchor-compatible prefix

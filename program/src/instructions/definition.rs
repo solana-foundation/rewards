@@ -765,6 +765,21 @@ pub enum RewardsProgramInstruction {
     #[codama(account(name = "rewards_program", docs = "This program's ID"))]
     ClosePointsConfig {} = 27,
 
+    /// Revoke a user's points. Authority force-burns the balance and closes the account.
+    /// Gated on config.revocable flag. Does not require user signature.
+    #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
+    #[codama(account(name = "points_config", writable, docs = "PDA: PointsConfig account; must have revocable=1"))]
+    #[codama(account(name = "user", docs = "Wallet address of the user being revoked"))]
+    #[codama(account(
+        name = "user_points_account",
+        writable,
+        docs = "PDA: [b\"user_points\", points_config, user] (closed)"
+    ))]
+    #[codama(account(name = "destination", writable, docs = "Receives rent refund from closed account"))]
+    #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
+    #[codama(account(name = "rewards_program", docs = "This program's ID"))]
+    RevokePoints {} = 28,
+
     /// Emit event data via CPI (prevents log truncation).
     #[codama(account(name = "event_authority", signer, docs = "PDA: [b\"__event_authority\"]; validates CPI caller"))]
     EmitEvent {} = 228,

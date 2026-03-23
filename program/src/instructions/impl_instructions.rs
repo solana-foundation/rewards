@@ -33,6 +33,7 @@ use super::points::{
     close_points_config::{ClosePointsConfigAccounts, ClosePointsConfigData},
     init_points::{InitPointsAccounts, InitPointsData},
     issue_points::{IssuePointsAccounts, IssuePointsData},
+    revoke_points::{RevokePointsAccounts, RevokePointsData},
     transfer_points::{TransferPointsAccounts, TransferPointsData},
     use_points::{UsePointsAccounts, UsePointsData},
 };
@@ -72,3 +73,4 @@ define_instruction!(UsePoints, UsePointsAccounts, UsePointsData);
 define_instruction!(TransferPoints, TransferPointsAccounts, TransferPointsData);
 define_instruction!(ClosePointsAccount, ClosePointsAccountAccounts, ClosePointsAccountData);
 define_instruction!(ClosePointsConfig, ClosePointsConfigAccounts, ClosePointsConfigData);
+define_instruction!(RevokePoints, RevokePointsAccounts, RevokePointsData);

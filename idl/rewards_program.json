@@ -1334,6 +1334,38 @@
       },
       {
         "kind": "definedTypeNode",
+        "name": "pointsRevokedEvent",
+        "type": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "pointsConfig",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "user",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "revokedBalance",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        }
+      },
+      {
+        "kind": "definedTypeNode",
         "name": "pointsTransferredEvent",
         "type": {
           "fields": [
@@ -1770,6 +1802,12 @@
         "kind": "errorNode",
         "message": "Points account balance not zero",
         "name": "pointsBalanceNotZero"
+      },
+      {
+        "code": 39,
+        "kind": "errorNode",
+        "message": "Points config is not revocable",
+        "name": "pointsNotRevocable"
       }
     ],
     "instructions": [
@@ -5444,6 +5482,98 @@
         ],
         "kind": "instructionNode",
         "name": "closePointsConfig"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "Points authority; must match points_config.authority"
+            ],
+            "isSigner": true,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          },
+          {
+            "docs": [
+              "PDA: PointsConfig account; must have revocable=1"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "pointsConfig"
+          },
+          {
+            "docs": [
+              "Wallet address of the user being revoked"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "user"
+          },
+          {
+            "docs": [
+              "PDA: [b\"user_points\", points_config, user] (closed)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "userPointsAccount"
+          },
+          {
+            "docs": [
+              "Receives rent refund from closed account"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "destination"
+          },
+          {
+            "docs": [
+              "PDA: [b\"__event_authority\"] for event CPI"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "eventAuthority"
+          },
+          {
+            "docs": [
+              "This program's ID"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rewardsProgram"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 28
+            },
+            "defaultValueStrategy": "omitted",
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "kind": "instructionNode",
+        "name": "revokePoints"
       },
       {
         "accounts": [
