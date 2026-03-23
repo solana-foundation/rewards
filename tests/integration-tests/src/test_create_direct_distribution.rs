@@ -1,4 +1,5 @@
-use solana_sdk::signer::Signer;
+use solana_sdk::{account::Account, signer::Signer};
+use solana_system_interface::program::ID as SYSTEM_PROGRAM_ID;
 
 use crate::fixtures::{CreateDirectDistributionFixture, CreateDirectDistributionSetup};
 use crate::utils::{
@@ -77,6 +78,30 @@ fn test_create_direct_distribution_success_token_2022() {
     let setup = CreateDirectDistributionSetup::new_token_2022(&mut ctx);
     let instruction = setup.build_instruction(&ctx);
 
+    instruction.send_expect_success(&mut ctx);
+
+    assert_direct_distribution(
+        &ctx,
+        &setup.distribution_pda,
+        &setup.authority.pubkey(),
+        &setup.mint.pubkey(),
+        setup.bump,
+    );
+}
+
+#[test]
+fn test_create_direct_distribution_prefunded_distribution_pda() {
+    let mut ctx = TestContext::new();
+    let setup = CreateDirectDistributionSetup::new(&mut ctx);
+
+    ctx.svm
+        .set_account(
+            setup.distribution_pda,
+            Account { lamports: 1, data: vec![], owner: SYSTEM_PROGRAM_ID, executable: false, rent_epoch: 0 },
+        )
+        .unwrap();
+
+    let instruction = setup.build_instruction(&ctx);
     instruction.send_expect_success(&mut ctx);
 
     assert_direct_distribution(

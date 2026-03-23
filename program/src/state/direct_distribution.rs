@@ -13,7 +13,7 @@ use crate::traits::{
     AccountParse, AccountSerialize, AccountSize, AccountValidation, Discriminator, Distribution, DistributionSigner,
     PdaAccount, PdaSeeds, RewardsAccountDiscriminators, Versioned,
 };
-use crate::{assert_no_padding, require_account_len, validate_discriminator};
+use crate::{assert_no_padding, require_account_len, validate_discriminator, validate_version};
 
 /// DirectDistribution account state
 ///
@@ -55,6 +55,7 @@ impl AccountParse for DirectDistribution {
     fn parse_from_bytes(data: &[u8]) -> Result<Self, ProgramError> {
         require_account_len!(data, Self::LEN);
         validate_discriminator!(data, Self::DISCRIMINATOR);
+        validate_version!(data, Self::VERSION);
 
         // Skip discriminator (byte 0) and version (byte 1)
         let data = &data[2..];
@@ -311,6 +312,16 @@ mod tests {
         let bytes = dist.to_bytes();
         let deserialized = DirectDistribution::parse_from_bytes(&bytes).unwrap();
         assert_eq!(deserialized.revocable, 1);
+    }
+
+    #[test]
+    fn test_parse_rejects_invalid_version() {
+        let dist = create_test_distribution();
+        let mut bytes = dist.to_bytes();
+        bytes[1] = DirectDistribution::VERSION + 1;
+
+        let result = DirectDistribution::parse_from_bytes(&bytes);
+        assert_eq!(result, Err(ProgramError::InvalidAccountData));
     }
 
     #[test]

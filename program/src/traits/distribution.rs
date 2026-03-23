@@ -33,6 +33,15 @@ pub trait Distribution: AccountParse + AccountSerialize + PdaAccount {
         Ok(())
     }
 
+    /// Validates that the provided mint matches the distribution mint
+    #[inline(always)]
+    fn validate_mint(&self, mint: &Address) -> Result<(), ProgramError> {
+        if self.mint() != mint {
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
+    }
+
     /// Adds to the total claimed amount with overflow checking
     #[inline(always)]
     fn add_claimed(&mut self, amount: u64) -> Result<(), ProgramError> {
@@ -64,6 +73,13 @@ mod tests {
         Ok(())
     }
 
+    fn test_validate_mint_impl(mint: &Address, check_mint: &Address) -> Result<(), ProgramError> {
+        if mint != check_mint {
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
+    }
+
     fn test_add_claimed_impl(current: u64, amount: u64) -> Result<u64, ProgramError> {
         current.checked_add(amount).ok_or(RewardsProgramError::MathOverflow.into())
     }
@@ -79,6 +95,19 @@ mod tests {
         let authority = Address::new_from_array([2u8; 32]);
         let wrong_authority = Address::new_from_array([99u8; 32]);
         assert!(test_validate_authority_impl(&authority, &wrong_authority).is_err());
+    }
+
+    #[test]
+    fn test_validate_mint_success() {
+        let mint = Address::new_from_array([3u8; 32]);
+        assert!(test_validate_mint_impl(&mint, &mint).is_ok());
+    }
+
+    #[test]
+    fn test_validate_mint_fail() {
+        let mint = Address::new_from_array([3u8; 32]);
+        let wrong_mint = Address::new_from_array([4u8; 32]);
+        assert!(test_validate_mint_impl(&mint, &wrong_mint).is_err());
     }
 
     #[test]

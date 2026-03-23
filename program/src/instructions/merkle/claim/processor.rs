@@ -26,6 +26,7 @@ pub fn process_claim_merkle(_program_id: &Address, accounts: &[AccountView], ins
     let distribution_data = ix.accounts.distribution.try_borrow()?;
     let mut distribution = MerkleDistribution::from_account(&distribution_data, ix.accounts.distribution, &ID)?;
     drop(distribution_data);
+    Distribution::validate_mint(&distribution, ix.accounts.mint.address())?;
 
     let schedule_bytes = ix.data.schedule.to_bytes();
     let leaf = compute_leaf_hash(ix.accounts.claimant.address(), ix.data.total_amount, &schedule_bytes);

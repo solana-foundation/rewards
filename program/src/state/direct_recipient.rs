@@ -14,7 +14,7 @@ use crate::traits::{
     RewardsAccountDiscriminators, Versioned, VestingParams, ACCOUNT_HEADER_SIZE,
 };
 use crate::utils::VestingSchedule;
-use crate::{require_account_len, validate_discriminator};
+use crate::{require_account_len, validate_discriminator, validate_version};
 
 /// DirectRecipient account state
 ///
@@ -57,6 +57,7 @@ impl AccountParse for DirectRecipient {
     fn parse_from_bytes(data: &[u8]) -> Result<Self, ProgramError> {
         require_account_len!(data, Self::LEN);
         validate_discriminator!(data, Self::DISCRIMINATOR);
+        validate_version!(data, Self::VERSION);
 
         // Skip discriminator (byte 0) and version (byte 1)
         let data = &data[2..];
@@ -363,6 +364,16 @@ mod tests {
         let deserialized = DirectRecipient::parse_from_bytes(&bytes).unwrap();
 
         assert_eq!(deserialized.schedule, schedule);
+    }
+
+    #[test]
+    fn test_parse_rejects_invalid_version() {
+        let recipient = create_test_recipient();
+        let mut bytes = recipient.to_bytes();
+        bytes[1] = DirectRecipient::VERSION + 1;
+
+        let result = DirectRecipient::parse_from_bytes(&bytes);
+        assert_eq!(result, Err(ProgramError::InvalidAccountData));
     }
 
     #[test]

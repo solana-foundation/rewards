@@ -7,7 +7,7 @@ use crate::traits::{
     AccountParse, AccountSerialize, AccountSize, AccountValidation, Discriminator, PdaSeeds,
     RewardsAccountDiscriminators, Versioned,
 };
-use crate::{require_account_len, validate_discriminator};
+use crate::{require_account_len, validate_discriminator, validate_version};
 
 /// Revocation account state
 ///
@@ -40,6 +40,7 @@ impl AccountParse for Revocation {
     fn parse_from_bytes(data: &[u8]) -> Result<Self, ProgramError> {
         require_account_len!(data, Self::LEN);
         validate_discriminator!(data, Self::DISCRIMINATOR);
+        validate_version!(data, Self::VERSION);
 
         // Skip discriminator (byte 0) and version (byte 1)
         let data = &data[2..];
@@ -152,6 +153,16 @@ mod tests {
         let deserialized = Revocation::parse_from_bytes(&bytes).unwrap();
 
         assert_eq!(deserialized.bump, revocation.bump);
+    }
+
+    #[test]
+    fn test_parse_rejects_invalid_version() {
+        let revocation = create_test_revocation();
+        let mut bytes = revocation.to_bytes();
+        bytes[1] = Revocation::VERSION + 1;
+
+        let result = Revocation::parse_from_bytes(&bytes);
+        assert_eq!(result, Err(ProgramError::InvalidAccountData));
     }
 
     #[test]

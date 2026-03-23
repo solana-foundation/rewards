@@ -22,6 +22,7 @@ pub fn process_close_direct_distribution(
     let distribution_data = ix.accounts.distribution.try_borrow()?;
     let distribution = DirectDistribution::from_account(&distribution_data, ix.accounts.distribution, &ID)?;
     distribution.validate_authority(ix.accounts.authority.address())?;
+    distribution.validate_mint(ix.accounts.mint.address())?;
 
     if distribution.clawback_ts != 0 {
         let current_ts = get_current_timestamp()?;

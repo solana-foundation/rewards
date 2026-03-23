@@ -1,4 +1,5 @@
-use solana_sdk::signer::Signer;
+use solana_sdk::{account::Account, signer::Signer};
+use solana_system_interface::program::ID as SYSTEM_PROGRAM_ID;
 
 use crate::fixtures::{CreateMerkleDistributionFixture, CreateMerkleDistributionSetup};
 use crate::utils::{
@@ -163,6 +164,32 @@ fn test_create_merkle_distribution_custom_clawback() {
     let custom_clawback = current_ts + 86400 * 30; // 30 days
 
     let setup = CreateMerkleDistributionSetup::builder(&mut ctx).clawback_ts(custom_clawback).build();
+
+    let instruction = setup.build_instruction(&ctx);
+    instruction.send_expect_success(&mut ctx);
+
+    assert_merkle_distribution(
+        &ctx,
+        &setup.distribution_pda,
+        &setup.authority.pubkey(),
+        &setup.mint.pubkey(),
+        &setup.merkle_root,
+        setup.total_amount,
+        setup.bump,
+    );
+}
+
+#[test]
+fn test_create_merkle_distribution_prefunded_distribution_pda() {
+    let mut ctx = TestContext::new();
+    let setup = CreateMerkleDistributionSetup::new(&mut ctx);
+
+    ctx.svm
+        .set_account(
+            setup.distribution_pda,
+            Account { lamports: 1, data: vec![], owner: SYSTEM_PROGRAM_ID, executable: false, rent_epoch: 0 },
+        )
+        .unwrap();
 
     let instruction = setup.build_instruction(&ctx);
     instruction.send_expect_success(&mut ctx);

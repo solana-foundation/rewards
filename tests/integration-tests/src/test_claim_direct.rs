@@ -1,11 +1,14 @@
-use solana_sdk::signature::Signer;
+use solana_sdk::{
+    instruction::InstructionError,
+    signature::{Keypair, Signer},
+};
 
 use rewards_program_client::types::VestingSchedule;
 
 use crate::fixtures::{ClaimDirectFixture, ClaimDirectSetup};
 use crate::utils::{
-    assert_direct_recipient, assert_rewards_error, expected_linear_unlock, test_empty_data, test_missing_signer,
-    test_not_writable, test_wrong_current_program, RewardsError, TestContext,
+    assert_direct_recipient, assert_instruction_error, assert_rewards_error, expected_linear_unlock, test_empty_data,
+    test_missing_signer, test_not_writable, test_wrong_current_program, RewardsError, TestContext,
 };
 
 #[test]
@@ -249,4 +252,31 @@ fn test_claim_direct_exceeds_claimable_amount() {
     let error = test_ix.send_expect_error(&mut ctx);
 
     assert_rewards_error(error, RewardsError::ExceedsClaimableAmount);
+}
+
+#[test]
+fn test_claim_direct_rejects_mint_mismatch() {
+    let mut ctx = TestContext::new();
+    let setup = ClaimDirectSetup::new(&mut ctx);
+
+    let wrong_mint = Keypair::new();
+    ctx.create_mint_for_program(&wrong_mint, &ctx.payer.pubkey(), 6, &setup.token_program);
+
+    let wrong_distribution_vault = ctx.create_ata_for_program_with_balance(
+        &setup.distribution_pda,
+        &wrong_mint.pubkey(),
+        setup.amount,
+        &setup.token_program,
+    );
+    let wrong_recipient_token_account =
+        ctx.create_ata_for_program(&setup.recipient.pubkey(), &wrong_mint.pubkey(), &setup.token_program);
+
+    let test_ix = setup
+        .build_instruction(&ctx)
+        .with_account_at(3, wrong_mint.pubkey())
+        .with_account_at(4, wrong_distribution_vault)
+        .with_account_at(5, wrong_recipient_token_account);
+
+    let error = test_ix.send_expect_error(&mut ctx);
+    assert_instruction_error(error, InstructionError::InvalidAccountData);
 }

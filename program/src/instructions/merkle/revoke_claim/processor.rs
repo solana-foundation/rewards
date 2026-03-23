@@ -34,6 +34,7 @@ pub fn process_revoke_merkle_claim(
     drop(distribution_data);
 
     distribution.validate_authority(ix.accounts.authority.address())?;
+    distribution.validate_mint(ix.accounts.mint.address())?;
 
     if ix.data.revoke_mode.is_disabled_by(distribution.revocable) {
         return Err(RewardsProgramError::DistributionNotRevocable.into());

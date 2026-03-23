@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 use pinocchio::{account::AccountView, error::ProgramError, Address};
 
-use crate::{require_len, validate_discriminator};
+use crate::{require_len, validate_discriminator, validate_version};
 
 pub const ACCOUNT_DISCRIMINATOR_SIZE: usize = 1;
 pub const ACCOUNT_VERSION_SIZE: usize = 1;
@@ -31,11 +31,12 @@ pub trait AccountSize: Discriminator + Versioned + Sized {
 
 /// Zero-copy account deserialization
 pub trait AccountDeserialize: AccountSize {
-    /// Zero-copy read from byte slice (validates discriminator, skips version)
+    /// Zero-copy read from byte slice (validates discriminator + version)
     #[inline(always)]
     fn from_bytes(data: &[u8]) -> Result<&Self, ProgramError> {
         require_len!(data, Self::LEN);
         validate_discriminator!(data, Self::DISCRIMINATOR);
+        validate_version!(data, Self::VERSION);
 
         // Skip discriminator (byte 0) and version (byte 1)
         unsafe { Self::from_bytes_unchecked(&data[2..]) }
@@ -59,6 +60,7 @@ pub trait AccountDeserialize: AccountSize {
     fn from_bytes_mut(data: &mut [u8]) -> Result<&mut Self, ProgramError> {
         require_len!(data, Self::LEN);
         validate_discriminator!(data, Self::DISCRIMINATOR);
+        validate_version!(data, Self::VERSION);
 
         // Skip discriminator (byte 0) and version (byte 1)
         unsafe { Self::from_bytes_mut_unchecked(&mut data[2..]) }
@@ -95,7 +97,7 @@ pub enum RewardsAccountDiscriminators {
 /// Use this for accounts where zero-copy deserialization isn't possible
 /// due to alignment constraints.
 pub trait AccountParse: AccountSize {
-    /// Parse account from bytes (validates discriminator, skips version)
+    /// Parse account from bytes (validates discriminator + version)
     fn parse_from_bytes(data: &[u8]) -> Result<Self, ProgramError>;
 }
 
@@ -257,6 +259,15 @@ mod tests {
     }
 
     #[test]
+    fn test_from_bytes_invalid_version() {
+        let account = TestAccount { bump: 100, data: [1u8; 32] };
+        let mut bytes = account.to_bytes();
+        bytes[1] = 99; // wrong version
+        let result = TestAccount::from_bytes(&bytes);
+        assert_eq!(result, Err(ProgramError::InvalidAccountData));
+    }
+
+    #[test]
     fn test_from_bytes_too_short() {
         let bytes = [0u8; 5];
         let result = TestAccount::from_bytes(&bytes);
@@ -275,6 +286,15 @@ mod tests {
         let account = TestAccount { bump: 100, data: [1u8; 32] };
         let mut bytes = account.to_bytes();
         bytes[0] = 99; // wrong discriminator
+        let result = TestAccount::from_bytes_mut(&mut bytes);
+        assert_eq!(result, Err(ProgramError::InvalidAccountData));
+    }
+
+    #[test]
+    fn test_from_bytes_mut_invalid_version() {
+        let account = TestAccount { bump: 100, data: [1u8; 32] };
+        let mut bytes = account.to_bytes();
+        bytes[1] = 99; // wrong version
         let result = TestAccount::from_bytes_mut(&mut bytes);
         assert_eq!(result, Err(ProgramError::InvalidAccountData));
     }

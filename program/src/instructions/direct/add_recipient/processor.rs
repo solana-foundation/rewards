@@ -25,6 +25,7 @@ pub fn process_add_direct_recipient(
     drop(distribution_data);
 
     Distribution::validate_authority(&distribution, ix.accounts.authority.address())?;
+    Distribution::validate_mint(&distribution, ix.accounts.mint.address())?;
 
     let new_total_allocated =
         distribution.total_allocated.checked_add(ix.data.amount).ok_or(RewardsProgramError::MathOverflow)?;
