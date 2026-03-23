@@ -661,6 +661,110 @@ pub enum RewardsProgramInstruction {
         proof: Vec<[u8; 32]>,
     } = 21,
 
+    /// Initialize a new points configuration.
+    /// Creates a points ledger where an authority can issue, use, and transfer points.
+    #[codama(account(name = "payer", signer, writable, docs = "Pays for account creation"))]
+    #[codama(account(name = "authority", signer, docs = "Points authority; stored on-chain"))]
+    #[codama(account(name = "seeds", signer, docs = "Arbitrary signer used as PDA seed for uniqueness"))]
+    #[codama(account(
+        name = "points_config",
+        writable,
+        docs = "PDA: [b\"points_config\", authority, seeds] (created)"
+    ))]
+    #[codama(account(name = "system_program", docs = "System program"))]
+    #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
+    #[codama(account(name = "rewards_program", docs = "This program's ID (for event CPI)"))]
+    InitPoints {
+        /// Bump for the points config PDA
+        bump: u8,
+        /// Whether points can be transferred between users (0 = no, 1 = yes)
+        transferable: u8,
+        /// Whether the authority can revoke user accounts (0 = no, 1 = yes)
+        revocable: u8,
+        /// Maximum supply of points (0 = unlimited)
+        max_supply: u64,
+    } = 22,
+
+    /// Issue points to a user. Creates user points account if needed.
+    #[codama(account(name = "payer", signer, writable, docs = "Pays for user account creation if needed"))]
+    #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
+    #[codama(account(name = "points_config", writable, docs = "PDA: PointsConfig account"))]
+    #[codama(account(name = "user", docs = "Wallet address of the user receiving points"))]
+    #[codama(account(
+        name = "user_points_account",
+        writable,
+        docs = "PDA: [b\"user_points\", points_config, user] (created or updated)"
+    ))]
+    #[codama(account(name = "system_program", docs = "System program"))]
+    #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
+    #[codama(account(name = "rewards_program", docs = "This program's ID"))]
+    IssuePoints {
+        /// Bump for the user points PDA
+        user_points_bump: u8,
+        /// Number of points to issue
+        quantity: u64,
+    } = 23,
+
+    /// Use (burn) points from a user. Requires both authority and user signatures.
+    #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
+    #[codama(account(name = "user", signer, docs = "User consenting to point usage"))]
+    #[codama(account(name = "points_config", writable, docs = "PDA: PointsConfig account"))]
+    #[codama(account(name = "user_points_account", writable, docs = "PDA: [b\"user_points\", points_config, user]"))]
+    #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
+    #[codama(account(name = "rewards_program", docs = "This program's ID"))]
+    UsePoints {
+        /// Number of points to use
+        quantity: u64,
+    } = 24,
+
+    /// Transfer points between users. Requires both authority and sender signatures.
+    #[codama(account(name = "payer", signer, writable, docs = "Pays for destination account creation if needed"))]
+    #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
+    #[codama(account(name = "from_user", signer, docs = "Sender consenting to transfer"))]
+    #[codama(account(name = "points_config", docs = "PDA: PointsConfig account; must have transferable=1"))]
+    #[codama(account(
+        name = "from_user_points",
+        writable,
+        docs = "PDA: [b\"user_points\", points_config, from_user]"
+    ))]
+    #[codama(account(name = "to_user", docs = "Wallet address of the recipient"))]
+    #[codama(account(
+        name = "to_user_points",
+        writable,
+        docs = "PDA: [b\"user_points\", points_config, to_user] (created or updated)"
+    ))]
+    #[codama(account(name = "system_program", docs = "System program"))]
+    #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
+    #[codama(account(name = "rewards_program", docs = "This program's ID"))]
+    TransferPoints {
+        /// Bump for the destination user points PDA
+        to_user_points_bump: u8,
+        /// Number of points to transfer
+        quantity: u64,
+    } = 25,
+
+    /// Close a user points account. Balance must be zero.
+    #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
+    #[codama(account(name = "points_config", docs = "PDA: PointsConfig account"))]
+    #[codama(account(name = "user", docs = "Wallet address of the user"))]
+    #[codama(account(
+        name = "user_points_account",
+        writable,
+        docs = "PDA: [b\"user_points\", points_config, user] (closed)"
+    ))]
+    #[codama(account(name = "destination", writable, docs = "Receives rent refund from closed account"))]
+    #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
+    #[codama(account(name = "rewards_program", docs = "This program's ID"))]
+    ClosePointsAccount {} = 26,
+
+    /// Close a points config. Authority can reclaim rent.
+    #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
+    #[codama(account(name = "points_config", writable, docs = "PDA: PointsConfig account (closed)"))]
+    #[codama(account(name = "destination", writable, docs = "Receives rent refund from closed account"))]
+    #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
+    #[codama(account(name = "rewards_program", docs = "This program's ID"))]
+    ClosePointsConfig {} = 27,
+
     /// Emit event data via CPI (prevents log truncation).
     #[codama(account(name = "event_authority", signer, docs = "PDA: [b\"__event_authority\"]; validates CPI caller"))]
     EmitEvent {} = 228,

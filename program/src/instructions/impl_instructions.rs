@@ -28,6 +28,14 @@ use super::merkle::{
     create_distribution::{CreateMerkleDistributionAccounts, CreateMerkleDistributionData},
     revoke_claim::{RevokeMerkleClaimAccounts, RevokeMerkleClaimData},
 };
+use super::points::{
+    close_points_account::{ClosePointsAccountAccounts, ClosePointsAccountData},
+    close_points_config::{ClosePointsConfigAccounts, ClosePointsConfigData},
+    init_points::{InitPointsAccounts, InitPointsData},
+    issue_points::{IssuePointsAccounts, IssuePointsData},
+    transfer_points::{TransferPointsAccounts, TransferPointsData},
+    use_points::{UsePointsAccounts, UsePointsData},
+};
 
 // Direct Distribution
 define_instruction!(AddDirectRecipient, AddDirectRecipientAccounts, AddDirectRecipientData);
@@ -56,3 +64,11 @@ define_instruction!(SyncContinuousBalance, SyncContinuousBalanceAccounts, SyncCo
 define_instruction!(SetContinuousBalance, SetContinuousBalanceAccounts, SetContinuousBalanceData);
 define_instruction!(CloseContinuousPool, CloseContinuousPoolAccounts, CloseContinuousPoolData);
 define_instruction!(RevokeContinuousUser, RevokeContinuousUserAccounts, RevokeContinuousUserData);
+
+// Points
+define_instruction!(InitPoints, InitPointsAccounts, InitPointsData);
+define_instruction!(IssuePoints, IssuePointsAccounts, IssuePointsData);
+define_instruction!(UsePoints, UsePointsAccounts, UsePointsData);
+define_instruction!(TransferPoints, TransferPointsAccounts, TransferPointsData);
+define_instruction!(ClosePointsAccount, ClosePointsAccountAccounts, ClosePointsAccountData);
+define_instruction!(ClosePointsConfig, ClosePointsConfigAccounts, ClosePointsConfigData);

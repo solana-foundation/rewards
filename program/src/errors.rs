@@ -144,6 +144,22 @@ pub enum RewardsProgramError {
     /// (34) This pool is configured for merkle claims
     #[error("This pool is configured for merkle claims")]
     ContinuousMerkleModeEnabled,
+
+    /// (35) Points max supply exceeded
+    #[error("Points max supply exceeded")]
+    PointsMaxSupplyExceeded,
+
+    /// (36) Insufficient points balance
+    #[error("Insufficient points balance")]
+    InsufficientPointsBalance,
+
+    /// (37) Points transfers not allowed for this config
+    #[error("Points transfers not allowed for this config")]
+    PointsTransfersDisabled,
+
+    /// (38) Points account balance not zero
+    #[error("Points account balance not zero")]
+    PointsBalanceNotZero,
 }
 
 impl From<RewardsProgramError> for ProgramError {

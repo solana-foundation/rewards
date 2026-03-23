@@ -19,6 +19,12 @@ pub enum EventDiscriminators {
     OptedOut = 8,
     BalanceSynced = 9,
     MerkleRootSet = 10,
+    PointsConfigCreated = 11,
+    PointsIssued = 12,
+    PointsUsed = 13,
+    PointsTransferred = 14,
+    PointsAccountClosed = 15,
+    PointsConfigClosed = 16,
 }
 
 /// Event discriminator with Anchor-compatible prefix

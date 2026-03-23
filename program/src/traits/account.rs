@@ -90,6 +90,8 @@ pub enum RewardsAccountDiscriminators {
     Revocation = 4,
     RewardPool = 5,
     UserRewardAccount = 6,
+    PointsConfig = 7,
+    UserPointsAccount = 8,
 }
 
 /// Manual account deserialization (non-zero-copy)

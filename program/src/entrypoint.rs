@@ -21,6 +21,11 @@ use crate::{
             close_distribution::process_close_merkle_distribution,
             create_distribution::process_create_merkle_distribution, revoke_claim::process_revoke_merkle_claim,
         },
+        points::{
+            close_points_account::process_close_points_account, close_points_config::process_close_points_config,
+            init_points::process_init_points, issue_points::process_issue_points,
+            transfer_points::process_transfer_points, use_points::process_use_points,
+        },
     },
     traits::RewardsInstructionDiscriminators,
 };
@@ -95,6 +100,18 @@ pub fn process_instruction(program_id: &Address, accounts: &[AccountView], instr
         }
         RewardsInstructionDiscriminators::ClaimContinuousMerkle => {
             process_claim_continuous_merkle(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::InitPoints => process_init_points(program_id, accounts, instruction_data),
+        RewardsInstructionDiscriminators::IssuePoints => process_issue_points(program_id, accounts, instruction_data),
+        RewardsInstructionDiscriminators::UsePoints => process_use_points(program_id, accounts, instruction_data),
+        RewardsInstructionDiscriminators::TransferPoints => {
+            process_transfer_points(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::ClosePointsAccount => {
+            process_close_points_account(program_id, accounts, instruction_data)
+        }
+        RewardsInstructionDiscriminators::ClosePointsConfig => {
+            process_close_points_config(program_id, accounts, instruction_data)
         }
         RewardsInstructionDiscriminators::EmitEvent => process_emit_event(program_id, accounts),
     }
