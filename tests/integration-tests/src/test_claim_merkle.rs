@@ -1,3 +1,4 @@
+use solana_sdk::instruction::InstructionError;
 use solana_sdk::signature::Signer;
 
 use rewards_program_client::types::VestingSchedule;
@@ -5,7 +6,7 @@ use rewards_program_client::types::VestingSchedule;
 use crate::fixtures::{ClaimMerkleFixture, ClaimMerkleSetup};
 use crate::utils::{
     assert_merkle_claim, assert_rewards_error, expected_linear_unlock, test_missing_signer, test_not_writable,
-    test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext,
+    test_wrong_account, test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext,
 };
 
 #[test]
@@ -48,6 +49,12 @@ fn test_claim_merkle_wrong_system_program() {
 fn test_claim_merkle_wrong_current_program() {
     let mut ctx = TestContext::new();
     test_wrong_current_program::<ClaimMerkleFixture>(&mut ctx);
+}
+
+#[test]
+fn test_claim_merkle_wrong_revocation_pda() {
+    let mut ctx = TestContext::new();
+    test_wrong_account::<ClaimMerkleFixture>(&mut ctx, 4, InstructionError::InvalidSeeds);
 }
 
 #[test]

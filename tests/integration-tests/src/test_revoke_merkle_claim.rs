@@ -1,10 +1,11 @@
 use rewards_program_client::accounts::MerkleDistribution;
 use rewards_program_client::types::{RevokeMode, VestingSchedule};
+use solana_sdk::instruction::InstructionError;
 
 use crate::fixtures::{RevokeMerkleClaimFixture, RevokeMerkleClaimSetup};
 use crate::utils::{
     assert_rewards_error, expected_linear_unlock, test_empty_data, test_missing_signer, test_not_writable,
-    test_wrong_current_program, RewardsError, TestContext, PROGRAM_ID,
+    test_wrong_account, test_wrong_current_program, RewardsError, TestContext, PROGRAM_ID,
 };
 
 // ── Generic fixture tests ──────────────────────────────────────────
@@ -55,6 +56,18 @@ fn test_revoke_merkle_wrong_current_program() {
 fn test_revoke_merkle_empty_data() {
     let mut ctx = TestContext::new();
     test_empty_data::<RevokeMerkleClaimFixture>(&mut ctx);
+}
+
+#[test]
+fn test_revoke_merkle_wrong_claim_pda() {
+    let mut ctx = TestContext::new();
+    test_wrong_account::<RevokeMerkleClaimFixture>(&mut ctx, 3, InstructionError::InvalidSeeds);
+}
+
+#[test]
+fn test_revoke_merkle_wrong_revocation_pda() {
+    let mut ctx = TestContext::new();
+    test_wrong_account::<RevokeMerkleClaimFixture>(&mut ctx, 4, InstructionError::InvalidSeeds);
 }
 
 // ── Error paths ────────────────────────────────────────────────────
