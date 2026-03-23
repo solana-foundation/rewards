@@ -1,7 +1,7 @@
 use rewards_program_client::accounts::{DirectDistribution, DirectRecipient, MerkleClaim, MerkleDistribution};
 use solana_sdk::{instruction::InstructionError, pubkey::Pubkey, transaction::TransactionError};
 
-use crate::utils::{get_reward_pool, TestContext, PROGRAM_ID};
+use crate::utils::{get_points_config, get_reward_pool, get_user_points_account, TestContext, PROGRAM_ID};
 
 pub use rewards_program_client::errors::RewardsProgramError as RewardsError;
 
@@ -108,6 +108,34 @@ pub fn assert_merkle_claim(ctx: &TestContext, claim_pda: &Pubkey, expected_claim
 
     assert_eq!(data.bump, expected_bump);
     assert_eq!(data.claimed_amount, expected_claimed_amount);
+}
+
+pub struct ExpectedPointsConfig<'a> {
+    pub authority: &'a Pubkey,
+    pub seed: &'a Pubkey,
+    pub bump: u8,
+    pub transferable: u8,
+    pub revocable: u8,
+    pub max_supply: u64,
+    pub total_issued: u64,
+    pub total_used: u64,
+}
+
+pub fn assert_points_config(ctx: &TestContext, config_pda: &Pubkey, expected: &ExpectedPointsConfig) {
+    let data = get_points_config(ctx, config_pda);
+    assert_eq!(data.bump, expected.bump);
+    assert_eq!(data.authority, *expected.authority);
+    assert_eq!(data.seed, *expected.seed);
+    assert_eq!(data.transferable, expected.transferable);
+    assert_eq!(data.revocable, expected.revocable);
+    assert_eq!(data.max_supply, expected.max_supply);
+    assert_eq!(data.total_issued, expected.total_issued);
+    assert_eq!(data.total_used, expected.total_used);
+}
+
+pub fn assert_user_points_balance(ctx: &TestContext, user_points_pda: &Pubkey, expected_balance: u64) {
+    let data = get_user_points_account(ctx, user_points_pda);
+    assert_eq!(data.balance, expected_balance);
 }
 
 pub fn assert_reward_pool(
