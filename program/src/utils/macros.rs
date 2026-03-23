@@ -49,6 +49,23 @@ macro_rules! validate_discriminator {
     };
 }
 
+/// Validate the version byte of an account header.
+///
+/// # Arguments
+/// * `data` - The account data including discriminator + version prefix.
+/// * `version` - The expected version byte.
+///
+/// # Returns
+/// * `Result<(), ProgramError>` - The result of the operation
+#[macro_export]
+macro_rules! validate_version {
+    ($data:expr, $version:expr) => {
+        if $data.len() < 2 || $data[1] != $version {
+            return Err(ProgramError::InvalidAccountData);
+        }
+    };
+}
+
 /// Compile-time assertion that a struct has no implicit padding.
 /// Use this for zero-copy structs to ensure memory layout matches serialized format.
 ///
@@ -135,6 +152,11 @@ mod tests {
         Ok(())
     }
 
+    fn test_validate_version(data: &[u8], version: u8) -> Result<(), ProgramError> {
+        validate_version!(data, version);
+        Ok(())
+    }
+
     #[test]
     fn test_require_len_success() {
         let data = [1, 2, 3, 4, 5];
@@ -167,6 +189,26 @@ mod tests {
     fn test_validate_discriminator_empty() {
         let data: [u8; 0] = [];
         let result = test_validate_discriminator(&data, 0);
+        assert_eq!(result, Err(ProgramError::InvalidAccountData));
+    }
+
+    #[test]
+    fn test_validate_version_success() {
+        let data = [42u8, 1, 2, 3];
+        assert!(test_validate_version(&data, 1).is_ok());
+    }
+
+    #[test]
+    fn test_validate_version_mismatch() {
+        let data = [42u8, 2, 3, 4];
+        let result = test_validate_version(&data, 1);
+        assert_eq!(result, Err(ProgramError::InvalidAccountData));
+    }
+
+    #[test]
+    fn test_validate_version_too_short() {
+        let data = [42u8];
+        let result = test_validate_version(&data, 1);
         assert_eq!(result, Err(ProgramError::InvalidAccountData));
     }
 

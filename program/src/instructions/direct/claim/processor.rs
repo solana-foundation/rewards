@@ -19,6 +19,7 @@ pub fn process_claim_direct(_program_id: &Address, accounts: &[AccountView], ins
     let distribution_data = ix.accounts.distribution.try_borrow()?;
     let mut distribution = DirectDistribution::from_account(&distribution_data, ix.accounts.distribution, &ID)?;
     drop(distribution_data);
+    Distribution::validate_mint(&distribution, ix.accounts.mint.address())?;
 
     let recipient_data = ix.accounts.recipient_account.try_borrow()?;
     let mut recipient = DirectRecipient::from_account(&recipient_data, ix.accounts.recipient_account, &ID)?;

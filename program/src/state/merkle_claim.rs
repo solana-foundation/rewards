@@ -13,7 +13,7 @@ use crate::traits::{
     AccountParse, AccountSerialize, AccountSize, AccountValidation, ClaimTracker, Discriminator, PdaSeeds,
     RewardsAccountDiscriminators, Versioned,
 };
-use crate::{assert_no_padding, require_account_len, validate_discriminator};
+use crate::{assert_no_padding, require_account_len, validate_discriminator, validate_version};
 
 /// MerkleClaim account state
 ///
@@ -48,6 +48,7 @@ impl AccountParse for MerkleClaim {
     fn parse_from_bytes(data: &[u8]) -> Result<Self, ProgramError> {
         require_account_len!(data, Self::LEN);
         validate_discriminator!(data, Self::DISCRIMINATOR);
+        validate_version!(data, Self::VERSION);
 
         // Skip discriminator (byte 0) and version (byte 1)
         let data = &data[2..];
@@ -203,6 +204,16 @@ mod tests {
 
         assert_eq!(deserialized.bump, claim.bump);
         assert_eq!(deserialized.claimed_amount, claim.claimed_amount);
+    }
+
+    #[test]
+    fn test_parse_rejects_invalid_version() {
+        let claim = create_test_claim();
+        let mut bytes = claim.to_bytes();
+        bytes[1] = MerkleClaim::VERSION + 1;
+
+        let result = MerkleClaim::parse_from_bytes(&bytes);
+        assert_eq!(result, Err(ProgramError::InvalidAccountData));
     }
 
     #[test]

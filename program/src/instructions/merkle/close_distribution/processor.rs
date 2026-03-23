@@ -28,6 +28,7 @@ pub fn process_close_merkle_distribution(
 
     // Validate authority
     distribution.validate_authority(ix.accounts.authority.address())?;
+    distribution.validate_mint(ix.accounts.mint.address())?;
 
     // Validate clawback timestamp has been reached
     if current_ts < distribution.clawback_ts {

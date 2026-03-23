@@ -49,7 +49,10 @@ pub fn close_pda_account(pda_account: &AccountView, recipient: &AccountView) -> 
 
 /// Create a PDA account for the given seeds.
 ///
-/// Will return an error if the account already exists (has lamports).
+/// Supports pre-funded, system-owned PDA addresses with zero data by
+/// completing initialization via transfer + allocate + assign.
+///
+/// Returns `AccountAlreadyInitialized` for non-system or data-bearing accounts.
 pub fn create_pda_account<const N: usize>(
     payer: &AccountView,
     space: usize,
@@ -64,12 +67,24 @@ pub fn create_pda_account<const N: usize>(
 
     let signers = [Signer::from(&pda_signer_seeds)];
 
-    if pda_account.lamports() > 0 {
-        Err(ProgramError::AccountAlreadyInitialized)
-    } else {
-        CreateAccount { from: payer, to: pda_account, lamports: required_lamports, space: space as u64, owner }
-            .invoke_signed(&signers)
+    if pda_account.lamports() == 0 {
+        return CreateAccount { from: payer, to: pda_account, lamports: required_lamports, space: space as u64, owner }
+            .invoke_signed(&signers);
     }
+
+    // Only permit the pre-funded edge case on a still-uninitialized system account.
+    if !is_pda_uninitialized(pda_account) || pda_account.data_len() != 0 {
+        return Err(ProgramError::AccountAlreadyInitialized);
+    }
+
+    let additional_lamports = required_lamports.saturating_sub(pda_account.lamports());
+    if additional_lamports > 0 {
+        Transfer { from: payer, to: pda_account, lamports: additional_lamports }.invoke()?;
+    }
+
+    Allocate { account: pda_account, space: space as u64 }.invoke_signed(&signers)?;
+    Assign { account: pda_account, owner }.invoke_signed(&signers)?;
+    Ok(())
 }
 
 /// Create a PDA account idempotently for the given seeds.

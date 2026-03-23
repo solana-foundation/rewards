@@ -1,11 +1,13 @@
-use solana_sdk::signature::Signer;
+use solana_sdk::instruction::InstructionError;
+use solana_sdk::signature::{Keypair, Signer};
 
 use rewards_program_client::types::VestingSchedule;
 
 use crate::fixtures::{ClaimMerkleFixture, ClaimMerkleSetup};
 use crate::utils::{
-    assert_merkle_claim, assert_rewards_error, expected_linear_unlock, test_missing_signer, test_not_writable,
-    test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext,
+    assert_instruction_error, assert_merkle_claim, assert_rewards_error, expected_linear_unlock, test_missing_signer,
+    test_not_writable, test_wrong_account, test_wrong_current_program, test_wrong_system_program, RewardsError,
+    TestContext,
 };
 
 #[test]
@@ -48,6 +50,12 @@ fn test_claim_merkle_wrong_system_program() {
 fn test_claim_merkle_wrong_current_program() {
     let mut ctx = TestContext::new();
     test_wrong_current_program::<ClaimMerkleFixture>(&mut ctx);
+}
+
+#[test]
+fn test_claim_merkle_wrong_revocation_pda() {
+    let mut ctx = TestContext::new();
+    test_wrong_account::<ClaimMerkleFixture>(&mut ctx, 4, InstructionError::InvalidSeeds);
 }
 
 #[test]
@@ -290,4 +298,31 @@ fn test_claim_merkle_reclaim_after_full_claim_fails() {
     let instruction2 = setup.build_instruction(&ctx);
     let error = instruction2.send_expect_error(&mut ctx);
     assert_rewards_error(error, RewardsError::NothingToClaim);
+}
+
+#[test]
+fn test_claim_merkle_rejects_mint_mismatch() {
+    let mut ctx = TestContext::new();
+    let setup = ClaimMerkleSetup::new(&mut ctx);
+
+    let wrong_mint = Keypair::new();
+    ctx.create_mint_for_program(&wrong_mint, &ctx.payer.pubkey(), 6, &setup.token_program);
+
+    let wrong_distribution_vault = ctx.create_ata_for_program_with_balance(
+        &setup.distribution_pda,
+        &wrong_mint.pubkey(),
+        setup.total_amount,
+        &setup.token_program,
+    );
+    let wrong_claimant_token_account =
+        ctx.create_ata_for_program(&setup.claimant.pubkey(), &wrong_mint.pubkey(), &setup.token_program);
+
+    let instruction = setup
+        .build_instruction(&ctx)
+        .with_account_at(5, wrong_mint.pubkey())
+        .with_account_at(6, wrong_distribution_vault)
+        .with_account_at(7, wrong_claimant_token_account);
+
+    let error = instruction.send_expect_error(&mut ctx);
+    assert_instruction_error(error, InstructionError::InvalidAccountData);
 }
