@@ -29,6 +29,10 @@ check:
     pnpm run format:check
     pnpm lint
 
+# TypeScript type checking across all workspaces
+typecheck:
+    pnpm -r run typecheck
+
 # Run unit tests
 unit-test:
     cargo test -p rewards-program
