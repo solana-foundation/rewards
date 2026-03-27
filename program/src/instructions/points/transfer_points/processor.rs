@@ -77,10 +77,8 @@ pub fn process_transfer_points(
     };
 
     // Transfer balances
-    from_account.balance =
-        from_account.balance.checked_sub(ix.data.quantity).ok_or(RewardsProgramError::MathOverflow)?;
-
-    to_account.balance = to_account.balance.checked_add(ix.data.quantity).ok_or(RewardsProgramError::MathOverflow)?;
+    from_account.sub_balance(ix.data.quantity)?;
+    to_account.add_balance(ix.data.quantity)?;
 
     // Write updated state
     let mut from_account_data = ix.accounts.from_user_points.try_borrow_mut()?;

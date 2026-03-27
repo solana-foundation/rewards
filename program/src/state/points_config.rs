@@ -150,6 +150,18 @@ impl PointsConfig {
     }
 
     #[inline(always)]
+    pub fn add_issued(&mut self, amount: u64) -> Result<(), ProgramError> {
+        self.total_issued = self.total_issued.checked_add(amount).ok_or(RewardsProgramError::MathOverflow)?;
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn add_used(&mut self, amount: u64) -> Result<(), ProgramError> {
+        self.total_used = self.total_used.checked_add(amount).ok_or(RewardsProgramError::MathOverflow)?;
+        Ok(())
+    }
+
+    #[inline(always)]
     pub fn validate_authority(&self, authority: &Address) -> Result<(), ProgramError> {
         if &self.authority != authority {
             return Err(RewardsProgramError::UnauthorizedAuthority.into());

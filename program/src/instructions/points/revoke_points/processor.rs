@@ -1,7 +1,6 @@
 use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
-    errors::RewardsProgramError,
     events::PointsRevokedEvent,
     state::{PointsConfig, UserPointsAccount},
     traits::{AccountSerialize, EventSerialize},
@@ -41,7 +40,7 @@ pub fn process_revoke_points(
 
     // Count revoked points as used
     if revoked_balance > 0 {
-        config.total_used = config.total_used.checked_add(revoked_balance).ok_or(RewardsProgramError::MathOverflow)?;
+        config.add_used(revoked_balance)?;
 
         let mut config_data = ix.accounts.points_config.try_borrow_mut()?;
         config.write_to_slice(&mut config_data)?;

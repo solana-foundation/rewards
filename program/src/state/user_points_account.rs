@@ -109,6 +109,18 @@ impl UserPointsAccount {
     }
 
     #[inline(always)]
+    pub fn add_balance(&mut self, amount: u64) -> Result<(), ProgramError> {
+        self.balance = self.balance.checked_add(amount).ok_or(RewardsProgramError::MathOverflow)?;
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn sub_balance(&mut self, amount: u64) -> Result<(), ProgramError> {
+        self.balance = self.balance.checked_sub(amount).ok_or(RewardsProgramError::MathOverflow)?;
+        Ok(())
+    }
+
+    #[inline(always)]
     pub fn validate_balance(&self, amount: u64) -> Result<(), ProgramError> {
         if self.balance < amount {
             return Err(RewardsProgramError::InsufficientPointsBalance.into());

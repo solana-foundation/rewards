@@ -1,7 +1,6 @@
 use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
-    errors::RewardsProgramError,
     events::PointsUsedEvent,
     state::{PointsConfig, UserPointsAccount},
     traits::{AccountSerialize, EventSerialize, InstructionData},
@@ -37,10 +36,8 @@ pub fn process_use_points(_program_id: &Address, accounts: &[AccountView], instr
     user_account.validate_balance(ix.data.quantity)?;
 
     // Update balances
-    user_account.balance =
-        user_account.balance.checked_sub(ix.data.quantity).ok_or(RewardsProgramError::MathOverflow)?;
-
-    config.total_used = config.total_used.checked_add(ix.data.quantity).ok_or(RewardsProgramError::MathOverflow)?;
+    user_account.sub_balance(ix.data.quantity)?;
+    config.add_used(ix.data.quantity)?;
 
     // Write updated state
     let mut user_account_data = ix.accounts.user_points_account.try_borrow_mut()?;
