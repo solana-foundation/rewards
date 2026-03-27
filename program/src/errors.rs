@@ -164,6 +164,10 @@ pub enum RewardsProgramError {
     /// (39) Points config is not revocable
     #[error("Points config is not revocable")]
     PointsNotRevocable,
+
+    /// (40) Cannot transfer points to the same user
+    #[error("Cannot transfer points to the same user")]
+    PointsSelfTransferNotAllowed,
 }
 
 impl From<RewardsProgramError> for ProgramError {

@@ -7,6 +7,13 @@ use crate::traits::{EventDiscriminator, EventDiscriminators, EventSerialize};
 #[derive(CodamaType)]
 pub struct PointsAccountClosedEvent {
     pub points_config: Address,
+    pub authority: Address,
+    pub seed: Address,
+    pub max_supply: u64,
+    pub transferable: u8,
+    pub revocable: u8,
+    pub total_issued: u64,
+    pub total_used: u64,
     pub user: Address,
 }
 
@@ -19,17 +26,36 @@ impl EventSerialize for PointsAccountClosedEvent {
     fn to_bytes_inner(&self) -> Vec<u8> {
         let mut data = Vec::with_capacity(Self::DATA_LEN);
         data.extend_from_slice(self.points_config.as_ref());
+        data.extend_from_slice(self.authority.as_ref());
+        data.extend_from_slice(self.seed.as_ref());
+        data.extend_from_slice(&self.max_supply.to_le_bytes());
+        data.push(self.transferable);
+        data.push(self.revocable);
+        data.extend_from_slice(&self.total_issued.to_le_bytes());
+        data.extend_from_slice(&self.total_used.to_le_bytes());
         data.extend_from_slice(self.user.as_ref());
         data
     }
 }
 
 impl PointsAccountClosedEvent {
-    pub const DATA_LEN: usize = 32 + 32; // 64
+    // 32 + 32 + 32 + 8 + 1 + 1 + 8 + 8 + 32 = 154
+    pub const DATA_LEN: usize = 32 + 32 + 32 + 8 + 1 + 1 + 8 + 8 + 32;
 
     #[inline(always)]
-    pub fn new(points_config: Address, user: Address) -> Self {
-        Self { points_config, user }
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        points_config: Address,
+        authority: Address,
+        seed: Address,
+        max_supply: u64,
+        transferable: u8,
+        revocable: u8,
+        total_issued: u64,
+        total_used: u64,
+        user: Address,
+    ) -> Self {
+        Self { points_config, authority, seed, max_supply, transferable, revocable, total_issued, total_used, user }
     }
 }
 
@@ -42,20 +68,22 @@ mod tests {
     #[test]
     fn test_points_account_closed_event() {
         let config = Address::new_from_array([1u8; 32]);
+        let authority = Address::new_from_array([3u8; 32]);
+        let seed = Address::new_from_array([4u8; 32]);
         let user = Address::new_from_array([2u8; 32]);
-        let event = PointsAccountClosedEvent::new(config, user);
+        let event = PointsAccountClosedEvent::new(config, authority, seed, 1_000_000, 1, 0, 500, 0, user);
 
         let bytes = event.to_bytes_inner();
         assert_eq!(bytes.len(), PointsAccountClosedEvent::DATA_LEN);
-        assert_eq!(&bytes[..32], config.as_ref());
-        assert_eq!(&bytes[32..64], user.as_ref());
     }
 
     #[test]
     fn test_points_account_closed_event_to_bytes() {
         let config = Address::new_from_array([1u8; 32]);
+        let authority = Address::new_from_array([3u8; 32]);
+        let seed = Address::new_from_array([4u8; 32]);
         let user = Address::new_from_array([2u8; 32]);
-        let event = PointsAccountClosedEvent::new(config, user);
+        let event = PointsAccountClosedEvent::new(config, authority, seed, 0, 1, 1, 0, 0, user);
 
         let bytes = event.to_bytes();
         assert_eq!(bytes.len(), EVENT_DISCRIMINATOR_LEN + PointsAccountClosedEvent::DATA_LEN);

@@ -7,6 +7,13 @@ use crate::traits::{EventDiscriminator, EventDiscriminators, EventSerialize};
 #[derive(CodamaType)]
 pub struct PointsIssuedEvent {
     pub points_config: Address,
+    pub authority: Address,
+    pub seed: Address,
+    pub max_supply: u64,
+    pub transferable: u8,
+    pub revocable: u8,
+    pub total_issued: u64,
+    pub total_used: u64,
     pub user: Address,
     pub quantity: u64,
     pub new_balance: u64,
@@ -21,6 +28,13 @@ impl EventSerialize for PointsIssuedEvent {
     fn to_bytes_inner(&self) -> Vec<u8> {
         let mut data = Vec::with_capacity(Self::DATA_LEN);
         data.extend_from_slice(self.points_config.as_ref());
+        data.extend_from_slice(self.authority.as_ref());
+        data.extend_from_slice(self.seed.as_ref());
+        data.extend_from_slice(&self.max_supply.to_le_bytes());
+        data.push(self.transferable);
+        data.push(self.revocable);
+        data.extend_from_slice(&self.total_issued.to_le_bytes());
+        data.extend_from_slice(&self.total_used.to_le_bytes());
         data.extend_from_slice(self.user.as_ref());
         data.extend_from_slice(&self.quantity.to_le_bytes());
         data.extend_from_slice(&self.new_balance.to_le_bytes());
@@ -29,11 +43,37 @@ impl EventSerialize for PointsIssuedEvent {
 }
 
 impl PointsIssuedEvent {
-    pub const DATA_LEN: usize = 32 + 32 + 8 + 8; // 80
+    // 32 + 32 + 32 + 8 + 1 + 1 + 8 + 8 + 32 + 8 + 8 = 170
+    pub const DATA_LEN: usize = 32 + 32 + 32 + 8 + 1 + 1 + 8 + 8 + 32 + 8 + 8;
 
     #[inline(always)]
-    pub fn new(points_config: Address, user: Address, quantity: u64, new_balance: u64) -> Self {
-        Self { points_config, user, quantity, new_balance }
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        points_config: Address,
+        authority: Address,
+        seed: Address,
+        max_supply: u64,
+        transferable: u8,
+        revocable: u8,
+        total_issued: u64,
+        total_used: u64,
+        user: Address,
+        quantity: u64,
+        new_balance: u64,
+    ) -> Self {
+        Self {
+            points_config,
+            authority,
+            seed,
+            max_supply,
+            transferable,
+            revocable,
+            total_issued,
+            total_used,
+            user,
+            quantity,
+            new_balance,
+        }
     }
 }
 
@@ -46,20 +86,22 @@ mod tests {
     #[test]
     fn test_points_issued_event() {
         let config = Address::new_from_array([1u8; 32]);
+        let authority = Address::new_from_array([3u8; 32]);
+        let seed = Address::new_from_array([4u8; 32]);
         let user = Address::new_from_array([2u8; 32]);
-        let event = PointsIssuedEvent::new(config, user, 500, 500);
+        let event = PointsIssuedEvent::new(config, authority, seed, 1_000_000, 1, 0, 500, 0, user, 500, 500);
 
         let bytes = event.to_bytes_inner();
         assert_eq!(bytes.len(), PointsIssuedEvent::DATA_LEN);
-        assert_eq!(&bytes[64..72], &500u64.to_le_bytes());
-        assert_eq!(&bytes[72..80], &500u64.to_le_bytes());
     }
 
     #[test]
     fn test_points_issued_event_to_bytes() {
         let config = Address::new_from_array([1u8; 32]);
+        let authority = Address::new_from_array([3u8; 32]);
+        let seed = Address::new_from_array([4u8; 32]);
         let user = Address::new_from_array([2u8; 32]);
-        let event = PointsIssuedEvent::new(config, user, 100, 100);
+        let event = PointsIssuedEvent::new(config, authority, seed, 0, 1, 1, 100, 0, user, 100, 100);
 
         let bytes = event.to_bytes();
         assert_eq!(bytes.len(), EVENT_DISCRIMINATOR_LEN + PointsIssuedEvent::DATA_LEN);

@@ -53,6 +53,13 @@ pub fn process_use_points(_program_id: &Address, accounts: &[AccountView], instr
 
     let event = PointsUsedEvent::new(
         *ix.accounts.points_config.address(),
+        config.authority,
+        config.seed,
+        config.max_supply,
+        config.transferable,
+        config.revocable,
+        config.total_issued,
+        config.total_used,
         *ix.accounts.user.address(),
         ix.data.quantity,
         user_account.balance,

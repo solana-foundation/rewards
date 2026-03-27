@@ -69,6 +69,13 @@ pub fn process_issue_points(_program_id: &Address, accounts: &[AccountView], ins
 
     let event = PointsIssuedEvent::new(
         *ix.accounts.points_config.address(),
+        config.authority,
+        config.seed,
+        config.max_supply,
+        config.transferable,
+        config.revocable,
+        config.total_issued,
+        config.total_used,
         *ix.accounts.user.address(),
         ix.data.quantity,
         user_account.balance,

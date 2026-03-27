@@ -110,27 +110,28 @@ pub fn assert_merkle_claim(ctx: &TestContext, claim_pda: &Pubkey, expected_claim
     assert_eq!(data.claimed_amount, expected_claimed_amount);
 }
 
-pub struct ExpectedPointsConfig<'a> {
-    pub authority: &'a Pubkey,
-    pub seed: &'a Pubkey,
-    pub bump: u8,
-    pub transferable: u8,
-    pub revocable: u8,
-    pub max_supply: u64,
-    pub total_issued: u64,
-    pub total_used: u64,
-}
-
-pub fn assert_points_config(ctx: &TestContext, config_pda: &Pubkey, expected: &ExpectedPointsConfig) {
+#[allow(clippy::too_many_arguments)]
+pub fn assert_points_config(
+    ctx: &TestContext,
+    config_pda: &Pubkey,
+    expected_authority: &Pubkey,
+    expected_seed: &Pubkey,
+    expected_bump: u8,
+    expected_transferable: u8,
+    expected_revocable: u8,
+    expected_max_supply: u64,
+    expected_total_issued: u64,
+    expected_total_used: u64,
+) {
     let data = get_points_config(ctx, config_pda);
-    assert_eq!(data.bump, expected.bump);
-    assert_eq!(data.authority, *expected.authority);
-    assert_eq!(data.seed, *expected.seed);
-    assert_eq!(data.transferable, expected.transferable);
-    assert_eq!(data.revocable, expected.revocable);
-    assert_eq!(data.max_supply, expected.max_supply);
-    assert_eq!(data.total_issued, expected.total_issued);
-    assert_eq!(data.total_used, expected.total_used);
+    assert_eq!(data.bump, expected_bump);
+    assert_eq!(data.authority, *expected_authority);
+    assert_eq!(data.seed, *expected_seed);
+    assert_eq!(data.transferable, expected_transferable);
+    assert_eq!(data.revocable, expected_revocable);
+    assert_eq!(data.max_supply, expected_max_supply);
+    assert_eq!(data.total_issued, expected_total_issued);
+    assert_eq!(data.total_used, expected_total_used);
 }
 
 pub fn assert_user_points_balance(ctx: &TestContext, user_points_pda: &Pubkey, expected_balance: u64) {

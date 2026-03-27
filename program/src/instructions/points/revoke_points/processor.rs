@@ -51,8 +51,18 @@ pub fn process_revoke_points(
     // Close user account, return rent to destination
     close_pda_account(ix.accounts.user_points_account, ix.accounts.destination)?;
 
-    let event =
-        PointsRevokedEvent::new(*ix.accounts.points_config.address(), *ix.accounts.user.address(), revoked_balance);
+    let event = PointsRevokedEvent::new(
+        *ix.accounts.points_config.address(),
+        config.authority,
+        config.seed,
+        config.max_supply,
+        config.transferable,
+        config.revocable,
+        config.total_issued,
+        config.total_used,
+        *ix.accounts.user.address(),
+        revoked_balance,
+    );
     emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;
 
     Ok(())

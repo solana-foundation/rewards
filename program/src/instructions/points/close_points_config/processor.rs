@@ -27,7 +27,16 @@ pub fn process_close_points_config(
     // to close the config at any time. Use revoke_points to clean up user accounts first.
     close_pda_account(ix.accounts.points_config, ix.accounts.destination)?;
 
-    let event = PointsConfigClosedEvent::new(*ix.accounts.points_config.address());
+    let event = PointsConfigClosedEvent::new(
+        *ix.accounts.points_config.address(),
+        config.authority,
+        config.seed,
+        config.max_supply,
+        config.transferable,
+        config.revocable,
+        config.total_issued,
+        config.total_used,
+    );
     emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;
 
     Ok(())

@@ -27,6 +27,12 @@ pub fn process_transfer_points(
     config.validate_authority(ix.accounts.authority.address())?;
     config.validate_transferable()?;
 
+    // Prevent self-transfers — writing from_account then to_account to the same
+    // underlying account would silently clobber the first write.
+    if ix.accounts.from_user.address() == ix.accounts.to_user.address() {
+        return Err(RewardsProgramError::PointsSelfTransferNotAllowed.into());
+    }
+
     // Validate from_user points PDA
     let from_seeds = UserPointsAccountSeeds {
         points_config: *ix.accounts.points_config.address(),
@@ -87,6 +93,13 @@ pub fn process_transfer_points(
 
     let event = PointsTransferredEvent::new(
         *ix.accounts.points_config.address(),
+        config.authority,
+        config.seed,
+        config.max_supply,
+        config.transferable,
+        config.revocable,
+        config.total_issued,
+        config.total_used,
         *ix.accounts.from_user.address(),
         *ix.accounts.to_user.address(),
         ix.data.quantity,

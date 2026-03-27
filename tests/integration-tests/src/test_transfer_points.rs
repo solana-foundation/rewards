@@ -198,3 +198,28 @@ fn test_transfer_points_from_user_pda_mismatch() {
     // PDA doesn't exist on-chain, so ownership check fires before PDA derivation
     assert_instruction_error(error, InstructionError::InvalidAccountOwner);
 }
+
+#[test]
+fn test_transfer_points_self_transfer() {
+    let mut ctx = TestContext::new();
+    let setup = TransferPointsSetup::new(&mut ctx);
+
+    // Derive the correct bump for from_user's points PDA
+    let (_, from_bump) = find_user_points_pda(&setup.points_config_pda, &setup.from_user.pubkey());
+
+    // Attempt transfer where from_user == to_user
+    let self_transfer = TransferPointsSetup {
+        authority: setup.authority,
+        from_user: setup.from_user.insecure_clone(),
+        to_user: setup.from_user.pubkey(),
+        points_config_pda: setup.points_config_pda,
+        from_user_points_pda: setup.from_user_points_pda,
+        to_user_points_pda: setup.from_user_points_pda,
+        to_user_points_bump: from_bump,
+        quantity: setup.quantity,
+        issued_quantity: setup.issued_quantity,
+    };
+    let ix = self_transfer.build_instruction(&ctx);
+    let error = ix.send_expect_error(&mut ctx);
+    assert_rewards_error(error, RewardsError::PointsSelfTransferNotAllowed);
+}

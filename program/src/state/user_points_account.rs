@@ -115,6 +115,14 @@ impl UserPointsAccount {
         }
         Ok(())
     }
+
+    #[inline(always)]
+    pub fn validate_zero_balance(&self) -> Result<(), ProgramError> {
+        if self.balance != 0 {
+            return Err(RewardsProgramError::PointsBalanceNotZero.into());
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -196,5 +204,18 @@ mod tests {
         let mut account = create_test_account();
         account.balance = 50;
         assert!(account.validate_balance(100).is_err());
+    }
+
+    #[test]
+    fn test_validate_zero_balance_success() {
+        let account = create_test_account();
+        assert!(account.validate_zero_balance().is_ok());
+    }
+
+    #[test]
+    fn test_validate_zero_balance_fail() {
+        let mut account = create_test_account();
+        account.balance = 100;
+        assert!(account.validate_zero_balance().is_err());
     }
 }

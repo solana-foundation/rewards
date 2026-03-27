@@ -3,7 +3,7 @@ use solana_sdk::signer::Signer;
 use crate::fixtures::{InitPointsFixture, InitPointsSetup};
 use crate::utils::{
     test_empty_data, test_missing_signer, test_not_writable, test_truncated_data, test_wrong_current_program,
-    test_wrong_system_program, ExpectedPointsConfig, TestContext,
+    test_wrong_system_program, TestContext,
 };
 
 // ── Generic validation tests ────────────────────────────────────────────────
@@ -62,16 +62,14 @@ fn test_init_points_success_default() {
     crate::utils::assert_points_config(
         &ctx,
         &setup.points_config_pda,
-        &ExpectedPointsConfig {
-            authority: &setup.authority.pubkey(),
-            seed: &setup.seed.pubkey(),
-            bump: setup.bump,
-            transferable: 0,
-            revocable: 0,
-            max_supply: 0,
-            total_issued: 0,
-            total_used: 0,
-        },
+        &setup.authority.pubkey(),
+        &setup.seed.pubkey(),
+        setup.bump,
+        0,
+        0,
+        0,
+        0,
+        0,
     );
 }
 
@@ -85,16 +83,14 @@ fn test_init_points_success_with_max_supply() {
     crate::utils::assert_points_config(
         &ctx,
         &setup.points_config_pda,
-        &ExpectedPointsConfig {
-            authority: &setup.authority.pubkey(),
-            seed: &setup.seed.pubkey(),
-            bump: setup.bump,
-            transferable: 0,
-            revocable: 0,
-            max_supply: 10_000,
-            total_issued: 0,
-            total_used: 0,
-        },
+        &setup.authority.pubkey(),
+        &setup.seed.pubkey(),
+        setup.bump,
+        0,
+        0,
+        10_000,
+        0,
+        0,
     );
 }
 
@@ -108,15 +104,13 @@ fn test_init_points_success_all_flags() {
     crate::utils::assert_points_config(
         &ctx,
         &setup.points_config_pda,
-        &ExpectedPointsConfig {
-            authority: &setup.authority.pubkey(),
-            seed: &setup.seed.pubkey(),
-            bump: setup.bump,
-            transferable: 1,
-            revocable: 1,
-            max_supply: 50_000,
-            total_issued: 0,
-            total_used: 0,
-        },
+        &setup.authority.pubkey(),
+        &setup.seed.pubkey(),
+        setup.bump,
+        1,
+        1,
+        50_000,
+        0,
+        0,
     );
 }

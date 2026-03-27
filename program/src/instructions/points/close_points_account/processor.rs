@@ -1,7 +1,6 @@
 use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
-    errors::RewardsProgramError,
     events::PointsAccountClosedEvent,
     state::{PointsConfig, UserPointsAccount},
     traits::EventSerialize,
@@ -37,13 +36,21 @@ pub fn process_close_points_account(
     drop(user_data);
 
     // Require zero balance to close
-    if user_account.balance != 0 {
-        return Err(RewardsProgramError::PointsBalanceNotZero.into());
-    }
+    user_account.validate_zero_balance()?;
 
     close_pda_account(ix.accounts.user_points_account, ix.accounts.destination)?;
 
-    let event = PointsAccountClosedEvent::new(*ix.accounts.points_config.address(), *ix.accounts.user.address());
+    let event = PointsAccountClosedEvent::new(
+        *ix.accounts.points_config.address(),
+        config.authority,
+        config.seed,
+        config.max_supply,
+        config.transferable,
+        config.revocable,
+        config.total_issued,
+        config.total_used,
+        *ix.accounts.user.address(),
+    );
     emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;
 
     Ok(())
