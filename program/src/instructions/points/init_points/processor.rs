@@ -4,7 +4,7 @@ use crate::{
     events::PointsConfigCreatedEvent,
     state::PointsConfig,
     traits::{AccountSerialize, AccountSize, EventSerialize, PdaSeeds},
-    utils::{cpi_initialize_points_mint, create_pda_account, emit_event},
+    utils::{create_pda_account, emit_event, PointsCpi},
     ID,
 };
 
@@ -36,11 +36,10 @@ pub fn process_init_points(_program_id: &Address, accounts: &[AccountView], inst
     drop(config_data);
 
     // Create the Token-2022 points mint with extensions
-    cpi_initialize_points_mint(
+    PointsCpi::initialize_points_mint(
         ix.accounts.payer,
         ix.accounts.points_mint,
         ix.accounts.points_config,
-        ix.accounts.system_program,
         ix.accounts.token_2022_program,
         ix.data.mint_bump,
     )?;

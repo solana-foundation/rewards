@@ -5,10 +5,7 @@ use crate::{
     events::PointsTransferredEvent,
     state::{PointsConfig, PointsMintSeeds},
     traits::{EventSerialize, InstructionData, PdaSeeds},
-    utils::{
-        cpi_burn_points, cpi_create_ata_idempotent, cpi_mint_points, emit_event, get_token_account_balance,
-        validate_associated_token_account_address,
-    },
+    utils::{emit_event, get_token_account_balance, PointsCpi},
     ID,
 };
 
@@ -39,22 +36,6 @@ pub fn process_transfer_points(
         return Err(RewardsProgramError::PointsSelfTransferNotAllowed.into());
     }
 
-    // Validate from token account is the correct ATA
-    validate_associated_token_account_address(
-        ix.accounts.from_token_account,
-        ix.accounts.from_user.address(),
-        ix.accounts.points_mint,
-        ix.accounts.token_2022_program,
-    )?;
-
-    // Validate to token account is the correct ATA
-    validate_associated_token_account_address(
-        ix.accounts.to_token_account,
-        ix.accounts.to_user.address(),
-        ix.accounts.points_mint,
-        ix.accounts.token_2022_program,
-    )?;
-
     // Validate from balance
     let from_balance = get_token_account_balance(ix.accounts.from_token_account)?;
     if from_balance < ix.data.quantity {
@@ -62,7 +43,7 @@ pub fn process_transfer_points(
     }
 
     // Create destination ATA if needed
-    cpi_create_ata_idempotent(
+    PointsCpi::create_ata_idempotent(
         ix.accounts.payer,
         ix.accounts.to_user,
         ix.accounts.points_mint,
@@ -72,7 +53,7 @@ pub fn process_transfer_points(
     )?;
 
     // Transfer via burn + mint (NonTransferable blocks standard transfers)
-    cpi_burn_points(
+    PointsCpi::burn_points(
         &config,
         ix.accounts.from_token_account,
         ix.accounts.points_mint,
@@ -81,7 +62,7 @@ pub fn process_transfer_points(
         ix.accounts.token_2022_program.address(),
     )?;
 
-    cpi_mint_points(
+    PointsCpi::mint_points(
         &config,
         ix.accounts.points_mint,
         ix.accounts.to_token_account,

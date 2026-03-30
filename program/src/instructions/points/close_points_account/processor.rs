@@ -6,7 +6,7 @@ use crate::{
     events::PointsAccountClosedEvent,
     state::{PointsConfig, PointsMintSeeds},
     traits::{EventSerialize, PdaSeeds},
-    utils::{emit_event, get_token_account_balance, validate_associated_token_account_address},
+    utils::{emit_event, get_token_account_balance},
     ID,
 };
 
@@ -29,14 +29,6 @@ pub fn process_close_points_account(
     // Validate points mint PDA
     let mint_seeds = PointsMintSeeds { points_config: *ix.accounts.points_config.address() };
     mint_seeds.validate_pda(ix.accounts.points_mint, &ID, config.mint_bump)?;
-
-    // Validate user token account is the correct ATA
-    validate_associated_token_account_address(
-        ix.accounts.user_token_account,
-        ix.accounts.user.address(),
-        ix.accounts.points_mint,
-        ix.accounts.token_2022_program,
-    )?;
 
     // Require zero balance before closing
     let balance = get_token_account_balance(ix.accounts.user_token_account)?;

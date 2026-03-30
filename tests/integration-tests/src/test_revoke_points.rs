@@ -134,11 +134,11 @@ fn test_revoke_points_zero_balance() {
     ix1.send_expect_success(&mut ctx);
     assert_user_points_balance(&ctx, &setup.user, &setup.points_mint_pda, 0);
 
-    // Revoke again on zero-balance account — should succeed (no-op burn, emits event)
+    // Revoke again on zero-balance account — should error
     ctx.advance_slot();
     let ix2 = setup.build_instruction(&ctx);
-    ix2.send_expect_success(&mut ctx);
-    assert_user_points_balance(&ctx, &setup.user, &setup.points_mint_pda, 0);
+    let error = ix2.send_expect_error(&mut ctx);
+    assert_rewards_error(error, RewardsError::PointsNothingToRevoke);
 }
 
 #[test]

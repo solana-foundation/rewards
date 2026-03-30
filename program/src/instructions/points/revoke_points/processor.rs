@@ -1,10 +1,11 @@
 use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
+    errors::RewardsProgramError,
     events::PointsRevokedEvent,
     state::{PointsConfig, PointsMintSeeds},
     traits::{EventSerialize, PdaSeeds},
-    utils::{cpi_burn_points, emit_event, get_token_account_balance, validate_associated_token_account_address},
+    utils::{emit_event, get_token_account_balance, PointsCpi},
     ID,
 };
 
@@ -29,31 +30,24 @@ pub fn process_revoke_points(
     let mint_seeds = PointsMintSeeds { points_config: *ix.accounts.points_config.address() };
     mint_seeds.validate_pda(ix.accounts.points_mint, &ID, config.mint_bump)?;
 
-    // Validate user token account is the correct ATA
-    validate_associated_token_account_address(
-        ix.accounts.user_token_account,
-        ix.accounts.user.address(),
-        ix.accounts.points_mint,
-        ix.accounts.token_2022_program,
-    )?;
-
-    // Read balance before burning
+    // Read balance — error if nothing to revoke
     let revoked_balance = get_token_account_balance(ix.accounts.user_token_account)?;
+    if revoked_balance == 0 {
+        return Err(RewardsProgramError::PointsNothingToRevoke.into());
+    }
 
     // Burn entire balance via permanent delegate.
     // The token account stays open — the user can close their own ATA
     // via standard Token-2022 CloseAccount since PermanentDelegate only
     // authorizes Burn/Transfer, not CloseAccount.
-    if revoked_balance > 0 {
-        cpi_burn_points(
-            &config,
-            ix.accounts.user_token_account,
-            ix.accounts.points_mint,
-            ix.accounts.points_config,
-            revoked_balance,
-            ix.accounts.token_2022_program.address(),
-        )?;
-    }
+    PointsCpi::burn_points(
+        &config,
+        ix.accounts.user_token_account,
+        ix.accounts.points_mint,
+        ix.accounts.points_config,
+        revoked_balance,
+        ix.accounts.token_2022_program.address(),
+    )?;
 
     let event = PointsRevokedEvent::new(
         *ix.accounts.points_config.address(),

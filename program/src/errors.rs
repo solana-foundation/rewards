@@ -168,6 +168,10 @@ pub enum RewardsProgramError {
     /// (40) Cannot transfer points to the same user
     #[error("Cannot transfer points to the same user")]
     PointsSelfTransferNotAllowed,
+
+    /// (41) Nothing to revoke — user has zero balance
+    #[error("Nothing to revoke — user has zero balance")]
+    PointsNothingToRevoke,
 }
 
 impl From<RewardsProgramError> for ProgramError {

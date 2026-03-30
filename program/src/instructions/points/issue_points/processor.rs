@@ -4,10 +4,7 @@ use crate::{
     events::PointsIssuedEvent,
     state::{PointsConfig, PointsMintSeeds},
     traits::{EventSerialize, InstructionData, PdaSeeds},
-    utils::{
-        cpi_create_ata_idempotent, cpi_mint_points, emit_event, get_token_account_balance,
-        validate_associated_token_account_address,
-    },
+    utils::{emit_event, get_token_account_balance, PointsCpi},
     ID,
 };
 
@@ -28,16 +25,8 @@ pub fn process_issue_points(_program_id: &Address, accounts: &[AccountView], ins
     let mint_seeds = PointsMintSeeds { points_config: *ix.accounts.points_config.address() };
     mint_seeds.validate_pda(ix.accounts.points_mint, &ID, config.mint_bump)?;
 
-    // Validate user token account is the correct ATA
-    validate_associated_token_account_address(
-        ix.accounts.user_token_account,
-        ix.accounts.user.address(),
-        ix.accounts.points_mint,
-        ix.accounts.token_2022_program,
-    )?;
-
     // Create ATA idempotently (first issue creates the account)
-    cpi_create_ata_idempotent(
+    PointsCpi::create_ata_idempotent(
         ix.accounts.payer,
         ix.accounts.user,
         ix.accounts.points_mint,
@@ -47,7 +36,7 @@ pub fn process_issue_points(_program_id: &Address, accounts: &[AccountView], ins
     )?;
 
     // Mint points to the user's token account
-    cpi_mint_points(
+    PointsCpi::mint_points(
         &config,
         ix.accounts.points_mint,
         ix.accounts.user_token_account,

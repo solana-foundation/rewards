@@ -3,9 +3,9 @@ use pinocchio::{account::AccountView, error::ProgramError};
 use crate::{
     traits::InstructionAccounts,
     utils::{
-        verify_associated_token_program, verify_current_program, verify_current_program_account,
-        verify_event_authority, verify_readonly, verify_signer, verify_system_program, verify_token_2022_program,
-        verify_writable,
+        validate_associated_token_account_address, verify_associated_token_program, verify_current_program,
+        verify_current_program_account, verify_event_authority, verify_readonly, verify_signer, verify_system_program,
+        verify_token_2022_program, verify_writable,
     },
 };
 
@@ -44,6 +44,8 @@ impl<'a> TryFrom<&'a [AccountView]> for IssuePointsAccounts<'a> {
         verify_readonly(user)?;
 
         verify_current_program_account(points_config)?;
+
+        validate_associated_token_account_address(user_token_account, user.address(), points_mint, token_2022_program)?;
 
         verify_token_2022_program(token_2022_program)?;
         verify_associated_token_program(ata_program)?;

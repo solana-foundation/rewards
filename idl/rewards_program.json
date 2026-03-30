@@ -1936,6 +1936,12 @@
         "kind": "errorNode",
         "message": "Cannot transfer points to the same user",
         "name": "pointsSelfTransferNotAllowed"
+      },
+      {
+        "code": 41,
+        "kind": "errorNode",
+        "message": "Nothing to revoke — user has zero balance",
+        "name": "pointsNothingToRevoke"
       }
     ],
     "instructions": [
