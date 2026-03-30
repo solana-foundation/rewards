@@ -4,7 +4,7 @@ use crate::{
     events::PointsConfigClosedEvent,
     state::{PointsConfig, PointsMintSeeds},
     traits::{EventSerialize, PdaSeeds},
-    utils::{close_pda_account, emit_event, PointsCpi},
+    utils::{close_pda_account, emit_event, Points},
     ID,
 };
 
@@ -28,7 +28,7 @@ pub fn process_close_points_config(
     mint_seeds.validate_pda(ix.accounts.points_mint, &ID, config.mint_bump)?;
 
     // Close the Token-2022 mint first (requires supply == 0, enforced by Token-2022)
-    PointsCpi::close_points_mint(
+    Points::close_points_mint(
         &config,
         ix.accounts.points_mint,
         ix.accounts.destination,

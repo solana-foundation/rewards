@@ -5,7 +5,7 @@ use crate::{
     events::PointsUsedEvent,
     state::{PointsConfig, PointsMintSeeds},
     traits::{EventSerialize, InstructionData, PdaSeeds},
-    utils::{emit_event, get_token_account_balance, PointsCpi},
+    utils::{emit_event, get_token_account_balance, Points},
     ID,
 };
 
@@ -33,7 +33,7 @@ pub fn process_use_points(_program_id: &Address, accounts: &[AccountView], instr
     }
 
     // Burn points via permanent delegate
-    PointsCpi::burn_points(
+    Points::burn_points(
         &config,
         ix.accounts.user_token_account,
         ix.accounts.points_mint,

@@ -4,7 +4,7 @@ use crate::{
     events::PointsIssuedEvent,
     state::{PointsConfig, PointsMintSeeds},
     traits::{EventSerialize, InstructionData, PdaSeeds},
-    utils::{emit_event, get_token_account_balance, PointsCpi},
+    utils::{emit_event, get_token_account_balance, Points},
     ID,
 };
 
@@ -26,7 +26,7 @@ pub fn process_issue_points(_program_id: &Address, accounts: &[AccountView], ins
     mint_seeds.validate_pda(ix.accounts.points_mint, &ID, config.mint_bump)?;
 
     // Create ATA idempotently (first issue creates the account)
-    PointsCpi::create_ata_idempotent(
+    Points::create_ata_idempotent(
         ix.accounts.payer,
         ix.accounts.user,
         ix.accounts.points_mint,
@@ -36,7 +36,7 @@ pub fn process_issue_points(_program_id: &Address, accounts: &[AccountView], ins
     )?;
 
     // Mint points to the user's token account
-    PointsCpi::mint_points(
+    Points::mint_points(
         &config,
         ix.accounts.points_mint,
         ix.accounts.user_token_account,

@@ -18,9 +18,9 @@ const IX_INIT_PERMANENT_DELEGATE: u8 = 35;
 
 /// CPI helpers for the points system. The PointsConfig PDA serves as mint
 /// authority, permanent delegate, and close authority for Token-2022 operations.
-pub struct PointsCpi;
+pub struct Points;
 
-impl PointsCpi {
+impl Points {
     /// Initialize a Token-2022 points mint with NonTransferable + PermanentDelegate +
     /// MintCloseAuthority extensions. The PointsConfig PDA is set as mint authority,
     /// permanent delegate, and close authority.

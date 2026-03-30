@@ -5,7 +5,7 @@ use crate::{
     events::PointsRevokedEvent,
     state::{PointsConfig, PointsMintSeeds},
     traits::{EventSerialize, PdaSeeds},
-    utils::{emit_event, get_token_account_balance, PointsCpi},
+    utils::{emit_event, get_token_account_balance, Points},
     ID,
 };
 
@@ -40,7 +40,7 @@ pub fn process_revoke_points(
     // The token account stays open — the user can close their own ATA
     // via standard Token-2022 CloseAccount since PermanentDelegate only
     // authorizes Burn/Transfer, not CloseAccount.
-    PointsCpi::burn_points(
+    Points::burn_points(
         &config,
         ix.accounts.user_token_account,
         ix.accounts.points_mint,

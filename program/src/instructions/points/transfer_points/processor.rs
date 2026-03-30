@@ -5,7 +5,7 @@ use crate::{
     events::PointsTransferredEvent,
     state::{PointsConfig, PointsMintSeeds},
     traits::{EventSerialize, InstructionData, PdaSeeds},
-    utils::{emit_event, get_token_account_balance, PointsCpi},
+    utils::{emit_event, get_token_account_balance, Points},
     ID,
 };
 
@@ -43,7 +43,7 @@ pub fn process_transfer_points(
     }
 
     // Create destination ATA if needed
-    PointsCpi::create_ata_idempotent(
+    Points::create_ata_idempotent(
         ix.accounts.payer,
         ix.accounts.to_user,
         ix.accounts.points_mint,
@@ -53,7 +53,7 @@ pub fn process_transfer_points(
     )?;
 
     // Transfer via burn + mint (NonTransferable blocks standard transfers)
-    PointsCpi::burn_points(
+    Points::burn_points(
         &config,
         ix.accounts.from_token_account,
         ix.accounts.points_mint,
@@ -62,7 +62,7 @@ pub fn process_transfer_points(
         ix.accounts.token_2022_program.address(),
     )?;
 
-    PointsCpi::mint_points(
+    Points::mint_points(
         &config,
         ix.accounts.points_mint,
         ix.accounts.to_token_account,
