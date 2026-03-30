@@ -87,7 +87,7 @@ impl ClosePointsAccountSetup {
 
         TestInstruction {
             instruction: builder.instruction(),
-            signers: vec![self.authority.insecure_clone()],
+            signers: vec![self.authority.insecure_clone(), self.user.insecure_clone()],
             name: "ClosePointsAccount",
         }
     }
@@ -103,13 +103,13 @@ impl InstructionTestFixture for ClosePointsAccountFixture {
         setup.build_instruction(ctx)
     }
 
-    /// 0: authority
+    /// 0: authority, 3: user
     fn required_signers() -> &'static [usize] {
-        &[0]
+        &[0, 3]
     }
 
     fn required_writable() -> &'static [usize] {
-        &[]
+        &[3, 4]
     }
 
     fn system_program_index() -> Option<usize> {

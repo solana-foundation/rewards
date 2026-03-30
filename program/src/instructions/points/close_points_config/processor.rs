@@ -2,8 +2,8 @@ use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
     events::PointsConfigClosedEvent,
-    state::PointsConfig,
-    traits::EventSerialize,
+    state::{PointsConfig, PointsMintSeeds},
+    traits::{EventSerialize, PdaSeeds},
     utils::{close_pda_account, cpi_close_points_mint, emit_event},
     ID,
 };
@@ -22,6 +22,10 @@ pub fn process_close_points_config(
     drop(config_data);
 
     config.validate_authority(ix.accounts.authority.address())?;
+
+    // Validate points mint PDA
+    let mint_seeds = PointsMintSeeds { points_config: *ix.accounts.points_config.address() };
+    mint_seeds.validate_pda(ix.accounts.points_mint, &ID, config.mint_bump)?;
 
     // Close the Token-2022 mint first (requires supply == 0, enforced by Token-2022)
     cpi_close_points_mint(

@@ -1,10 +1,11 @@
 use pinocchio::{account::AccountView, Address, ProgramResult};
+use pinocchio_token_2022::instructions::CloseAccount;
 
 use crate::{
     errors::RewardsProgramError,
     events::PointsAccountClosedEvent,
-    state::PointsConfig,
-    traits::EventSerialize,
+    state::{PointsConfig, PointsMintSeeds},
+    traits::{EventSerialize, PdaSeeds},
     utils::{emit_event, get_token_account_balance, validate_associated_token_account_address},
     ID,
 };
@@ -25,6 +26,10 @@ pub fn process_close_points_account(
 
     config.validate_authority(ix.accounts.authority.address())?;
 
+    // Validate points mint PDA
+    let mint_seeds = PointsMintSeeds { points_config: *ix.accounts.points_config.address() };
+    mint_seeds.validate_pda(ix.accounts.points_mint, &ID, config.mint_bump)?;
+
     // Validate user token account is the correct ATA
     validate_associated_token_account_address(
         ix.accounts.user_token_account,
@@ -33,12 +38,20 @@ pub fn process_close_points_account(
         ix.accounts.token_2022_program,
     )?;
 
-    // Require zero balance — the user can close their own ATA via
-    // standard Token-2022 CloseAccount after this verification.
+    // Require zero balance before closing
     let balance = get_token_account_balance(ix.accounts.user_token_account)?;
     if balance != 0 {
         return Err(RewardsProgramError::PointsBalanceNotZero.into());
     }
+
+    // Close the token account — user signs as ATA owner, rent refunded to user
+    CloseAccount {
+        account: ix.accounts.user_token_account,
+        destination: ix.accounts.user,
+        authority: ix.accounts.user,
+        token_program: ix.accounts.token_2022_program.address(),
+    }
+    .invoke()?;
 
     let event = PointsAccountClosedEvent::new(
         *ix.accounts.points_config.address(),

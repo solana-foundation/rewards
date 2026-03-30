@@ -47,7 +47,7 @@ fn test_points_full_lifecycle() {
     assert_user_points_balance(&ctx, &user_a.pubkey(), &points_mint, 500);
 
     // ── Step 3: Issue 300 to user B ─────────────────────────────────────────
-    let user_b = Keypair::new();
+    let user_b = ctx.create_funded_keypair();
     let user_b_ata =
         get_associated_token_address_with_program_id(&user_b.pubkey(), &points_mint, &TOKEN_2022_PROGRAM_ID);
 
@@ -170,7 +170,7 @@ fn test_points_full_lifecycle() {
         .event_authority(event_authority);
     TestInstruction {
         instruction: builder.instruction(),
-        signers: vec![authority.insecure_clone()],
+        signers: vec![authority.insecure_clone(), user_a.insecure_clone()],
         name: "ClosePointsAccount-A",
     }
     .send_expect_success(&mut ctx);
@@ -187,7 +187,7 @@ fn test_points_full_lifecycle() {
         .event_authority(event_authority);
     TestInstruction {
         instruction: builder.instruction(),
-        signers: vec![authority.insecure_clone()],
+        signers: vec![authority.insecure_clone(), user_b.insecure_clone()],
         name: "ClosePointsAccount-B",
     }
     .send_expect_success(&mut ctx);

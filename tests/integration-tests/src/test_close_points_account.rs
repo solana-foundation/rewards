@@ -80,7 +80,7 @@ fn test_close_points_account_balance_not_zero() {
 
     let ix = TestInstruction {
         instruction: builder.instruction(),
-        signers: vec![init_setup.authority.insecure_clone()],
+        signers: vec![init_setup.authority.insecure_clone(), user.insecure_clone()],
         name: "ClosePointsAccount",
     };
     let error = ix.send_expect_error(&mut ctx);
@@ -134,7 +134,7 @@ fn test_close_points_account_nonexistent_ata() {
 
     let ix = TestInstruction {
         instruction: builder.instruction(),
-        signers: vec![init_setup.authority.insecure_clone()],
+        signers: vec![init_setup.authority.insecure_clone(), user.insecure_clone()],
         name: "ClosePointsAccount",
     };
     let error = ix.send_expect_error(&mut ctx);

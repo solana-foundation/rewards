@@ -2,8 +2,8 @@ use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
     events::PointsRevokedEvent,
-    state::PointsConfig,
-    traits::EventSerialize,
+    state::{PointsConfig, PointsMintSeeds},
+    traits::{EventSerialize, PdaSeeds},
     utils::{cpi_burn_points, emit_event, get_token_account_balance, validate_associated_token_account_address},
     ID,
 };
@@ -24,6 +24,10 @@ pub fn process_revoke_points(
 
     config.validate_authority(ix.accounts.authority.address())?;
     config.validate_revocable()?;
+
+    // Validate points mint PDA
+    let mint_seeds = PointsMintSeeds { points_config: *ix.accounts.points_config.address() };
+    mint_seeds.validate_pda(ix.accounts.points_mint, &ID, config.mint_bump)?;
 
     // Validate user token account is the correct ATA
     validate_associated_token_account_address(

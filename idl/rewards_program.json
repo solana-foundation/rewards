@@ -5548,19 +5548,19 @@
           },
           {
             "docs": [
-              "Wallet address of the user"
+              "Wallet address of the user; signs as ATA owner, receives rent refund"
             ],
-            "isSigner": false,
-            "isWritable": false,
+            "isSigner": true,
+            "isWritable": true,
             "kind": "instructionAccountNode",
             "name": "user"
           },
           {
             "docs": [
-              "User's ATA for the points mint"
+              "User's ATA for the points mint (closed)"
             ],
             "isSigner": false,
-            "isWritable": false,
+            "isWritable": true,
             "kind": "instructionAccountNode",
             "name": "userTokenAccount"
           },

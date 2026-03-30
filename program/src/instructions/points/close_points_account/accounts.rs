@@ -4,7 +4,7 @@ use crate::{
     traits::InstructionAccounts,
     utils::{
         verify_current_program, verify_current_program_account, verify_event_authority, verify_readonly, verify_signer,
-        verify_token_2022_program,
+        verify_token_2022_program, verify_writable,
     },
 };
 
@@ -34,9 +34,9 @@ impl<'a> TryFrom<&'a [AccountView]> for ClosePointsAccountAccounts<'a> {
 
         verify_readonly(points_config)?;
         verify_readonly(points_mint)?;
-        verify_readonly(user_token_account)?;
+        verify_writable(user_token_account, true)?;
 
-        verify_readonly(user)?;
+        verify_signer(user, true)?;
 
         verify_current_program_account(points_config)?;
 

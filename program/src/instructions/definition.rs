@@ -749,13 +749,13 @@ pub enum RewardsProgramInstruction {
         quantity: u64,
     } = 25,
 
-    /// Verify a user's token account has zero balance. Emits PointsAccountClosed event.
-    /// The user can close their own ATA via standard Token-2022 CloseAccount.
+    /// Close a user's points token account. Requires zero balance and user signature.
+    /// The user signs as account owner so Token-2022 can close the ATA.
     #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
     #[codama(account(name = "points_config", docs = "PDA: PointsConfig account"))]
     #[codama(account(name = "points_mint", docs = "PDA: Token-2022 points mint"))]
-    #[codama(account(name = "user", docs = "Wallet address of the user"))]
-    #[codama(account(name = "user_token_account", docs = "User's ATA for the points mint"))]
+    #[codama(account(name = "user", signer, writable, docs = "Wallet address of the user; signs as ATA owner, receives rent refund"))]
+    #[codama(account(name = "user_token_account", writable, docs = "User's ATA for the points mint (closed)"))]
     #[codama(account(name = "token_2022_program", docs = "Token-2022 program"))]
     #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
     #[codama(account(name = "rewards_program", docs = "This program's ID"))]

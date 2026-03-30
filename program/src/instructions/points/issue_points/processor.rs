@@ -2,8 +2,8 @@ use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
     events::PointsIssuedEvent,
-    state::PointsConfig,
-    traits::{EventSerialize, InstructionData},
+    state::{PointsConfig, PointsMintSeeds},
+    traits::{EventSerialize, InstructionData, PdaSeeds},
     utils::{
         cpi_create_ata_idempotent, cpi_mint_points, emit_event, get_token_account_balance,
         validate_associated_token_account_address,
@@ -23,6 +23,10 @@ pub fn process_issue_points(_program_id: &Address, accounts: &[AccountView], ins
     drop(config_data);
 
     config.validate_authority(ix.accounts.authority.address())?;
+
+    // Validate points mint PDA
+    let mint_seeds = PointsMintSeeds { points_config: *ix.accounts.points_config.address() };
+    mint_seeds.validate_pda(ix.accounts.points_mint, &ID, config.mint_bump)?;
 
     // Validate user token account is the correct ATA
     validate_associated_token_account_address(
