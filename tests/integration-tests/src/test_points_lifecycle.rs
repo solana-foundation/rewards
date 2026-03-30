@@ -2,9 +2,10 @@ use solana_sdk::signature::{Keypair, Signer};
 use spl_associated_token_account::get_associated_token_address_with_program_id;
 use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 
-use crate::fixtures::InitPointsSetup;
+use crate::fixtures::{InitPointsSetup, IssuePointsSetup};
 use crate::utils::{
-    assert_account_closed, assert_user_points_balance, find_event_authority_pda, TestContext, TestInstruction,
+    assert_account_closed, assert_user_points_balance, find_event_authority_pda, find_points_config_pda,
+    find_points_mint_pda, TestContext, TestInstruction,
 };
 
 #[test]
@@ -208,4 +209,83 @@ fn test_points_full_lifecycle() {
     .send_expect_success(&mut ctx);
 
     assert_account_closed(&ctx, &config_pda);
+}
+
+#[test]
+fn test_points_multiple_configs_same_authority() {
+    let mut ctx = TestContext::new();
+
+    let authority = ctx.create_funded_keypair();
+
+    // Create first config with seed1
+    let seed1 = Keypair::new();
+    let (config_pda1, bump1) = find_points_config_pda(&authority.pubkey(), &seed1.pubkey());
+    let (mint_pda1, mint_bump1) = find_points_mint_pda(&config_pda1);
+
+    let setup1 = InitPointsSetup {
+        authority: authority.insecure_clone(),
+        seed: seed1,
+        points_config_pda: config_pda1,
+        points_mint_pda: mint_pda1,
+        bump: bump1,
+        mint_bump: mint_bump1,
+        transferable: 0,
+        revocable: 0,
+    };
+    setup1.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    // Create second config with seed2 (same authority)
+    let seed2 = Keypair::new();
+    let (config_pda2, bump2) = find_points_config_pda(&authority.pubkey(), &seed2.pubkey());
+    let (mint_pda2, mint_bump2) = find_points_mint_pda(&config_pda2);
+
+    let setup2 = InitPointsSetup {
+        authority: authority.insecure_clone(),
+        seed: seed2,
+        points_config_pda: config_pda2,
+        points_mint_pda: mint_pda2,
+        bump: bump2,
+        mint_bump: mint_bump2,
+        transferable: 1,
+        revocable: 1,
+    };
+    setup2.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    // Both configs should exist independently
+    assert!(ctx.get_account(&config_pda1).is_some(), "Config 1 should exist");
+    assert!(ctx.get_account(&config_pda2).is_some(), "Config 2 should exist");
+    assert!(ctx.get_account(&mint_pda1).is_some(), "Mint 1 should exist");
+    assert!(ctx.get_account(&mint_pda2).is_some(), "Mint 2 should exist");
+    assert_ne!(config_pda1, config_pda2, "Config PDAs should differ");
+
+    // Issue points on both configs to different users
+    let user1 = Keypair::new();
+    let user1_ata = get_associated_token_address_with_program_id(&user1.pubkey(), &mint_pda1, &TOKEN_2022_PROGRAM_ID);
+
+    let issue1 = IssuePointsSetup {
+        authority: authority.insecure_clone(),
+        points_config_pda: config_pda1,
+        points_mint_pda: mint_pda1,
+        user: user1.pubkey(),
+        user_ata: user1_ata,
+        quantity: 100,
+    };
+    issue1.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    let user2 = Keypair::new();
+    let user2_ata = get_associated_token_address_with_program_id(&user2.pubkey(), &mint_pda2, &TOKEN_2022_PROGRAM_ID);
+
+    let issue2 = IssuePointsSetup {
+        authority: authority.insecure_clone(),
+        points_config_pda: config_pda2,
+        points_mint_pda: mint_pda2,
+        user: user2.pubkey(),
+        user_ata: user2_ata,
+        quantity: 200,
+    };
+    issue2.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    // Verify balances are independent
+    assert_user_points_balance(&ctx, &user1.pubkey(), &mint_pda1, 100);
+    assert_user_points_balance(&ctx, &user2.pubkey(), &mint_pda2, 200);
 }

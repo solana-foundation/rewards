@@ -1,9 +1,11 @@
+use solana_sdk::instruction::InstructionError;
+use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 
 use crate::fixtures::{UsePointsFixture, UsePointsSetup};
 use crate::utils::{
-    assert_rewards_error, assert_user_points_balance, test_empty_data, test_missing_signer, test_not_writable,
-    test_truncated_data, test_wrong_current_program, RewardsError, TestContext,
+    assert_instruction_error, assert_rewards_error, assert_user_points_balance, test_empty_data, test_missing_signer,
+    test_not_writable, test_truncated_data, test_wrong_current_program, RewardsError, TestContext,
 };
 
 // ── Generic validation tests ────────────────────────────────────────────────
@@ -111,4 +113,25 @@ fn test_use_points_wrong_authority() {
     let ix = bad_setup.build_instruction(&ctx);
     let error = ix.send_expect_error(&mut ctx);
     assert_rewards_error(error, RewardsError::UnauthorizedAuthority);
+}
+
+#[test]
+fn test_use_points_wrong_ata() {
+    let mut ctx = TestContext::new();
+    let setup = UsePointsSetup::new(&mut ctx);
+
+    // Use a fabricated ATA address
+    let wrong_ata = Keypair::new().pubkey();
+    let bad_setup = UsePointsSetup {
+        authority: setup.authority,
+        user: setup.user,
+        points_config_pda: setup.points_config_pda,
+        points_mint_pda: setup.points_mint_pda,
+        user_ata: wrong_ata,
+        quantity: setup.quantity,
+        issued_quantity: setup.issued_quantity,
+    };
+    let ix = bad_setup.build_instruction(&ctx);
+    let error = ix.send_expect_error(&mut ctx);
+    assert_instruction_error(error, InstructionError::InvalidAccountData);
 }

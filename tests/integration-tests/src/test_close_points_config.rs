@@ -1,4 +1,8 @@
-use crate::fixtures::{ClosePointsConfigFixture, ClosePointsConfigSetup};
+use solana_sdk::signature::{Keypair, Signer};
+use spl_associated_token_account::get_associated_token_address_with_program_id;
+use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
+
+use crate::fixtures::{ClosePointsConfigFixture, ClosePointsConfigSetup, InitPointsSetup, IssuePointsSetup};
 use crate::utils::{
     assert_account_closed, assert_rewards_error, test_empty_data, test_missing_signer, test_not_writable,
     test_wrong_current_program, RewardsError, TestContext,
@@ -65,4 +69,41 @@ fn test_close_points_config_wrong_authority() {
     let ix = bad_setup.build_instruction(&ctx);
     let error = ix.send_expect_error(&mut ctx);
     assert_rewards_error(error, RewardsError::UnauthorizedAuthority);
+}
+
+#[test]
+fn test_close_points_config_with_outstanding_supply() {
+    let mut ctx = TestContext::new();
+
+    // Create config and issue points (creating non-zero supply)
+    let init_setup = InitPointsSetup::builder(&mut ctx).build();
+    init_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    let user = Keypair::new();
+    let user_ata = get_associated_token_address_with_program_id(
+        &user.pubkey(),
+        &init_setup.points_mint_pda,
+        &TOKEN_2022_PROGRAM_ID,
+    );
+
+    let issue = IssuePointsSetup {
+        authority: init_setup.authority.insecure_clone(),
+        points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
+        user: user.pubkey(),
+        user_ata,
+        quantity: 500,
+    };
+    issue.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    // Attempt to close config while supply > 0 — Token-2022 should reject
+    let destination = ctx.create_funded_keypair();
+    let close_setup = ClosePointsConfigSetup {
+        authority: init_setup.authority,
+        points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
+        destination: destination.pubkey(),
+    };
+    let ix = close_setup.build_instruction(&ctx);
+    let _error = ix.send_expect_error(&mut ctx);
 }

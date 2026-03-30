@@ -121,3 +121,74 @@ fn test_revoke_points_wrong_authority() {
     let error = ix.send_expect_error(&mut ctx);
     assert_rewards_error(error, RewardsError::UnauthorizedAuthority);
 }
+
+#[test]
+fn test_revoke_points_zero_balance() {
+    let mut ctx = TestContext::new();
+
+    // Create revocable config and issue points
+    let setup = RevokePointsSetup::new_with_quantity(&mut ctx, 500);
+
+    // Revoke all points first
+    let ix1 = setup.build_instruction(&ctx);
+    ix1.send_expect_success(&mut ctx);
+    assert_user_points_balance(&ctx, &setup.user, &setup.points_mint_pda, 0);
+
+    // Revoke again on zero-balance account — should succeed (no-op burn, emits event)
+    ctx.advance_slot();
+    let ix2 = setup.build_instruction(&ctx);
+    ix2.send_expect_success(&mut ctx);
+    assert_user_points_balance(&ctx, &setup.user, &setup.points_mint_pda, 0);
+}
+
+#[test]
+fn test_revoke_points_then_reissue() {
+    let mut ctx = TestContext::new();
+
+    // Create revocable config and issue points
+    let init_setup = crate::fixtures::InitPointsSetup::builder(&mut ctx).revocable(1).build();
+    init_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    let user = Keypair::new();
+    let user_ata = get_associated_token_address_with_program_id(
+        &user.pubkey(),
+        &init_setup.points_mint_pda,
+        &TOKEN_2022_PROGRAM_ID,
+    );
+
+    // Issue 500 points
+    let issue = IssuePointsSetup {
+        authority: init_setup.authority.insecure_clone(),
+        points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
+        user: user.pubkey(),
+        user_ata,
+        quantity: 500,
+    };
+    issue.build_instruction(&ctx).send_expect_success(&mut ctx);
+    assert_user_points_balance(&ctx, &user.pubkey(), &init_setup.points_mint_pda, 500);
+
+    // Revoke all
+    let revoke = RevokePointsSetup {
+        authority: init_setup.authority.insecure_clone(),
+        user: user.pubkey(),
+        points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
+        user_ata,
+        issued_quantity: 500,
+    };
+    revoke.build_instruction(&ctx).send_expect_success(&mut ctx);
+    assert_user_points_balance(&ctx, &user.pubkey(), &init_setup.points_mint_pda, 0);
+
+    // Re-issue 300 points to same user
+    let reissue = IssuePointsSetup {
+        authority: init_setup.authority.insecure_clone(),
+        points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
+        user: user.pubkey(),
+        user_ata,
+        quantity: 300,
+    };
+    reissue.build_instruction(&ctx).send_expect_success(&mut ctx);
+    assert_user_points_balance(&ctx, &user.pubkey(), &init_setup.points_mint_pda, 300);
+}

@@ -1,11 +1,14 @@
+use solana_sdk::instruction::InstructionError;
+use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use spl_associated_token_account::get_associated_token_address_with_program_id;
 use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 
 use crate::fixtures::{InitPointsSetup, IssuePointsSetup, TransferPointsFixture, TransferPointsSetup};
 use crate::utils::{
-    assert_rewards_error, assert_user_points_balance, test_empty_data, test_missing_signer, test_not_writable,
-    test_truncated_data, test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext,
+    assert_instruction_error, assert_rewards_error, assert_user_points_balance, test_empty_data, test_missing_signer,
+    test_not_writable, test_truncated_data, test_wrong_current_program, test_wrong_system_program, RewardsError,
+    TestContext,
 };
 
 // ── Generic validation tests ────────────────────────────────────────────────
@@ -196,4 +199,182 @@ fn test_transfer_points_self_transfer() {
     let ix = self_transfer.build_instruction(&ctx);
     let error = ix.send_expect_error(&mut ctx);
     assert_rewards_error(error, RewardsError::PointsSelfTransferNotAllowed);
+}
+
+#[test]
+fn test_transfer_points_wrong_from_ata() {
+    let mut ctx = TestContext::new();
+    let setup = TransferPointsSetup::new(&mut ctx);
+
+    // Replace from_token_account with a fabricated address
+    let wrong_ata = Keypair::new().pubkey();
+    let bad_setup = TransferPointsSetup {
+        authority: setup.authority,
+        from_user: setup.from_user,
+        to_user: setup.to_user,
+        points_config_pda: setup.points_config_pda,
+        points_mint_pda: setup.points_mint_pda,
+        from_token_account: wrong_ata,
+        to_token_account: setup.to_token_account,
+        quantity: setup.quantity,
+        issued_quantity: setup.issued_quantity,
+    };
+    let ix = bad_setup.build_instruction(&ctx);
+    let error = ix.send_expect_error(&mut ctx);
+    assert_instruction_error(error, InstructionError::InvalidAccountData);
+}
+
+#[test]
+fn test_transfer_points_wrong_to_ata() {
+    let mut ctx = TestContext::new();
+    let setup = TransferPointsSetup::new(&mut ctx);
+
+    // Replace to_token_account with a fabricated address
+    let wrong_ata = Keypair::new().pubkey();
+    let bad_setup = TransferPointsSetup {
+        authority: setup.authority,
+        from_user: setup.from_user,
+        to_user: setup.to_user,
+        points_config_pda: setup.points_config_pda,
+        points_mint_pda: setup.points_mint_pda,
+        from_token_account: setup.from_token_account,
+        to_token_account: wrong_ata,
+        quantity: setup.quantity,
+        issued_quantity: setup.issued_quantity,
+    };
+    let ix = bad_setup.build_instruction(&ctx);
+    let error = ix.send_expect_error(&mut ctx);
+    assert_instruction_error(error, InstructionError::InvalidAccountData);
+}
+
+#[test]
+fn test_transfer_points_to_existing_user() {
+    let mut ctx = TestContext::new();
+
+    // Create config with transferable=1
+    let init_setup = InitPointsSetup::builder(&mut ctx).transferable(1).build();
+    init_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    let from_user = ctx.create_funded_keypair();
+    let from_ata = get_associated_token_address_with_program_id(
+        &from_user.pubkey(),
+        &init_setup.points_mint_pda,
+        &TOKEN_2022_PROGRAM_ID,
+    );
+
+    let to_user = solana_sdk::signature::Keypair::new();
+    let to_ata = get_associated_token_address_with_program_id(
+        &to_user.pubkey(),
+        &init_setup.points_mint_pda,
+        &TOKEN_2022_PROGRAM_ID,
+    );
+
+    // Issue 1000 to sender
+    let issue_from = IssuePointsSetup {
+        authority: init_setup.authority.insecure_clone(),
+        points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
+        user: from_user.pubkey(),
+        user_ata: from_ata,
+        quantity: 1_000,
+    };
+    issue_from.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    // Issue 200 to recipient (pre-existing balance)
+    let issue_to = IssuePointsSetup {
+        authority: init_setup.authority.insecure_clone(),
+        points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
+        user: to_user.pubkey(),
+        user_ata: to_ata,
+        quantity: 200,
+    };
+    issue_to.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    // Transfer 300 from sender to recipient (who already has 200)
+    let transfer_setup = TransferPointsSetup {
+        authority: init_setup.authority,
+        from_user,
+        to_user: to_user.pubkey(),
+        points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
+        from_token_account: from_ata,
+        to_token_account: to_ata,
+        quantity: 300,
+        issued_quantity: 1_000,
+    };
+    let ix = transfer_setup.build_instruction(&ctx);
+    ix.send_expect_success(&mut ctx);
+
+    assert_user_points_balance(&ctx, &transfer_setup.from_user.pubkey(), &init_setup.points_mint_pda, 700);
+    assert_user_points_balance(&ctx, &transfer_setup.to_user, &init_setup.points_mint_pda, 500);
+}
+
+#[test]
+fn test_transfer_points_chained_partial() {
+    let mut ctx = TestContext::new();
+
+    // Create config with transferable=1
+    let init_setup = InitPointsSetup::builder(&mut ctx).transferable(1).build();
+    init_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    let from_user = ctx.create_funded_keypair();
+    let from_ata = get_associated_token_address_with_program_id(
+        &from_user.pubkey(),
+        &init_setup.points_mint_pda,
+        &TOKEN_2022_PROGRAM_ID,
+    );
+
+    let to_user = solana_sdk::signature::Keypair::new();
+    let to_ata = get_associated_token_address_with_program_id(
+        &to_user.pubkey(),
+        &init_setup.points_mint_pda,
+        &TOKEN_2022_PROGRAM_ID,
+    );
+
+    // Issue 1000 to sender
+    let issue = IssuePointsSetup {
+        authority: init_setup.authority.insecure_clone(),
+        points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
+        user: from_user.pubkey(),
+        user_ata: from_ata,
+        quantity: 1_000,
+    };
+    issue.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    // Transfer 400
+    let transfer1 = TransferPointsSetup {
+        authority: init_setup.authority.insecure_clone(),
+        from_user: from_user.insecure_clone(),
+        to_user: to_user.pubkey(),
+        points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
+        from_token_account: from_ata,
+        to_token_account: to_ata,
+        quantity: 400,
+        issued_quantity: 1_000,
+    };
+    transfer1.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    assert_user_points_balance(&ctx, &from_user.pubkey(), &init_setup.points_mint_pda, 600);
+    assert_user_points_balance(&ctx, &to_user.pubkey(), &init_setup.points_mint_pda, 400);
+
+    // Transfer remaining 600 (drains sender)
+    ctx.advance_slot();
+    let transfer2 = TransferPointsSetup {
+        authority: init_setup.authority,
+        from_user,
+        to_user: to_user.pubkey(),
+        points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
+        from_token_account: from_ata,
+        to_token_account: to_ata,
+        quantity: 600,
+        issued_quantity: 1_000,
+    };
+    transfer2.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    assert_user_points_balance(&ctx, &transfer2.from_user.pubkey(), &init_setup.points_mint_pda, 0);
+    assert_user_points_balance(&ctx, &transfer2.to_user, &init_setup.points_mint_pda, 1_000);
 }
