@@ -754,7 +754,12 @@ pub enum RewardsProgramInstruction {
     #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
     #[codama(account(name = "points_config", docs = "PDA: PointsConfig account"))]
     #[codama(account(name = "points_mint", docs = "PDA: Token-2022 points mint"))]
-    #[codama(account(name = "user", signer, writable, docs = "Wallet address of the user; signs as ATA owner, receives rent refund"))]
+    #[codama(account(
+        name = "user",
+        signer,
+        writable,
+        docs = "Wallet address of the user; signs as ATA owner, receives rent refund"
+    ))]
     #[codama(account(name = "user_token_account", writable, docs = "User's ATA for the points mint (closed)"))]
     #[codama(account(name = "token_2022_program", docs = "Token-2022 program"))]
     #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
