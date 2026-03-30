@@ -15,14 +15,9 @@ use crate::traits::{
 };
 use crate::{require_account_len, validate_discriminator};
 
-/// Space required for the Token-2022 points mint account.
-///
-/// 82 (Mint base data) + 83 (zero-padding to BASE_ACCOUNT_LENGTH) = 165
-/// + 1 (AccountType discriminator)
-/// + 4 (NonTransferable TLV: 2 type + 2 length + 0 data)
-/// + 36 (PermanentDelegate TLV: 2 type + 2 length + 32 pubkey)
-/// + 36 (MintCloseAuthority TLV: 2 type + 2 length + 32 pubkey)
-/// = 242
+/// Space required for the Token-2022 points mint account:
+/// 165 (82 Mint base + 83 padding) + 1 AccountType + 4 NonTransferable TLV
+/// + 36 PermanentDelegate TLV + 36 MintCloseAuthority TLV = 242
 pub const POINTS_MINT_SPACE: usize = 242;
 
 /// PointsConfig account state
