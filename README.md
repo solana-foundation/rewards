@@ -34,13 +34,13 @@ A token rewards program for Solana that supports four distribution models: direc
 
 ### Distribution Type
 
-|                  | Direct                                          | Merkle                                                                   | Continuous                                                         | Points                                                             |
-| ---------------- | ----------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| **How it works** | Creates an on-chain account per recipient       | Stores a single merkle root on-chain; recipients provide proofs to claim | Users opt in; rewards distributed proportional to held balance     | Authority issues non-transferable Token-2022 tokens to users       |
-| **Upfront cost** | Authority pays rent for every recipient account | No per-recipient accounts until someone claims                           | Users pay rent for their own reward account on opt-in              | Payer pays rent for user ATA on first issue                        |
-| **Scalability**  | Practical up to low thousands of recipients     | Scales to millions with constant on-chain storage                        | Scales to any number of opted-in users                             | Scales to any number of users                                      |
-| **Mutability**   | Recipients can be added after creation          | Recipient set is fixed at creation                                       | Users opt in/out freely; authority distributes rewards at any time | Authority issues/uses/revokes at any time                          |
-| **Best for**     | Small, dynamic distributions                    | Large, fixed distributions                                               | Ongoing reward programs (staking, liquidity mining)                | Loyalty points, reputation, non-transferable rewards               |
+|                  | Direct                                          | Merkle                                                                   | Continuous                                                         | Points                                                       |
+| ---------------- | ----------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------ |
+| **How it works** | Creates an on-chain account per recipient       | Stores a single merkle root on-chain; recipients provide proofs to claim | Users opt in; rewards distributed proportional to held balance     | Authority issues non-transferable Token-2022 tokens to users |
+| **Upfront cost** | Authority pays rent for every recipient account | No per-recipient accounts until someone claims                           | Users pay rent for their own reward account on opt-in              | Payer pays rent for user ATA on first issue                  |
+| **Scalability**  | Practical up to low thousands of recipients     | Scales to millions with constant on-chain storage                        | Scales to any number of opted-in users                             | Scales to any number of users                                |
+| **Mutability**   | Recipients can be added after creation          | Recipient set is fixed at creation                                       | Users opt in/out freely; authority distributes rewards at any time | Authority issues/uses/revokes at any time                    |
+| **Best for**     | Small, dynamic distributions                    | Large, fixed distributions                                               | Ongoing reward programs (staking, liquidity mining)                | Loyalty points, reputation, non-transferable rewards         |
 
 ### Vesting Schedule (Direct & Merkle only)
 
