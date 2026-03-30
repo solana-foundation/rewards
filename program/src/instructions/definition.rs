@@ -662,7 +662,7 @@ pub enum RewardsProgramInstruction {
     } = 21,
 
     /// Initialize a new points configuration.
-    /// Creates a points ledger where an authority can issue, use, and transfer points.
+    /// Creates a points system backed by a Token-2022 mint with NonTransferable + PermanentDelegate extensions.
     #[codama(account(name = "payer", signer, writable, docs = "Pays for account creation"))]
     #[codama(account(name = "authority", signer, docs = "Points authority; stored on-chain"))]
     #[codama(account(name = "seeds", signer, docs = "Arbitrary signer used as PDA seed for uniqueness"))]
@@ -671,7 +671,13 @@ pub enum RewardsProgramInstruction {
         writable,
         docs = "PDA: [b\"points_config\", authority, seeds] (created)"
     ))]
+    #[codama(account(
+        name = "points_mint",
+        writable,
+        docs = "PDA: [b\"mint\", points_config] Token-2022 mint (created)"
+    ))]
     #[codama(account(name = "system_program", docs = "System program"))]
+    #[codama(account(name = "token_2022_program", docs = "Token-2022 program"))]
     #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
     #[codama(account(name = "rewards_program", docs = "This program's ID (for event CPI)"))]
     InitPoints {
@@ -681,35 +687,38 @@ pub enum RewardsProgramInstruction {
         transferable: u8,
         /// Whether the authority can revoke user accounts (0 = no, 1 = yes)
         revocable: u8,
-        /// Maximum supply of points (0 = unlimited)
-        max_supply: u64,
+        /// Bump for the points mint PDA
+        mint_bump: u8,
     } = 22,
 
-    /// Issue points to a user. Creates user points account if needed.
-    #[codama(account(name = "payer", signer, writable, docs = "Pays for user account creation if needed"))]
+    /// Issue points to a user by minting tokens. Creates user ATA if needed.
+    #[codama(account(name = "payer", signer, writable, docs = "Pays for ATA creation if needed"))]
     #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
-    #[codama(account(name = "points_config", writable, docs = "PDA: PointsConfig account"))]
+    #[codama(account(name = "points_config", docs = "PDA: PointsConfig account"))]
+    #[codama(account(name = "points_mint", writable, docs = "PDA: Token-2022 points mint"))]
     #[codama(account(name = "user", docs = "Wallet address of the user receiving points"))]
     #[codama(account(
-        name = "user_points_account",
+        name = "user_token_account",
         writable,
-        docs = "PDA: [b\"user_points\", points_config, user] (created or updated)"
+        docs = "User's ATA for the points mint (created or existing)"
     ))]
+    #[codama(account(name = "token_2022_program", docs = "Token-2022 program"))]
+    #[codama(account(name = "associated_token_program", docs = "Associated Token Account program"))]
     #[codama(account(name = "system_program", docs = "System program"))]
     #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
     #[codama(account(name = "rewards_program", docs = "This program's ID"))]
     IssuePoints {
-        /// Bump for the user points PDA
-        user_points_bump: u8,
         /// Number of points to issue
         quantity: u64,
     } = 23,
 
-    /// Use (burn) points from a user. Requires both authority and user signatures.
+    /// Use (burn) points from a user via permanent delegate. Requires both authority and user signatures.
     #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
     #[codama(account(name = "user", signer, docs = "User consenting to point usage"))]
-    #[codama(account(name = "points_config", writable, docs = "PDA: PointsConfig account"))]
-    #[codama(account(name = "user_points_account", writable, docs = "PDA: [b\"user_points\", points_config, user]"))]
+    #[codama(account(name = "points_config", docs = "PDA: PointsConfig account"))]
+    #[codama(account(name = "points_mint", writable, docs = "PDA: Token-2022 points mint"))]
+    #[codama(account(name = "user_token_account", writable, docs = "User's ATA for the points mint"))]
+    #[codama(account(name = "token_2022_program", docs = "Token-2022 program"))]
     #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
     #[codama(account(name = "rewards_program", docs = "This program's ID"))]
     UsePoints {
@@ -717,65 +726,60 @@ pub enum RewardsProgramInstruction {
         quantity: u64,
     } = 24,
 
-    /// Transfer points between users. Requires both authority and sender signatures.
-    #[codama(account(name = "payer", signer, writable, docs = "Pays for destination account creation if needed"))]
+    /// Transfer points between users via burn+mint. Requires both authority and sender signatures.
+    #[codama(account(name = "payer", signer, writable, docs = "Pays for destination ATA creation if needed"))]
     #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
     #[codama(account(name = "from_user", signer, docs = "Sender consenting to transfer"))]
-    #[codama(account(name = "points_config", docs = "PDA: PointsConfig account; must have transferable=1"))]
-    #[codama(account(
-        name = "from_user_points",
-        writable,
-        docs = "PDA: [b\"user_points\", points_config, from_user]"
-    ))]
     #[codama(account(name = "to_user", docs = "Wallet address of the recipient"))]
+    #[codama(account(name = "points_config", docs = "PDA: PointsConfig account; must have transferable=1"))]
+    #[codama(account(name = "points_mint", writable, docs = "PDA: Token-2022 points mint"))]
+    #[codama(account(name = "from_token_account", writable, docs = "Sender's ATA for the points mint"))]
     #[codama(account(
-        name = "to_user_points",
+        name = "to_token_account",
         writable,
-        docs = "PDA: [b\"user_points\", points_config, to_user] (created or updated)"
+        docs = "Recipient's ATA for the points mint (created or existing)"
     ))]
+    #[codama(account(name = "token_2022_program", docs = "Token-2022 program"))]
+    #[codama(account(name = "associated_token_program", docs = "Associated Token Account program"))]
     #[codama(account(name = "system_program", docs = "System program"))]
     #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
     #[codama(account(name = "rewards_program", docs = "This program's ID"))]
     TransferPoints {
-        /// Bump for the destination user points PDA
-        to_user_points_bump: u8,
         /// Number of points to transfer
         quantity: u64,
     } = 25,
 
-    /// Close a user points account. Balance must be zero.
+    /// Verify a user's token account has zero balance. Emits PointsAccountClosed event.
+    /// The user can close their own ATA via standard Token-2022 CloseAccount.
     #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
     #[codama(account(name = "points_config", docs = "PDA: PointsConfig account"))]
+    #[codama(account(name = "points_mint", docs = "PDA: Token-2022 points mint"))]
     #[codama(account(name = "user", docs = "Wallet address of the user"))]
-    #[codama(account(
-        name = "user_points_account",
-        writable,
-        docs = "PDA: [b\"user_points\", points_config, user] (closed)"
-    ))]
-    #[codama(account(name = "destination", writable, docs = "Receives rent refund from closed account"))]
+    #[codama(account(name = "user_token_account", docs = "User's ATA for the points mint"))]
+    #[codama(account(name = "token_2022_program", docs = "Token-2022 program"))]
     #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
     #[codama(account(name = "rewards_program", docs = "This program's ID"))]
     ClosePointsAccount {} = 26,
 
-    /// Close a points config. Authority can reclaim rent.
+    /// Close a points config and its mint. Authority can reclaim rent. Mint supply must be 0.
     #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
     #[codama(account(name = "points_config", writable, docs = "PDA: PointsConfig account (closed)"))]
-    #[codama(account(name = "destination", writable, docs = "Receives rent refund from closed account"))]
+    #[codama(account(name = "points_mint", writable, docs = "PDA: Token-2022 points mint (closed)"))]
+    #[codama(account(name = "destination", writable, docs = "Receives rent refund from closed accounts"))]
+    #[codama(account(name = "token_2022_program", docs = "Token-2022 program"))]
     #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
     #[codama(account(name = "rewards_program", docs = "This program's ID"))]
     ClosePointsConfig {} = 27,
 
-    /// Revoke a user's points. Authority force-burns the balance and closes the account.
+    /// Revoke a user's points. Authority force-burns the entire balance.
+    /// Token account stays open — user can close their own ATA.
     /// Gated on config.revocable flag. Does not require user signature.
     #[codama(account(name = "authority", signer, docs = "Points authority; must match points_config.authority"))]
-    #[codama(account(name = "points_config", writable, docs = "PDA: PointsConfig account; must have revocable=1"))]
+    #[codama(account(name = "points_config", docs = "PDA: PointsConfig account; must have revocable=1"))]
+    #[codama(account(name = "points_mint", writable, docs = "PDA: Token-2022 points mint"))]
     #[codama(account(name = "user", docs = "Wallet address of the user being revoked"))]
-    #[codama(account(
-        name = "user_points_account",
-        writable,
-        docs = "PDA: [b\"user_points\", points_config, user] (closed)"
-    ))]
-    #[codama(account(name = "destination", writable, docs = "Receives rent refund from closed account"))]
+    #[codama(account(name = "user_token_account", writable, docs = "User's ATA for the points mint"))]
+    #[codama(account(name = "token_2022_program", docs = "Token-2022 program"))]
     #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
     #[codama(account(name = "rewards_program", docs = "This program's ID"))]
     RevokePoints {} = 28,

@@ -1,10 +1,10 @@
-use pinocchio::{account::AccountView, error::ProgramError, Address, ProgramResult};
+use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
     events::PointsConfigCreatedEvent,
     state::PointsConfig,
     traits::{AccountSerialize, AccountSize, EventSerialize, PdaSeeds},
-    utils::{create_pda_account, emit_event},
+    utils::{cpi_initialize_points_mint, create_pda_account, emit_event},
     ID,
 };
 
@@ -17,16 +17,17 @@ pub fn process_init_points(_program_id: &Address, accounts: &[AccountView], inst
         ix.data.bump,
         ix.data.transferable,
         ix.data.revocable,
+        ix.data.mint_bump,
         *ix.accounts.authority.address(),
         *ix.accounts.seed.address(),
-        ix.data.max_supply,
     );
 
     config.validate_pda(ix.accounts.points_config, &ID, ix.data.bump)?;
 
     let bump_seed = [ix.data.bump];
     let config_seeds = config.seeds_with_bump(&bump_seed);
-    let config_seeds_array: [_; 4] = config_seeds.try_into().map_err(|_| ProgramError::InvalidArgument)?;
+    let config_seeds_array: [_; 4] =
+        config_seeds.try_into().map_err(|_| pinocchio::error::ProgramError::InvalidArgument)?;
 
     create_pda_account(ix.accounts.payer, PointsConfig::LEN, &ID, ix.accounts.points_config, config_seeds_array)?;
 
@@ -34,10 +35,19 @@ pub fn process_init_points(_program_id: &Address, accounts: &[AccountView], inst
     config.write_to_slice(&mut config_data)?;
     drop(config_data);
 
+    // Create the Token-2022 points mint with extensions
+    cpi_initialize_points_mint(
+        ix.accounts.payer,
+        ix.accounts.points_mint,
+        ix.accounts.points_config,
+        ix.accounts.system_program,
+        ix.accounts.token_2022_program,
+        ix.data.mint_bump,
+    )?;
+
     let event = PointsConfigCreatedEvent::new(
         *ix.accounts.authority.address(),
         *ix.accounts.seed.address(),
-        ix.data.max_supply,
         ix.data.transferable,
         ix.data.revocable,
     );

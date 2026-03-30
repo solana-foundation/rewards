@@ -52,6 +52,19 @@ pub fn verify_current_program(account: &AccountView) -> Result<(), ProgramError>
     Ok(())
 }
 
+/// Verify the account is the Token-2022 program, returning an error if it is not.
+///
+/// Unlike `verify_token_program` which accepts both SPL Token and Token-2022,
+/// this requires specifically the Token-2022 program.
+#[inline(always)]
+pub fn verify_token_2022_program(account: &AccountView) -> Result<(), ProgramError> {
+    if account.address() != &TOKEN_2022_PROGRAM_ID {
+        return Err(ProgramError::IncorrectProgramId);
+    }
+
+    Ok(())
+}
+
 /// Verify the account is the associated token program, returning an error if it is not.
 ///
 /// # Arguments

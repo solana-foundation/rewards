@@ -3,17 +3,18 @@ use solana_sdk::{
     pubkey::Pubkey,
     signature::{Keypair, Signer},
 };
+use spl_associated_token_account::get_associated_token_address_with_program_id;
+use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 
 use crate::fixtures::{IssuePointsSetup, DEFAULT_ISSUE_QUANTITY};
-use crate::utils::{
-    find_event_authority_pda, find_user_points_pda, InstructionTestFixture, TestContext, TestInstruction,
-};
+use crate::utils::{find_event_authority_pda, InstructionTestFixture, TestContext, TestInstruction};
 
 pub struct UsePointsSetup {
     pub authority: Keypair,
     pub user: Keypair,
     pub points_config_pda: Pubkey,
-    pub user_points_pda: Pubkey,
+    pub points_mint_pda: Pubkey,
+    pub user_ata: Pubkey,
     pub quantity: u64,
     pub issued_quantity: u64,
 }
@@ -35,7 +36,9 @@ impl UsePointsSetup {
             .authority(self.authority.pubkey())
             .user(self.user.pubkey())
             .points_config(self.points_config_pda)
-            .user_points_account(self.user_points_pda)
+            .points_mint(self.points_mint_pda)
+            .user_token_account(self.user_ata)
+            .token2022_program(TOKEN_2022_PROGRAM_ID)
             .event_authority(event_authority)
             .quantity(self.quantity);
 
@@ -75,15 +78,19 @@ impl<'a> UsePointsSetupBuilder<'a> {
         init_ix.send_expect_success(self.ctx);
 
         let user = self.ctx.create_funded_keypair();
-        let (user_points_pda, user_points_bump) = find_user_points_pda(&init_setup.points_config_pda, &user.pubkey());
+        let user_ata = get_associated_token_address_with_program_id(
+            &user.pubkey(),
+            &init_setup.points_mint_pda,
+            &TOKEN_2022_PROGRAM_ID,
+        );
 
         // Issue points to user
         let issue_setup = IssuePointsSetup {
             authority: init_setup.authority.insecure_clone(),
             points_config_pda: init_setup.points_config_pda,
+            points_mint_pda: init_setup.points_mint_pda,
             user: user.pubkey(),
-            user_points_pda,
-            user_points_bump,
+            user_ata,
             quantity: self.issue_quantity,
         };
         let issue_ix = issue_setup.build_instruction(self.ctx);
@@ -93,7 +100,8 @@ impl<'a> UsePointsSetupBuilder<'a> {
             authority: init_setup.authority,
             user,
             points_config_pda: init_setup.points_config_pda,
-            user_points_pda,
+            points_mint_pda: init_setup.points_mint_pda,
+            user_ata,
             quantity: self.quantity,
             issued_quantity: self.issue_quantity,
         }
@@ -115,9 +123,9 @@ impl InstructionTestFixture for UsePointsFixture {
         &[0, 1]
     }
 
-    /// 2: points_config, 3: user_points_account
+    /// 3: points_mint, 4: user_token_account
     fn required_writable() -> &'static [usize] {
-        &[2, 3]
+        &[3, 4]
     }
 
     fn system_program_index() -> Option<usize> {
@@ -125,7 +133,7 @@ impl InstructionTestFixture for UsePointsFixture {
     }
 
     fn current_program_index() -> Option<usize> {
-        Some(5)
+        Some(7)
     }
 
     fn data_len() -> usize {

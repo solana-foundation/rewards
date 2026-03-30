@@ -21,7 +21,7 @@ fn test_close_points_config_not_writable() {
 #[test]
 fn test_close_points_config_destination_not_writable() {
     let mut ctx = TestContext::new();
-    test_not_writable::<ClosePointsConfigFixture>(&mut ctx, 2);
+    test_not_writable::<ClosePointsConfigFixture>(&mut ctx, 3);
 }
 
 #[test]
@@ -59,6 +59,7 @@ fn test_close_points_config_wrong_authority() {
     let bad_setup = ClosePointsConfigSetup {
         authority: fake_authority,
         points_config_pda: setup.points_config_pda,
+        points_mint_pda: setup.points_mint_pda,
         destination: setup.destination,
     };
     let ix = bad_setup.build_instruction(&ctx);

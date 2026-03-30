@@ -1,9 +1,10 @@
 use solana_sdk::signature::{Keypair, Signer};
+use spl_associated_token_account::get_associated_token_address_with_program_id;
+use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 
 use crate::fixtures::InitPointsSetup;
 use crate::utils::{
-    assert_account_closed, assert_user_points_balance, find_event_authority_pda, find_user_points_pda,
-    get_points_config, TestContext, TestInstruction,
+    assert_account_closed, assert_user_points_balance, find_event_authority_pda, TestContext, TestInstruction,
 };
 
 #[test]
@@ -11,26 +12,29 @@ fn test_points_full_lifecycle() {
     let mut ctx = TestContext::new();
     let (event_authority, _) = find_event_authority_pda();
 
-    // ── Step 1: Init config (transferable=1, revocable=1, max_supply=1000) ──
-    let init_setup = InitPointsSetup::builder(&mut ctx).transferable(1).revocable(1).max_supply(1_000).build();
+    // ── Step 1: Init config (transferable=1, revocable=1) ──
+    let init_setup = InitPointsSetup::builder(&mut ctx).transferable(1).revocable(1).build();
     init_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
 
     let config_pda = init_setup.points_config_pda;
+    let points_mint = init_setup.points_mint_pda;
     let authority = init_setup.authority;
 
     // ── Step 2: Issue 500 to user A ─────────────────────────────────────────
     let user_a = ctx.create_funded_keypair();
-    let (user_a_pda, user_a_bump) = find_user_points_pda(&config_pda, &user_a.pubkey());
+    let user_a_ata =
+        get_associated_token_address_with_program_id(&user_a.pubkey(), &points_mint, &TOKEN_2022_PROGRAM_ID);
 
     let mut builder = rewards_program_client::instructions::IssuePointsBuilder::new();
     builder
         .payer(ctx.payer.pubkey())
         .authority(authority.pubkey())
         .points_config(config_pda)
+        .points_mint(points_mint)
         .user(user_a.pubkey())
-        .user_points_account(user_a_pda)
+        .user_token_account(user_a_ata)
+        .token2022_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority)
-        .user_points_bump(user_a_bump)
         .quantity(500);
     TestInstruction {
         instruction: builder.instruction(),
@@ -39,21 +43,23 @@ fn test_points_full_lifecycle() {
     }
     .send_expect_success(&mut ctx);
 
-    assert_user_points_balance(&ctx, &user_a_pda, 500);
+    assert_user_points_balance(&ctx, &user_a.pubkey(), &points_mint, 500);
 
     // ── Step 3: Issue 300 to user B ─────────────────────────────────────────
     let user_b = Keypair::new();
-    let (user_b_pda, user_b_bump) = find_user_points_pda(&config_pda, &user_b.pubkey());
+    let user_b_ata =
+        get_associated_token_address_with_program_id(&user_b.pubkey(), &points_mint, &TOKEN_2022_PROGRAM_ID);
 
     let mut builder = rewards_program_client::instructions::IssuePointsBuilder::new();
     builder
         .payer(ctx.payer.pubkey())
         .authority(authority.pubkey())
         .points_config(config_pda)
+        .points_mint(points_mint)
         .user(user_b.pubkey())
-        .user_points_account(user_b_pda)
+        .user_token_account(user_b_ata)
+        .token2022_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority)
-        .user_points_bump(user_b_bump)
         .quantity(300);
     TestInstruction {
         instruction: builder.instruction(),
@@ -62,11 +68,7 @@ fn test_points_full_lifecycle() {
     }
     .send_expect_success(&mut ctx);
 
-    assert_user_points_balance(&ctx, &user_b_pda, 300);
-
-    let config = get_points_config(&ctx, &config_pda);
-    assert_eq!(config.total_issued, 800);
-    assert_eq!(config.total_used, 0);
+    assert_user_points_balance(&ctx, &user_b.pubkey(), &points_mint, 300);
 
     // ── Step 4: Transfer 100 from A to B ────────────────────────────────────
     let mut builder = rewards_program_client::instructions::TransferPointsBuilder::new();
@@ -74,12 +76,13 @@ fn test_points_full_lifecycle() {
         .payer(ctx.payer.pubkey())
         .authority(authority.pubkey())
         .from_user(user_a.pubkey())
-        .points_config(config_pda)
-        .from_user_points(user_a_pda)
         .to_user(user_b.pubkey())
-        .to_user_points(user_b_pda)
+        .points_config(config_pda)
+        .points_mint(points_mint)
+        .from_token_account(user_a_ata)
+        .to_token_account(user_b_ata)
+        .token2022_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority)
-        .to_user_points_bump(user_b_bump)
         .quantity(100);
     TestInstruction {
         instruction: builder.instruction(),
@@ -88,8 +91,8 @@ fn test_points_full_lifecycle() {
     }
     .send_expect_success(&mut ctx);
 
-    assert_user_points_balance(&ctx, &user_a_pda, 400); // 500 - 100
-    assert_user_points_balance(&ctx, &user_b_pda, 400); // 300 + 100
+    assert_user_points_balance(&ctx, &user_a.pubkey(), &points_mint, 400); // 500 - 100
+    assert_user_points_balance(&ctx, &user_b.pubkey(), &points_mint, 400); // 300 + 100
 
     // ── Step 5: Use 200 from A ──────────────────────────────────────────────
     let mut builder = rewards_program_client::instructions::UsePointsBuilder::new();
@@ -97,7 +100,9 @@ fn test_points_full_lifecycle() {
         .authority(authority.pubkey())
         .user(user_a.pubkey())
         .points_config(config_pda)
-        .user_points_account(user_a_pda)
+        .points_mint(points_mint)
+        .user_token_account(user_a_ata)
+        .token2022_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority)
         .quantity(200);
     TestInstruction {
@@ -107,19 +112,17 @@ fn test_points_full_lifecycle() {
     }
     .send_expect_success(&mut ctx);
 
-    assert_user_points_balance(&ctx, &user_a_pda, 200); // 400 - 200
+    assert_user_points_balance(&ctx, &user_a.pubkey(), &points_mint, 200); // 400 - 200
 
-    let config = get_points_config(&ctx, &config_pda);
-    assert_eq!(config.total_used, 200);
-
-    // ── Step 6: Revoke B (burns 400, closes account) ────────────────────────
+    // ── Step 6: Revoke B (burns 400) ────────────────────────────────────────
     let mut builder = rewards_program_client::instructions::RevokePointsBuilder::new();
     builder
         .authority(authority.pubkey())
         .points_config(config_pda)
+        .points_mint(points_mint)
         .user(user_b.pubkey())
-        .user_points_account(user_b_pda)
-        .destination(ctx.payer.pubkey())
+        .user_token_account(user_b_ata)
+        .token2022_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority);
     TestInstruction {
         instruction: builder.instruction(),
@@ -128,10 +131,8 @@ fn test_points_full_lifecycle() {
     }
     .send_expect_success(&mut ctx);
 
-    assert_account_closed(&ctx, &user_b_pda);
-
-    let config = get_points_config(&ctx, &config_pda);
-    assert_eq!(config.total_used, 600); // 200 + 400 revoked
+    // Tokens burned but account still exists
+    assert_user_points_balance(&ctx, &user_b.pubkey(), &points_mint, 0);
 
     // ── Step 7: Use remaining 200 from A, then close A ──────────────────────
     // Advance slot to get a fresh blockhash — step 5 used the same accounts,
@@ -142,7 +143,9 @@ fn test_points_full_lifecycle() {
         .authority(authority.pubkey())
         .user(user_a.pubkey())
         .points_config(config_pda)
-        .user_points_account(user_a_pda)
+        .points_mint(points_mint)
+        .user_token_account(user_a_ata)
+        .token2022_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority)
         .quantity(200);
     TestInstruction {
@@ -152,16 +155,17 @@ fn test_points_full_lifecycle() {
     }
     .send_expect_success(&mut ctx);
 
-    assert_user_points_balance(&ctx, &user_a_pda, 0);
+    assert_user_points_balance(&ctx, &user_a.pubkey(), &points_mint, 0);
 
-    // Close A's account
+    // Close A's points account (verifies zero balance, emits event)
     let mut builder = rewards_program_client::instructions::ClosePointsAccountBuilder::new();
     builder
         .authority(authority.pubkey())
         .points_config(config_pda)
+        .points_mint(points_mint)
         .user(user_a.pubkey())
-        .user_points_account(user_a_pda)
-        .destination(ctx.payer.pubkey())
+        .user_token_account(user_a_ata)
+        .token2022_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority);
     TestInstruction {
         instruction: builder.instruction(),
@@ -170,18 +174,31 @@ fn test_points_full_lifecycle() {
     }
     .send_expect_success(&mut ctx);
 
-    assert_account_closed(&ctx, &user_a_pda);
+    // Also close B's (already zero from revoke)
+    let mut builder = rewards_program_client::instructions::ClosePointsAccountBuilder::new();
+    builder
+        .authority(authority.pubkey())
+        .points_config(config_pda)
+        .points_mint(points_mint)
+        .user(user_b.pubkey())
+        .user_token_account(user_b_ata)
+        .token2022_program(TOKEN_2022_PROGRAM_ID)
+        .event_authority(event_authority);
+    TestInstruction {
+        instruction: builder.instruction(),
+        signers: vec![authority.insecure_clone()],
+        name: "ClosePointsAccount-B",
+    }
+    .send_expect_success(&mut ctx);
 
     // ── Step 8: Close config ────────────────────────────────────────────────
-    let config = get_points_config(&ctx, &config_pda);
-    assert_eq!(config.total_issued, 800);
-    assert_eq!(config.total_used, 800); // 200 + 200 + 400
-
     let mut builder = rewards_program_client::instructions::ClosePointsConfigBuilder::new();
     builder
         .authority(authority.pubkey())
         .points_config(config_pda)
+        .points_mint(points_mint)
         .destination(ctx.payer.pubkey())
+        .token2022_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority);
     TestInstruction {
         instruction: builder.instruction(),

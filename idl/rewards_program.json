@@ -341,11 +341,20 @@
             },
             {
               "kind": "structFieldTypeNode",
+              "name": "mintBump",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
               "name": "padding",
               "type": {
                 "count": {
                   "kind": "fixedCountNode",
-                  "value": 5
+                  "value": 4
                 },
                 "item": {
                   "endian": "le",
@@ -367,33 +376,6 @@
               "name": "seed",
               "type": {
                 "kind": "publicKeyTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "maxSupply",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalIssued",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalUsed",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
               }
             }
           ],
@@ -568,49 +550,6 @@
         },
         "kind": "accountNode",
         "name": "rewardPool"
-      },
-      {
-        "data": {
-          "fields": [
-            {
-              "kind": "structFieldTypeNode",
-              "name": "bump",
-              "type": {
-                "endian": "le",
-                "format": "u8",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "padding",
-              "type": {
-                "count": {
-                  "kind": "fixedCountNode",
-                  "value": 7
-                },
-                "item": {
-                  "endian": "le",
-                  "format": "u8",
-                  "kind": "numberTypeNode"
-                },
-                "kind": "arrayTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "balance",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            }
-          ],
-          "kind": "structTypeNode"
-        },
-        "kind": "accountNode",
-        "name": "userPointsAccount"
       },
       {
         "data": {
@@ -1230,15 +1169,6 @@
             },
             {
               "kind": "structFieldTypeNode",
-              "name": "maxSupply",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
               "name": "transferable",
               "type": {
                 "endian": "le",
@@ -1252,24 +1182,6 @@
               "type": {
                 "endian": "le",
                 "format": "u8",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalIssued",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalUsed",
-              "type": {
-                "endian": "le",
-                "format": "u64",
                 "kind": "numberTypeNode"
               }
             },
@@ -1312,15 +1224,6 @@
             },
             {
               "kind": "structFieldTypeNode",
-              "name": "maxSupply",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
               "name": "transferable",
               "type": {
                 "endian": "le",
@@ -1334,24 +1237,6 @@
               "type": {
                 "endian": "le",
                 "format": "u8",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalIssued",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalUsed",
-              "type": {
-                "endian": "le",
-                "format": "u64",
                 "kind": "numberTypeNode"
               }
             }
@@ -1376,15 +1261,6 @@
               "name": "seed",
               "type": {
                 "kind": "publicKeyTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "maxSupply",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
               }
             },
             {
@@ -1437,15 +1313,6 @@
             },
             {
               "kind": "structFieldTypeNode",
-              "name": "maxSupply",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
               "name": "transferable",
               "type": {
                 "endian": "le",
@@ -1459,24 +1326,6 @@
               "type": {
                 "endian": "le",
                 "format": "u8",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalIssued",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalUsed",
-              "type": {
-                "endian": "le",
-                "format": "u64",
                 "kind": "numberTypeNode"
               }
             },
@@ -1537,15 +1386,6 @@
             },
             {
               "kind": "structFieldTypeNode",
-              "name": "maxSupply",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
               "name": "transferable",
               "type": {
                 "endian": "le",
@@ -1559,24 +1399,6 @@
               "type": {
                 "endian": "le",
                 "format": "u8",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalIssued",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalUsed",
-              "type": {
-                "endian": "le",
-                "format": "u64",
                 "kind": "numberTypeNode"
               }
             },
@@ -1628,15 +1450,6 @@
             },
             {
               "kind": "structFieldTypeNode",
-              "name": "maxSupply",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
               "name": "transferable",
               "type": {
                 "endian": "le",
@@ -1650,24 +1463,6 @@
               "type": {
                 "endian": "le",
                 "format": "u8",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalIssued",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalUsed",
-              "type": {
-                "endian": "le",
-                "format": "u64",
                 "kind": "numberTypeNode"
               }
             },
@@ -1726,15 +1521,6 @@
             },
             {
               "kind": "structFieldTypeNode",
-              "name": "maxSupply",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
               "name": "transferable",
               "type": {
                 "endian": "le",
@@ -1748,24 +1534,6 @@
               "type": {
                 "endian": "le",
                 "format": "u8",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalIssued",
-              "type": {
-                "endian": "le",
-                "format": "u64",
-                "kind": "numberTypeNode"
-              }
-            },
-            {
-              "kind": "structFieldTypeNode",
-              "name": "totalUsed",
-              "type": {
-                "endian": "le",
-                "format": "u64",
                 "kind": "numberTypeNode"
               }
             },
@@ -5241,12 +5009,30 @@
           },
           {
             "docs": [
+              "PDA: [b\"mint\", points_config] Token-2022 mint (created)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "pointsMint"
+          },
+          {
+            "docs": [
               "System program"
             ],
             "isSigner": false,
             "isWritable": false,
             "kind": "instructionAccountNode",
             "name": "systemProgram"
+          },
+          {
+            "docs": [
+              "Token-2022 program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "token2022Program"
           },
           {
             "docs": [
@@ -5311,10 +5097,10 @@
           },
           {
             "kind": "instructionArgumentNode",
-            "name": "maxSupply",
+            "name": "mintBump",
             "type": {
               "endian": "le",
-              "format": "u64",
+              "format": "u8",
               "kind": "numberTypeNode"
             }
           }
@@ -5333,7 +5119,7 @@
         "accounts": [
           {
             "docs": [
-              "Pays for user account creation if needed"
+              "Pays for ATA creation if needed"
             ],
             "isSigner": true,
             "isWritable": true,
@@ -5354,9 +5140,18 @@
               "PDA: PointsConfig account"
             ],
             "isSigner": false,
-            "isWritable": true,
+            "isWritable": false,
             "kind": "instructionAccountNode",
             "name": "pointsConfig"
+          },
+          {
+            "docs": [
+              "PDA: Token-2022 points mint"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "pointsMint"
           },
           {
             "docs": [
@@ -5369,12 +5164,30 @@
           },
           {
             "docs": [
-              "PDA: [b\"user_points\", points_config, user] (created or updated)"
+              "User's ATA for the points mint (created or existing)"
             ],
             "isSigner": false,
             "isWritable": true,
             "kind": "instructionAccountNode",
-            "name": "userPointsAccount"
+            "name": "userTokenAccount"
+          },
+          {
+            "docs": [
+              "Token-2022 program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "token2022Program"
+          },
+          {
+            "docs": [
+              "Associated Token Account program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "associatedTokenProgram"
           },
           {
             "docs": [
@@ -5413,15 +5226,6 @@
             "defaultValueStrategy": "omitted",
             "kind": "instructionArgumentNode",
             "name": "discriminator",
-            "type": {
-              "endian": "le",
-              "format": "u8",
-              "kind": "numberTypeNode"
-            }
-          },
-          {
-            "kind": "instructionArgumentNode",
-            "name": "userPointsBump",
             "type": {
               "endian": "le",
               "format": "u8",
@@ -5473,18 +5277,36 @@
               "PDA: PointsConfig account"
             ],
             "isSigner": false,
-            "isWritable": true,
+            "isWritable": false,
             "kind": "instructionAccountNode",
             "name": "pointsConfig"
           },
           {
             "docs": [
-              "PDA: [b\"user_points\", points_config, user]"
+              "PDA: Token-2022 points mint"
             ],
             "isSigner": false,
             "isWritable": true,
             "kind": "instructionAccountNode",
-            "name": "userPointsAccount"
+            "name": "pointsMint"
+          },
+          {
+            "docs": [
+              "User's ATA for the points mint"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "userTokenAccount"
+          },
+          {
+            "docs": [
+              "Token-2022 program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "token2022Program"
           },
           {
             "docs": [
@@ -5544,7 +5366,7 @@
         "accounts": [
           {
             "docs": [
-              "Pays for destination account creation if needed"
+              "Pays for destination ATA creation if needed"
             ],
             "isSigner": true,
             "isWritable": true,
@@ -5571,24 +5393,6 @@
           },
           {
             "docs": [
-              "PDA: PointsConfig account; must have transferable=1"
-            ],
-            "isSigner": false,
-            "isWritable": false,
-            "kind": "instructionAccountNode",
-            "name": "pointsConfig"
-          },
-          {
-            "docs": [
-              "PDA: [b\"user_points\", points_config, from_user]"
-            ],
-            "isSigner": false,
-            "isWritable": true,
-            "kind": "instructionAccountNode",
-            "name": "fromUserPoints"
-          },
-          {
-            "docs": [
               "Wallet address of the recipient"
             ],
             "isSigner": false,
@@ -5598,12 +5402,57 @@
           },
           {
             "docs": [
-              "PDA: [b\"user_points\", points_config, to_user] (created or updated)"
+              "PDA: PointsConfig account; must have transferable=1"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "pointsConfig"
+          },
+          {
+            "docs": [
+              "PDA: Token-2022 points mint"
             ],
             "isSigner": false,
             "isWritable": true,
             "kind": "instructionAccountNode",
-            "name": "toUserPoints"
+            "name": "pointsMint"
+          },
+          {
+            "docs": [
+              "Sender's ATA for the points mint"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "fromTokenAccount"
+          },
+          {
+            "docs": [
+              "Recipient's ATA for the points mint (created or existing)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "toTokenAccount"
+          },
+          {
+            "docs": [
+              "Token-2022 program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "token2022Program"
+          },
+          {
+            "docs": [
+              "Associated Token Account program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "associatedTokenProgram"
           },
           {
             "docs": [
@@ -5642,15 +5491,6 @@
             "defaultValueStrategy": "omitted",
             "kind": "instructionArgumentNode",
             "name": "discriminator",
-            "type": {
-              "endian": "le",
-              "format": "u8",
-              "kind": "numberTypeNode"
-            }
-          },
-          {
-            "kind": "instructionArgumentNode",
-            "name": "toUserPointsBump",
             "type": {
               "endian": "le",
               "format": "u8",
@@ -5699,6 +5539,15 @@
           },
           {
             "docs": [
+              "PDA: Token-2022 points mint"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "pointsMint"
+          },
+          {
+            "docs": [
               "Wallet address of the user"
             ],
             "isSigner": false,
@@ -5708,21 +5557,21 @@
           },
           {
             "docs": [
-              "PDA: [b\"user_points\", points_config, user] (closed)"
+              "User's ATA for the points mint"
             ],
             "isSigner": false,
-            "isWritable": true,
+            "isWritable": false,
             "kind": "instructionAccountNode",
-            "name": "userPointsAccount"
+            "name": "userTokenAccount"
           },
           {
             "docs": [
-              "Receives rent refund from closed account"
+              "Token-2022 program"
             ],
             "isSigner": false,
-            "isWritable": true,
+            "isWritable": false,
             "kind": "instructionAccountNode",
-            "name": "destination"
+            "name": "token2022Program"
           },
           {
             "docs": [
@@ -5791,12 +5640,30 @@
           },
           {
             "docs": [
-              "Receives rent refund from closed account"
+              "PDA: Token-2022 points mint (closed)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "pointsMint"
+          },
+          {
+            "docs": [
+              "Receives rent refund from closed accounts"
             ],
             "isSigner": false,
             "isWritable": true,
             "kind": "instructionAccountNode",
             "name": "destination"
+          },
+          {
+            "docs": [
+              "Token-2022 program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "token2022Program"
           },
           {
             "docs": [
@@ -5859,9 +5726,18 @@
               "PDA: PointsConfig account; must have revocable=1"
             ],
             "isSigner": false,
-            "isWritable": true,
+            "isWritable": false,
             "kind": "instructionAccountNode",
             "name": "pointsConfig"
+          },
+          {
+            "docs": [
+              "PDA: Token-2022 points mint"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "pointsMint"
           },
           {
             "docs": [
@@ -5874,21 +5750,21 @@
           },
           {
             "docs": [
-              "PDA: [b\"user_points\", points_config, user] (closed)"
+              "User's ATA for the points mint"
             ],
             "isSigner": false,
             "isWritable": true,
             "kind": "instructionAccountNode",
-            "name": "userPointsAccount"
+            "name": "userTokenAccount"
           },
           {
             "docs": [
-              "Receives rent refund from closed account"
+              "Token-2022 program"
             ],
             "isSigner": false,
-            "isWritable": true,
+            "isWritable": false,
             "kind": "instructionAccountNode",
-            "name": "destination"
+            "name": "token2022Program"
           },
           {
             "docs": [

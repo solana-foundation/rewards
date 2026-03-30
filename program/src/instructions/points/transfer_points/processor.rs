@@ -1,11 +1,14 @@
-use pinocchio::{account::AccountView, error::ProgramError, Address, ProgramResult};
+use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
     errors::RewardsProgramError,
     events::PointsTransferredEvent,
-    state::{PointsConfig, UserPointsAccount, UserPointsAccountSeeds},
-    traits::{AccountParse, AccountSerialize, AccountSize, EventSerialize, InstructionData, PdaSeeds},
-    utils::{create_pda_account, emit_event, is_pda_uninitialized},
+    state::PointsConfig,
+    traits::{EventSerialize, InstructionData},
+    utils::{
+        cpi_burn_points, cpi_create_ata_idempotent, cpi_mint_points, emit_event, get_token_account_balance,
+        validate_associated_token_account_address,
+    },
     ID,
 };
 
@@ -27,77 +30,68 @@ pub fn process_transfer_points(
     config.validate_authority(ix.accounts.authority.address())?;
     config.validate_transferable()?;
 
-    // Prevent self-transfers — writing from_account then to_account to the same
-    // underlying account would silently clobber the first write.
+    // Prevent self-transfers
     if ix.accounts.from_user.address() == ix.accounts.to_user.address() {
         return Err(RewardsProgramError::PointsSelfTransferNotAllowed.into());
     }
 
-    // Validate from_user points PDA
-    let from_seeds = UserPointsAccountSeeds {
-        points_config: *ix.accounts.points_config.address(),
-        user: *ix.accounts.from_user.address(),
-    };
-    from_seeds.validate_pda_address(ix.accounts.from_user_points, &ID)?;
+    // Validate from token account is the correct ATA
+    validate_associated_token_account_address(
+        ix.accounts.from_token_account,
+        ix.accounts.from_user.address(),
+        ix.accounts.points_mint,
+        ix.accounts.token_2022_program,
+    )?;
 
-    // Parse from user account
-    let from_data = ix.accounts.from_user_points.try_borrow()?;
-    let mut from_account = UserPointsAccount::parse_from_bytes(&from_data)?;
-    drop(from_data);
+    // Validate to token account is the correct ATA
+    validate_associated_token_account_address(
+        ix.accounts.to_token_account,
+        ix.accounts.to_user.address(),
+        ix.accounts.points_mint,
+        ix.accounts.token_2022_program,
+    )?;
 
-    from_account.validate_balance(ix.data.quantity)?;
+    // Validate from balance
+    let from_balance = get_token_account_balance(ix.accounts.from_token_account)?;
+    if from_balance < ix.data.quantity {
+        return Err(RewardsProgramError::InsufficientPointsBalance.into());
+    }
 
-    // Validate to_user points PDA
-    let to_seeds = UserPointsAccountSeeds {
-        points_config: *ix.accounts.points_config.address(),
-        user: *ix.accounts.to_user.address(),
-    };
-    to_seeds.validate_pda(ix.accounts.to_user_points, &ID, ix.data.to_user_points_bump)?;
+    // Create destination ATA if needed
+    cpi_create_ata_idempotent(
+        ix.accounts.payer,
+        ix.accounts.to_user,
+        ix.accounts.points_mint,
+        ix.accounts.to_token_account,
+        ix.accounts.system_program,
+        ix.accounts.token_2022_program,
+    )?;
 
-    // Create to_user account if needed
-    let mut to_account = if is_pda_uninitialized(ix.accounts.to_user_points) {
-        let bump_seed = [ix.data.to_user_points_bump];
-        let pda_seeds = to_seeds.seeds_with_bump(&bump_seed);
-        let pda_seeds_array: [_; 4] = pda_seeds.try_into().map_err(|_| ProgramError::InvalidArgument)?;
+    // Transfer via burn + mint (NonTransferable blocks standard transfers)
+    cpi_burn_points(
+        &config,
+        ix.accounts.from_token_account,
+        ix.accounts.points_mint,
+        ix.accounts.points_config,
+        ix.data.quantity,
+        ix.accounts.token_2022_program.address(),
+    )?;
 
-        create_pda_account(
-            ix.accounts.payer,
-            UserPointsAccount::LEN,
-            &ID,
-            ix.accounts.to_user_points,
-            pda_seeds_array,
-        )?;
-
-        UserPointsAccount::new(ix.data.to_user_points_bump)
-    } else {
-        let to_data = ix.accounts.to_user_points.try_borrow()?;
-        let account = UserPointsAccount::parse_from_bytes(&to_data)?;
-        drop(to_data);
-        account
-    };
-
-    // Transfer balances
-    from_account.sub_balance(ix.data.quantity)?;
-    to_account.add_balance(ix.data.quantity)?;
-
-    // Write updated state
-    let mut from_account_data = ix.accounts.from_user_points.try_borrow_mut()?;
-    from_account.write_to_slice(&mut from_account_data)?;
-    drop(from_account_data);
-
-    let mut to_account_data = ix.accounts.to_user_points.try_borrow_mut()?;
-    to_account.write_to_slice(&mut to_account_data)?;
-    drop(to_account_data);
+    cpi_mint_points(
+        &config,
+        ix.accounts.points_mint,
+        ix.accounts.to_token_account,
+        ix.accounts.points_config,
+        ix.data.quantity,
+        ix.accounts.token_2022_program.address(),
+    )?;
 
     let event = PointsTransferredEvent::new(
         *ix.accounts.points_config.address(),
         config.authority,
         config.seed,
-        config.max_supply,
         config.transferable,
         config.revocable,
-        config.total_issued,
-        config.total_used,
         *ix.accounts.from_user.address(),
         *ix.accounts.to_user.address(),
         ix.data.quantity,

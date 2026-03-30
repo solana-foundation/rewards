@@ -67,37 +67,18 @@ fn test_init_points_success_default() {
         setup.bump,
         0,
         0,
-        0,
-        0,
-        0,
+        setup.mint_bump,
     );
-}
 
-#[test]
-fn test_init_points_success_with_max_supply() {
-    let mut ctx = TestContext::new();
-    let setup = InitPointsSetup::builder(&mut ctx).max_supply(10_000).build();
-    let instruction = setup.build_instruction(&ctx);
-    instruction.send_expect_success(&mut ctx);
-
-    crate::utils::assert_points_config(
-        &ctx,
-        &setup.points_config_pda,
-        &setup.authority.pubkey(),
-        &setup.seed.pubkey(),
-        setup.bump,
-        0,
-        0,
-        10_000,
-        0,
-        0,
-    );
+    // Verify mint was created at the expected PDA
+    let mint_account = ctx.get_account(&setup.points_mint_pda);
+    assert!(mint_account.is_some(), "Points mint should exist after init");
 }
 
 #[test]
 fn test_init_points_success_all_flags() {
     let mut ctx = TestContext::new();
-    let setup = InitPointsSetup::builder(&mut ctx).transferable(1).revocable(1).max_supply(50_000).build();
+    let setup = InitPointsSetup::builder(&mut ctx).transferable(1).revocable(1).build();
     let instruction = setup.build_instruction(&ctx);
     instruction.send_expect_success(&mut ctx);
 
@@ -109,8 +90,6 @@ fn test_init_points_success_all_flags() {
         setup.bump,
         1,
         1,
-        50_000,
-        0,
-        0,
+        setup.mint_bump,
     );
 }

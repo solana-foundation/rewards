@@ -3,12 +3,14 @@ use solana_sdk::{
     pubkey::Pubkey,
     signature::{Keypair, Signer},
 };
+use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 
 use crate::utils::{find_event_authority_pda, InstructionTestFixture, TestContext, TestInstruction};
 
 pub struct ClosePointsConfigSetup {
     pub authority: Keypair,
     pub points_config_pda: Pubkey,
+    pub points_mint_pda: Pubkey,
     pub destination: Pubkey,
 }
 
@@ -23,6 +25,7 @@ impl ClosePointsConfigSetup {
         ClosePointsConfigSetup {
             authority: init_setup.authority,
             points_config_pda: init_setup.points_config_pda,
+            points_mint_pda: init_setup.points_mint_pda,
             destination: destination.pubkey(),
         }
     }
@@ -34,7 +37,9 @@ impl ClosePointsConfigSetup {
         builder
             .authority(self.authority.pubkey())
             .points_config(self.points_config_pda)
+            .points_mint(self.points_mint_pda)
             .destination(self.destination)
+            .token2022_program(TOKEN_2022_PROGRAM_ID)
             .event_authority(event_authority);
 
         TestInstruction {
@@ -60,9 +65,9 @@ impl InstructionTestFixture for ClosePointsConfigFixture {
         &[0]
     }
 
-    /// 1: points_config, 2: destination
+    /// 1: points_config, 2: points_mint, 3: destination
     fn required_writable() -> &'static [usize] {
-        &[1, 2]
+        &[1, 2, 3]
     }
 
     fn system_program_index() -> Option<usize> {
@@ -70,7 +75,7 @@ impl InstructionTestFixture for ClosePointsConfigFixture {
     }
 
     fn current_program_index() -> Option<usize> {
-        Some(4)
+        Some(6)
     }
 
     fn data_len() -> usize {

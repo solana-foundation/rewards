@@ -8,7 +8,6 @@ use crate::traits::{EventDiscriminator, EventDiscriminators, EventSerialize};
 pub struct PointsConfigCreatedEvent {
     pub authority: Address,
     pub seed: Address,
-    pub max_supply: u64,
     pub transferable: u8,
     pub revocable: u8,
 }
@@ -23,7 +22,6 @@ impl EventSerialize for PointsConfigCreatedEvent {
         let mut data = Vec::with_capacity(Self::DATA_LEN);
         data.extend_from_slice(self.authority.as_ref());
         data.extend_from_slice(self.seed.as_ref());
-        data.extend_from_slice(&self.max_supply.to_le_bytes());
         data.push(self.transferable);
         data.push(self.revocable);
         data
@@ -31,11 +29,11 @@ impl EventSerialize for PointsConfigCreatedEvent {
 }
 
 impl PointsConfigCreatedEvent {
-    pub const DATA_LEN: usize = 32 + 32 + 8 + 1 + 1; // 74
+    pub const DATA_LEN: usize = 32 + 32 + 1 + 1; // 66
 
     #[inline(always)]
-    pub fn new(authority: Address, seed: Address, max_supply: u64, transferable: u8, revocable: u8) -> Self {
-        Self { authority, seed, max_supply, transferable, revocable }
+    pub fn new(authority: Address, seed: Address, transferable: u8, revocable: u8) -> Self {
+        Self { authority, seed, transferable, revocable }
     }
 }
 
@@ -49,22 +47,21 @@ mod tests {
     fn test_points_config_created_event() {
         let authority = Address::new_from_array([1u8; 32]);
         let seed = Address::new_from_array([2u8; 32]);
-        let event = PointsConfigCreatedEvent::new(authority, seed, 1_000_000, 1, 0);
+        let event = PointsConfigCreatedEvent::new(authority, seed, 1, 0);
 
         let bytes = event.to_bytes_inner();
         assert_eq!(bytes.len(), PointsConfigCreatedEvent::DATA_LEN);
         assert_eq!(&bytes[..32], authority.as_ref());
         assert_eq!(&bytes[32..64], seed.as_ref());
-        assert_eq!(&bytes[64..72], &1_000_000u64.to_le_bytes());
-        assert_eq!(bytes[72], 1);
-        assert_eq!(bytes[73], 0);
+        assert_eq!(bytes[64], 1);
+        assert_eq!(bytes[65], 0);
     }
 
     #[test]
     fn test_points_config_created_event_to_bytes() {
         let authority = Address::new_from_array([1u8; 32]);
         let seed = Address::new_from_array([2u8; 32]);
-        let event = PointsConfigCreatedEvent::new(authority, seed, 0, 1, 1);
+        let event = PointsConfigCreatedEvent::new(authority, seed, 1, 1);
 
         let bytes = event.to_bytes();
         assert_eq!(bytes.len(), EVENT_DISCRIMINATOR_LEN + PointsConfigCreatedEvent::DATA_LEN);

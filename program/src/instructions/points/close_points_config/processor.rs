@@ -4,7 +4,7 @@ use crate::{
     events::PointsConfigClosedEvent,
     state::PointsConfig,
     traits::EventSerialize,
-    utils::{close_pda_account, emit_event},
+    utils::{close_pda_account, cpi_close_points_mint, emit_event},
     ID,
 };
 
@@ -23,19 +23,24 @@ pub fn process_close_points_config(
 
     config.validate_authority(ix.accounts.authority.address())?;
 
-    // Intentionally does not check outstanding balances. Authority has full discretion
-    // to close the config at any time. Use revoke_points to clean up user accounts first.
+    // Close the Token-2022 mint first (requires supply == 0, enforced by Token-2022)
+    cpi_close_points_mint(
+        &config,
+        ix.accounts.points_mint,
+        ix.accounts.destination,
+        ix.accounts.points_config,
+        ix.accounts.token_2022_program.address(),
+    )?;
+
+    // Close the config PDA, reclaim rent to destination
     close_pda_account(ix.accounts.points_config, ix.accounts.destination)?;
 
     let event = PointsConfigClosedEvent::new(
         *ix.accounts.points_config.address(),
         config.authority,
         config.seed,
-        config.max_supply,
         config.transferable,
         config.revocable,
-        config.total_issued,
-        config.total_used,
     );
     emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;
 

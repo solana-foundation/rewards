@@ -1,10 +1,11 @@
 use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
+    errors::RewardsProgramError,
     events::PointsUsedEvent,
-    state::{PointsConfig, UserPointsAccount},
-    traits::{AccountSerialize, EventSerialize, InstructionData},
-    utils::emit_event,
+    state::PointsConfig,
+    traits::{EventSerialize, InstructionData},
+    utils::{cpi_burn_points, emit_event, get_token_account_balance, validate_associated_token_account_address},
     ID,
 };
 
@@ -16,50 +17,47 @@ pub fn process_use_points(_program_id: &Address, accounts: &[AccountView], instr
 
     // Parse and validate config
     let config_data = ix.accounts.points_config.try_borrow()?;
-    let mut config = PointsConfig::from_account(&config_data, ix.accounts.points_config, &ID)?;
+    let config = PointsConfig::from_account(&config_data, ix.accounts.points_config, &ID)?;
     drop(config_data);
 
     config.validate_authority(ix.accounts.authority.address())?;
 
-    // Parse and validate user points account
-    let user_data = ix.accounts.user_points_account.try_borrow()?;
-    let mut user_account = UserPointsAccount::from_account(
-        &user_data,
-        ix.accounts.user_points_account,
-        &ID,
-        ix.accounts.points_config.address(),
+    // Validate user token account is the correct ATA
+    validate_associated_token_account_address(
+        ix.accounts.user_token_account,
         ix.accounts.user.address(),
+        ix.accounts.points_mint,
+        ix.accounts.token_2022_program,
     )?;
-    drop(user_data);
 
-    // Validate balance
-    user_account.validate_balance(ix.data.quantity)?;
+    // Read and validate balance
+    let balance = get_token_account_balance(ix.accounts.user_token_account)?;
+    if balance < ix.data.quantity {
+        return Err(RewardsProgramError::InsufficientPointsBalance.into());
+    }
 
-    // Update balances
-    user_account.sub_balance(ix.data.quantity)?;
-    config.add_used(ix.data.quantity)?;
+    // Burn points via permanent delegate
+    cpi_burn_points(
+        &config,
+        ix.accounts.user_token_account,
+        ix.accounts.points_mint,
+        ix.accounts.points_config,
+        ix.data.quantity,
+        ix.accounts.token_2022_program.address(),
+    )?;
 
-    // Write updated state
-    let mut user_account_data = ix.accounts.user_points_account.try_borrow_mut()?;
-    user_account.write_to_slice(&mut user_account_data)?;
-    drop(user_account_data);
-
-    let mut config_account_data = ix.accounts.points_config.try_borrow_mut()?;
-    config.write_to_slice(&mut config_account_data)?;
-    drop(config_account_data);
+    // Read new balance post-burn
+    let new_balance = get_token_account_balance(ix.accounts.user_token_account)?;
 
     let event = PointsUsedEvent::new(
         *ix.accounts.points_config.address(),
         config.authority,
         config.seed,
-        config.max_supply,
         config.transferable,
         config.revocable,
-        config.total_issued,
-        config.total_used,
         *ix.accounts.user.address(),
         ix.data.quantity,
-        user_account.balance,
+        new_balance,
     );
     emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;
 

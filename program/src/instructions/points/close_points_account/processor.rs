@@ -1,10 +1,11 @@
 use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
+    errors::RewardsProgramError,
     events::PointsAccountClosedEvent,
-    state::{PointsConfig, UserPointsAccount},
+    state::PointsConfig,
     traits::EventSerialize,
-    utils::{close_pda_account, emit_event},
+    utils::{emit_event, get_token_account_balance, validate_associated_token_account_address},
     ID,
 };
 
@@ -24,31 +25,27 @@ pub fn process_close_points_account(
 
     config.validate_authority(ix.accounts.authority.address())?;
 
-    // Parse and validate user points account
-    let user_data = ix.accounts.user_points_account.try_borrow()?;
-    let user_account = UserPointsAccount::from_account(
-        &user_data,
-        ix.accounts.user_points_account,
-        &ID,
-        ix.accounts.points_config.address(),
+    // Validate user token account is the correct ATA
+    validate_associated_token_account_address(
+        ix.accounts.user_token_account,
         ix.accounts.user.address(),
+        ix.accounts.points_mint,
+        ix.accounts.token_2022_program,
     )?;
-    drop(user_data);
 
-    // Require zero balance to close
-    user_account.validate_zero_balance()?;
-
-    close_pda_account(ix.accounts.user_points_account, ix.accounts.destination)?;
+    // Require zero balance — the user can close their own ATA via
+    // standard Token-2022 CloseAccount after this verification.
+    let balance = get_token_account_balance(ix.accounts.user_token_account)?;
+    if balance != 0 {
+        return Err(RewardsProgramError::PointsBalanceNotZero.into());
+    }
 
     let event = PointsAccountClosedEvent::new(
         *ix.accounts.points_config.address(),
         config.authority,
         config.seed,
-        config.max_supply,
         config.transferable,
         config.revocable,
-        config.total_issued,
-        config.total_used,
         *ix.accounts.user.address(),
     );
     emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;

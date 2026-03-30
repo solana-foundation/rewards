@@ -6,7 +6,7 @@ pub struct InitPointsData {
     pub bump: u8,
     pub transferable: u8,
     pub revocable: u8,
-    pub max_supply: u64,
+    pub mint_bump: u8,
 }
 
 impl<'a> TryFrom<&'a [u8]> for InitPointsData {
@@ -19,12 +19,12 @@ impl<'a> TryFrom<&'a [u8]> for InitPointsData {
         let bump = data[0];
         let transferable = data[1];
         let revocable = data[2];
-        let max_supply = u64::from_le_bytes(data[3..11].try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
+        let mint_bump = data[3];
 
-        Ok(Self { bump, transferable, revocable, max_supply })
+        Ok(Self { bump, transferable, revocable, mint_bump })
     }
 }
 
 impl<'a> InstructionData<'a> for InitPointsData {
-    const LEN: usize = 11; // bump(1) + transferable(1) + revocable(1) + max_supply(8)
+    const LEN: usize = 4; // bump(1) + transferable(1) + revocable(1) + mint_bump(1)
 }

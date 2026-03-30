@@ -1,10 +1,13 @@
-use pinocchio::{account::AccountView, error::ProgramError, Address, ProgramResult};
+use pinocchio::{account::AccountView, Address, ProgramResult};
 
 use crate::{
     events::PointsIssuedEvent,
-    state::{PointsConfig, UserPointsAccount, UserPointsAccountSeeds},
-    traits::{AccountParse, AccountSerialize, AccountSize, EventSerialize, InstructionData, PdaSeeds},
-    utils::{create_pda_account, emit_event, is_pda_uninitialized},
+    state::PointsConfig,
+    traits::{EventSerialize, InstructionData},
+    utils::{
+        cpi_create_ata_idempotent, cpi_mint_points, emit_event, get_token_account_balance,
+        validate_associated_token_account_address,
+    },
     ID,
 };
 
@@ -16,66 +19,51 @@ pub fn process_issue_points(_program_id: &Address, accounts: &[AccountView], ins
 
     // Parse and validate config
     let config_data = ix.accounts.points_config.try_borrow()?;
-    let mut config = PointsConfig::from_account(&config_data, ix.accounts.points_config, &ID)?;
+    let config = PointsConfig::from_account(&config_data, ix.accounts.points_config, &ID)?;
     drop(config_data);
 
     config.validate_authority(ix.accounts.authority.address())?;
-    config.validate_max_supply(ix.data.quantity)?;
 
-    // Validate user points PDA
-    let user_seeds = UserPointsAccountSeeds {
-        points_config: *ix.accounts.points_config.address(),
-        user: *ix.accounts.user.address(),
-    };
-    user_seeds.validate_pda(ix.accounts.user_points_account, &ID, ix.data.user_points_bump)?;
+    // Validate user token account is the correct ATA
+    validate_associated_token_account_address(
+        ix.accounts.user_token_account,
+        ix.accounts.user.address(),
+        ix.accounts.points_mint,
+        ix.accounts.token_2022_program,
+    )?;
 
-    // Idempotent: create user account inline on first issue (matches ClaimMerkle pattern).
-    let mut user_account = if is_pda_uninitialized(ix.accounts.user_points_account) {
-        let bump_seed = [ix.data.user_points_bump];
-        let pda_seeds = user_seeds.seeds_with_bump(&bump_seed);
-        let pda_seeds_array: [_; 4] = pda_seeds.try_into().map_err(|_| ProgramError::InvalidArgument)?;
+    // Create ATA idempotently (first issue creates the account)
+    cpi_create_ata_idempotent(
+        ix.accounts.payer,
+        ix.accounts.user,
+        ix.accounts.points_mint,
+        ix.accounts.user_token_account,
+        ix.accounts.system_program,
+        ix.accounts.token_2022_program,
+    )?;
 
-        create_pda_account(
-            ix.accounts.payer,
-            UserPointsAccount::LEN,
-            &ID,
-            ix.accounts.user_points_account,
-            pda_seeds_array,
-        )?;
+    // Mint points to the user's token account
+    cpi_mint_points(
+        &config,
+        ix.accounts.points_mint,
+        ix.accounts.user_token_account,
+        ix.accounts.points_config,
+        ix.data.quantity,
+        ix.accounts.token_2022_program.address(),
+    )?;
 
-        UserPointsAccount::new(ix.data.user_points_bump)
-    } else {
-        let user_data = ix.accounts.user_points_account.try_borrow()?;
-        let account = UserPointsAccount::parse_from_bytes(&user_data)?;
-        drop(user_data);
-        account
-    };
-
-    // Update balances
-    user_account.add_balance(ix.data.quantity)?;
-    config.add_issued(ix.data.quantity)?;
-
-    // Write updated state
-    let mut user_account_data = ix.accounts.user_points_account.try_borrow_mut()?;
-    user_account.write_to_slice(&mut user_account_data)?;
-    drop(user_account_data);
-
-    let mut config_account_data = ix.accounts.points_config.try_borrow_mut()?;
-    config.write_to_slice(&mut config_account_data)?;
-    drop(config_account_data);
+    // Read new balance from ATA post-mint
+    let new_balance = get_token_account_balance(ix.accounts.user_token_account)?;
 
     let event = PointsIssuedEvent::new(
         *ix.accounts.points_config.address(),
         config.authority,
         config.seed,
-        config.max_supply,
         config.transferable,
         config.revocable,
-        config.total_issued,
-        config.total_used,
         *ix.accounts.user.address(),
         ix.data.quantity,
-        user_account.balance,
+        new_balance,
     );
     emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;
 

@@ -1,10 +1,11 @@
-use solana_sdk::{instruction::InstructionError, signer::Signer};
+use solana_sdk::signer::Signer;
+use spl_associated_token_account::get_associated_token_address_with_program_id;
+use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 
 use crate::fixtures::{InitPointsSetup, IssuePointsSetup, TransferPointsFixture, TransferPointsSetup};
 use crate::utils::{
-    assert_instruction_error, assert_rewards_error, assert_user_points_balance, find_user_points_pda,
-    get_points_config, test_empty_data, test_missing_signer, test_not_writable, test_truncated_data,
-    test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext,
+    assert_rewards_error, assert_user_points_balance, test_empty_data, test_missing_signer, test_not_writable,
+    test_truncated_data, test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext,
 };
 
 // ── Generic validation tests ────────────────────────────────────────────────
@@ -22,15 +23,15 @@ fn test_transfer_points_missing_from_user_signer() {
 }
 
 #[test]
-fn test_transfer_points_from_user_points_not_writable() {
+fn test_transfer_points_from_token_account_not_writable() {
     let mut ctx = TestContext::new();
-    test_not_writable::<TransferPointsFixture>(&mut ctx, 4);
+    test_not_writable::<TransferPointsFixture>(&mut ctx, 6);
 }
 
 #[test]
-fn test_transfer_points_to_user_points_not_writable() {
+fn test_transfer_points_to_token_account_not_writable() {
     let mut ctx = TestContext::new();
-    test_not_writable::<TransferPointsFixture>(&mut ctx, 6);
+    test_not_writable::<TransferPointsFixture>(&mut ctx, 7);
 }
 
 #[test]
@@ -66,13 +67,8 @@ fn test_transfer_points_success_to_new_user() {
     let ix = setup.build_instruction(&ctx);
     ix.send_expect_success(&mut ctx);
 
-    assert_user_points_balance(&ctx, &setup.from_user_points_pda, 600);
-    assert_user_points_balance(&ctx, &setup.to_user_points_pda, 400);
-
-    // Config totals should be unchanged by transfers
-    let config = get_points_config(&ctx, &setup.points_config_pda);
-    assert_eq!(config.total_issued, 1_000);
-    assert_eq!(config.total_used, 0);
+    assert_user_points_balance(&ctx, &setup.from_user.pubkey(), &setup.points_mint_pda, 600);
+    assert_user_points_balance(&ctx, &setup.to_user, &setup.points_mint_pda, 400);
 }
 
 #[test]
@@ -82,8 +78,8 @@ fn test_transfer_points_success_full_balance() {
     let ix = setup.build_instruction(&ctx);
     ix.send_expect_success(&mut ctx);
 
-    assert_user_points_balance(&ctx, &setup.from_user_points_pda, 0);
-    assert_user_points_balance(&ctx, &setup.to_user_points_pda, 1_000);
+    assert_user_points_balance(&ctx, &setup.from_user.pubkey(), &setup.points_mint_pda, 0);
+    assert_user_points_balance(&ctx, &setup.to_user, &setup.points_mint_pda, 1_000);
 }
 
 // ── Error tests ─────────────────────────────────────────────────────────────
@@ -108,21 +104,29 @@ fn test_transfer_points_disabled() {
     init_ix.send_expect_success(&mut ctx);
 
     let from_user = ctx.create_funded_keypair();
-    let (from_pda, from_bump) = find_user_points_pda(&init_setup.points_config_pda, &from_user.pubkey());
+    let from_token_account = get_associated_token_address_with_program_id(
+        &from_user.pubkey(),
+        &init_setup.points_mint_pda,
+        &TOKEN_2022_PROGRAM_ID,
+    );
 
     // Issue to from_user
     let issue = IssuePointsSetup {
         authority: init_setup.authority.insecure_clone(),
         points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
         user: from_user.pubkey(),
-        user_points_pda: from_pda,
-        user_points_bump: from_bump,
+        user_ata: from_token_account,
         quantity: 1_000,
     };
     issue.build_instruction(&ctx).send_expect_success(&mut ctx);
 
     let to_user = solana_sdk::signature::Keypair::new();
-    let (to_pda, to_bump) = find_user_points_pda(&init_setup.points_config_pda, &to_user.pubkey());
+    let to_token_account = get_associated_token_address_with_program_id(
+        &to_user.pubkey(),
+        &init_setup.points_mint_pda,
+        &TOKEN_2022_PROGRAM_ID,
+    );
 
     // Attempt transfer on non-transferable config
     let transfer_setup = TransferPointsSetup {
@@ -130,9 +134,9 @@ fn test_transfer_points_disabled() {
         from_user,
         to_user: to_user.pubkey(),
         points_config_pda: init_setup.points_config_pda,
-        from_user_points_pda: from_pda,
-        to_user_points_pda: to_pda,
-        to_user_points_bump: to_bump,
+        points_mint_pda: init_setup.points_mint_pda,
+        from_token_account,
+        to_token_account,
         quantity: 500,
         issued_quantity: 1_000,
     };
@@ -161,9 +165,9 @@ fn test_transfer_points_wrong_authority() {
         from_user: setup.from_user,
         to_user: setup.to_user,
         points_config_pda: setup.points_config_pda,
-        from_user_points_pda: setup.from_user_points_pda,
-        to_user_points_pda: setup.to_user_points_pda,
-        to_user_points_bump: setup.to_user_points_bump,
+        points_mint_pda: setup.points_mint_pda,
+        from_token_account: setup.from_token_account,
+        to_token_account: setup.to_token_account,
         quantity: setup.quantity,
         issued_quantity: setup.issued_quantity,
     };
@@ -173,39 +177,9 @@ fn test_transfer_points_wrong_authority() {
 }
 
 #[test]
-fn test_transfer_points_from_user_pda_mismatch() {
-    let mut ctx = TestContext::new();
-    let setup = TransferPointsSetup::new(&mut ctx);
-
-    // Derive a PDA for a different user (not from_user)
-    let other_user = solana_sdk::signature::Keypair::new();
-    let (wrong_from_pda, _) = find_user_points_pda(&setup.points_config_pda, &other_user.pubkey());
-
-    // Use correct from_user signer but wrong from_user_points PDA
-    let bad_setup = TransferPointsSetup {
-        authority: setup.authority,
-        from_user: setup.from_user, // correct signer
-        to_user: setup.to_user,
-        points_config_pda: setup.points_config_pda,
-        from_user_points_pda: wrong_from_pda, // doesn't derive from from_user
-        to_user_points_pda: setup.to_user_points_pda,
-        to_user_points_bump: setup.to_user_points_bump,
-        quantity: setup.quantity,
-        issued_quantity: setup.issued_quantity,
-    };
-    let ix = bad_setup.build_instruction(&ctx);
-    let error = ix.send_expect_error(&mut ctx);
-    // PDA doesn't exist on-chain, so ownership check fires before PDA derivation
-    assert_instruction_error(error, InstructionError::InvalidAccountOwner);
-}
-
-#[test]
 fn test_transfer_points_self_transfer() {
     let mut ctx = TestContext::new();
     let setup = TransferPointsSetup::new(&mut ctx);
-
-    // Derive the correct bump for from_user's points PDA
-    let (_, from_bump) = find_user_points_pda(&setup.points_config_pda, &setup.from_user.pubkey());
 
     // Attempt transfer where from_user == to_user
     let self_transfer = TransferPointsSetup {
@@ -213,9 +187,9 @@ fn test_transfer_points_self_transfer() {
         from_user: setup.from_user.insecure_clone(),
         to_user: setup.from_user.pubkey(),
         points_config_pda: setup.points_config_pda,
-        from_user_points_pda: setup.from_user_points_pda,
-        to_user_points_pda: setup.from_user_points_pda,
-        to_user_points_bump: from_bump,
+        points_mint_pda: setup.points_mint_pda,
+        from_token_account: setup.from_token_account,
+        to_token_account: setup.from_token_account,
         quantity: setup.quantity,
         issued_quantity: setup.issued_quantity,
     };

@@ -59,6 +59,8 @@ mod test_issue_points;
 #[cfg(test)]
 mod test_points_lifecycle;
 #[cfg(test)]
+mod test_points_nontransferable;
+#[cfg(test)]
 mod test_revoke_points;
 #[cfg(test)]
 mod test_transfer_points;

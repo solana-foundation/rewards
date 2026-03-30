@@ -1,11 +1,12 @@
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
+use spl_associated_token_account::get_associated_token_address_with_program_id;
+use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 
 use crate::fixtures::{InitPointsSetup, IssuePointsSetup, RevokePointsFixture, RevokePointsSetup};
 use crate::utils::{
-    assert_account_closed, assert_rewards_error, find_event_authority_pda, find_user_points_pda, get_points_config,
-    test_empty_data, test_missing_signer, test_not_writable, test_wrong_current_program, RewardsError, TestContext,
-    TestInstruction,
+    assert_rewards_error, assert_user_points_balance, find_event_authority_pda, test_empty_data, test_missing_signer,
+    test_not_writable, test_wrong_current_program, RewardsError, TestContext, TestInstruction,
 };
 
 // ── Generic validation tests ────────────────────────────────────────────────
@@ -17,19 +18,13 @@ fn test_revoke_points_missing_authority_signer() {
 }
 
 #[test]
-fn test_revoke_points_config_not_writable() {
+fn test_revoke_points_points_mint_not_writable() {
     let mut ctx = TestContext::new();
-    test_not_writable::<RevokePointsFixture>(&mut ctx, 1);
+    test_not_writable::<RevokePointsFixture>(&mut ctx, 2);
 }
 
 #[test]
-fn test_revoke_points_user_points_not_writable() {
-    let mut ctx = TestContext::new();
-    test_not_writable::<RevokePointsFixture>(&mut ctx, 3);
-}
-
-#[test]
-fn test_revoke_points_destination_not_writable() {
+fn test_revoke_points_user_token_account_not_writable() {
     let mut ctx = TestContext::new();
     test_not_writable::<RevokePointsFixture>(&mut ctx, 4);
 }
@@ -55,13 +50,8 @@ fn test_revoke_points_success() {
     let ix = setup.build_instruction(&ctx);
     ix.send_expect_success(&mut ctx);
 
-    // User account should be closed
-    assert_account_closed(&ctx, &setup.user_points_pda);
-
-    // Config total_used should be incremented by the revoked balance
-    let config = get_points_config(&ctx, &setup.points_config_pda);
-    assert_eq!(config.total_used, 750);
-    assert_eq!(config.total_issued, 750);
+    // Tokens should be burned — balance is zero but account still exists
+    assert_user_points_balance(&ctx, &setup.user, &setup.points_mint_pda, 0);
 }
 
 // ── Error tests ─────────────────────────────────────────────────────────────
@@ -75,15 +65,19 @@ fn test_revoke_points_not_revocable() {
     init_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
 
     let user = Keypair::new();
-    let (user_points_pda, user_points_bump) = find_user_points_pda(&init_setup.points_config_pda, &user.pubkey());
+    let user_ata = get_associated_token_address_with_program_id(
+        &user.pubkey(),
+        &init_setup.points_mint_pda,
+        &TOKEN_2022_PROGRAM_ID,
+    );
 
     // Issue points
     let issue = IssuePointsSetup {
         authority: init_setup.authority.insecure_clone(),
         points_config_pda: init_setup.points_config_pda,
+        points_mint_pda: init_setup.points_mint_pda,
         user: user.pubkey(),
-        user_points_pda,
-        user_points_bump,
+        user_ata,
         quantity: 100,
     };
     issue.build_instruction(&ctx).send_expect_success(&mut ctx);
@@ -94,9 +88,10 @@ fn test_revoke_points_not_revocable() {
     builder
         .authority(init_setup.authority.pubkey())
         .points_config(init_setup.points_config_pda)
+        .points_mint(init_setup.points_mint_pda)
         .user(user.pubkey())
-        .user_points_account(user_points_pda)
-        .destination(ctx.payer.pubkey())
+        .user_token_account(user_ata)
+        .token2022_program(TOKEN_2022_PROGRAM_ID)
         .event_authority(event_authority);
 
     let ix = TestInstruction {
@@ -118,8 +113,8 @@ fn test_revoke_points_wrong_authority() {
         authority: fake_authority,
         user: setup.user,
         points_config_pda: setup.points_config_pda,
-        user_points_pda: setup.user_points_pda,
-        destination: setup.destination,
+        points_mint_pda: setup.points_mint_pda,
+        user_ata: setup.user_ata,
         issued_quantity: setup.issued_quantity,
     };
     let ix = bad_setup.build_instruction(&ctx);
