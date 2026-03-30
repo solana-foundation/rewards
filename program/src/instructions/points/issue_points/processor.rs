@@ -26,7 +26,7 @@ pub fn process_issue_points(_program_id: &Address, accounts: &[AccountView], ins
     mint_seeds.validate_pda(ix.accounts.points_mint, &ID, config.mint_bump)?;
 
     // Create ATA idempotently (first issue creates the account)
-    Points::create_ata_idempotent(
+    Points::create_account(
         ix.accounts.payer,
         ix.accounts.user,
         ix.accounts.points_mint,
@@ -36,7 +36,7 @@ pub fn process_issue_points(_program_id: &Address, accounts: &[AccountView], ins
     )?;
 
     // Mint points to the user's token account
-    Points::mint_points(
+    Points::issue(
         &config,
         ix.accounts.points_mint,
         ix.accounts.user_token_account,

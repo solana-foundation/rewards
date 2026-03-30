@@ -27,7 +27,7 @@ impl Points {
     ///
     /// Extension init instructions must be called before InitializeMint2 — this is
     /// enforced by the Token-2022 program.
-    pub fn initialize_points_mint<'a>(
+    pub fn initialize<'a>(
         payer: &'a AccountView,
         points_mint: &'a AccountView,
         config_account: &'a AccountView,
@@ -92,7 +92,7 @@ impl Points {
 
     /// Mint points to a user's token account. The PointsConfig PDA signs as mint authority.
     #[inline(always)]
-    pub fn mint_points<'a>(
+    pub fn issue<'a>(
         config: &PointsConfig,
         mint: &'a AccountView,
         destination: &'a AccountView,
@@ -108,7 +108,7 @@ impl Points {
 
     /// Burn points from a user's token account. The PointsConfig PDA signs as permanent delegate.
     #[inline(always)]
-    pub fn burn_points<'a>(
+    pub fn burn<'a>(
         config: &PointsConfig,
         token_account: &'a AccountView,
         mint: &'a AccountView,
@@ -125,7 +125,7 @@ impl Points {
     /// Close a user's token account. The PointsConfig PDA signs as permanent delegate.
     /// Rent lamports are returned to the destination account.
     #[inline(always)]
-    pub fn close_token_account<'a>(
+    pub fn close_account<'a>(
         config: &PointsConfig,
         token_account: &'a AccountView,
         destination: &'a AccountView,
@@ -141,7 +141,7 @@ impl Points {
     /// Close the points mint account via MintCloseAuthority. The PointsConfig PDA signs
     /// as close authority. Token-2022 enforces that mint supply must be 0.
     #[inline(always)]
-    pub fn close_points_mint<'a>(
+    pub fn close_mint<'a>(
         config: &PointsConfig,
         mint: &'a AccountView,
         destination: &'a AccountView,
@@ -155,7 +155,7 @@ impl Points {
 
     /// Create an Associated Token Account idempotently for a user's points.
     #[inline(always)]
-    pub fn create_ata_idempotent<'a>(
+    pub fn create_account<'a>(
         payer: &'a AccountView,
         user: &'a AccountView,
         mint: &'a AccountView,

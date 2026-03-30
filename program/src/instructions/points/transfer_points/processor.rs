@@ -43,7 +43,7 @@ pub fn process_transfer_points(
     }
 
     // Create destination ATA if needed
-    Points::create_ata_idempotent(
+    Points::create_account(
         ix.accounts.payer,
         ix.accounts.to_user,
         ix.accounts.points_mint,
@@ -53,7 +53,7 @@ pub fn process_transfer_points(
     )?;
 
     // Transfer via burn + mint (NonTransferable blocks standard transfers)
-    Points::burn_points(
+    Points::burn(
         &config,
         ix.accounts.from_token_account,
         ix.accounts.points_mint,
@@ -62,7 +62,7 @@ pub fn process_transfer_points(
         ix.accounts.token_2022_program.address(),
     )?;
 
-    Points::mint_points(
+    Points::issue(
         &config,
         ix.accounts.points_mint,
         ix.accounts.to_token_account,

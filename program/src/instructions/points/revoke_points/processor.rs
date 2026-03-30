@@ -40,7 +40,7 @@ pub fn process_revoke_points(
     // The token account stays open — the user can close their own ATA
     // via standard Token-2022 CloseAccount since PermanentDelegate only
     // authorizes Burn/Transfer, not CloseAccount.
-    Points::burn_points(
+    Points::burn(
         &config,
         ix.accounts.user_token_account,
         ix.accounts.points_mint,

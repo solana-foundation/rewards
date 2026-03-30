@@ -36,7 +36,7 @@ pub fn process_init_points(_program_id: &Address, accounts: &[AccountView], inst
     drop(config_data);
 
     // Create the Token-2022 points mint with extensions
-    Points::initialize_points_mint(
+    Points::initialize(
         ix.accounts.payer,
         ix.accounts.points_mint,
         ix.accounts.points_config,

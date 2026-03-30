@@ -33,7 +33,7 @@ pub fn process_use_points(_program_id: &Address, accounts: &[AccountView], instr
     }
 
     // Burn points via permanent delegate
-    Points::burn_points(
+    Points::burn(
         &config,
         ix.accounts.user_token_account,
         ix.accounts.points_mint,
