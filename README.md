@@ -19,13 +19,14 @@ REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi
 
 ## Overview
 
-A token rewards program for Solana that supports three distribution models: direct allocations with vesting, merkle-proof-based claims, and continuous reward pools with proportional distribution.
+A token rewards program for Solana that supports four distribution models: direct allocations with vesting, merkle-proof-based claims, continuous reward pools with proportional distribution, and authority-managed points.
 
 ## Key Features
 
-- **Three distribution types** - Direct (on-chain recipient accounts), Merkle (off-chain tree, on-chain root), and Continuous (proportional reward pools)
+- **Four distribution types** - Direct (on-chain recipient accounts), Merkle (off-chain tree, on-chain root), Continuous (proportional reward pools), and Points (authority-managed non-transferable tokens)
 - **Configurable vesting schedules** - Immediate, Linear, Cliff, and CliffLinear (Direct and Merkle)
 - **Continuous reward pools** - Users earn rewards proportional to their held balance over time
+- **Points system** - Authority issues/uses/revokes non-transferable Token-2022 points with permanent delegate control
 - **Revocation support** - Authority can revoke recipients across all distribution types (NonVested or Full mode)
 - **Token-2022 support** - Works with both SPL Token and Token-2022 mints
 
@@ -33,13 +34,13 @@ A token rewards program for Solana that supports three distribution models: dire
 
 ### Distribution Type
 
-|                  | Direct                                          | Merkle                                                                   | Continuous                                                         |
-| ---------------- | ----------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| **How it works** | Creates an on-chain account per recipient       | Stores a single merkle root on-chain; recipients provide proofs to claim | Users opt in; rewards distributed proportional to held balance     |
-| **Upfront cost** | Authority pays rent for every recipient account | No per-recipient accounts until someone claims                           | Users pay rent for their own reward account on opt-in              |
-| **Scalability**  | Practical up to low thousands of recipients     | Scales to millions with constant on-chain storage                        | Scales to any number of opted-in users                             |
-| **Mutability**   | Recipients can be added after creation          | Recipient set is fixed at creation                                       | Users opt in/out freely; authority distributes rewards at any time |
-| **Best for**     | Small, dynamic distributions                    | Large, fixed distributions                                               | Ongoing reward programs (staking, liquidity mining)                |
+|                  | Direct                                          | Merkle                                                                   | Continuous                                                         | Points                                                       |
+| ---------------- | ----------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------ |
+| **How it works** | Creates an on-chain account per recipient       | Stores a single merkle root on-chain; recipients provide proofs to claim | Users opt in; rewards distributed proportional to held balance     | Authority issues non-transferable Token-2022 tokens to users |
+| **Upfront cost** | Authority pays rent for every recipient account | No per-recipient accounts until someone claims                           | Users pay rent for their own reward account on opt-in              | Payer pays rent for user ATA on first issue                  |
+| **Scalability**  | Practical up to low thousands of recipients     | Scales to millions with constant on-chain storage                        | Scales to any number of opted-in users                             | Scales to any number of users                                |
+| **Mutability**   | Recipients can be added after creation          | Recipient set is fixed at creation                                       | Users opt in/out freely; authority distributes rewards at any time | Authority issues/uses/revokes at any time                    |
+| **Best for**     | Small, dynamic distributions                    | Large, fixed distributions                                               | Ongoing reward programs (staking, liquidity mining)                | Loyalty points, reputation, non-transferable rewards         |
 
 ### Vesting Schedule (Direct & Merkle only)
 
@@ -69,6 +70,8 @@ Revocation is opt-in per distribution via the `revocable` bitmask field. A `Revo
 | MerkleClaim        | `["merkle_claim", distribution, claimant]`                    | Tracks claimed amount per claimant            |
 | RewardPool         | `["reward_pool", reward_mint, tracked_mint, authority, seed]` | Continuous pool config and reward accumulator |
 | UserRewardAccount  | `["user_reward", reward_pool, user]`                          | Tracks user participation and accrued rewards |
+| PointsConfig       | `["points_config", authority, seed]`                          | Points system config (authority, flags)       |
+| PointsMint         | `["mint", points_config]`                                     | Token-2022 mint with extensions (PDA)         |
 | Revocation         | `["revocation", parent, user]`                                | Marker PDA blocking revoked users (all types) |
 
 ## Instructions
@@ -109,6 +112,26 @@ Revocation is opt-in per distribution via the `revocable` bitmask field. A `Revo
 | 19  | RevokeContinuousUser       | Authority revokes user from pool                         |
 | 13  | ContinuousOptOut           | User opts out and claims remaining rewards               |
 | 18  | CloseContinuousPool        | Authority closes pool, reclaims remaining tokens         |
+
+### Points
+
+| #   | Instruction        | Description                                                  |
+| --- | ------------------ | ------------------------------------------------------------ |
+| 22  | InitPoints         | Create config PDA and Token-2022 mint with extensions        |
+| 23  | IssuePoints        | Mint points to a user's ATA (created idempotently)           |
+| 24  | UsePoints          | Burn points from user via permanent delegate (user cosigns)  |
+| 25  | TransferPoints     | Transfer points between users via burn+mint (sender cosigns) |
+| 28  | RevokePoints       | Authority force-burns user's entire balance                  |
+| 26  | ClosePointsAccount | Close user's ATA after balance reaches zero (user cosigns)   |
+| 27  | ClosePointsConfig  | Close config and mint, reclaim rent (supply must be 0)       |
+
+The points mint is created with three Token-2022 extensions:
+
+- **NonTransferable** — tokens cannot be transferred via standard Token-2022 transfers
+- **PermanentDelegate** — the PointsConfig PDA can burn tokens from any holder
+- **MintCloseAuthority** — the PointsConfig PDA can close the mint when supply is 0
+
+Optional config flags: `transferable` (enables authority-mediated burn+mint transfers) and `revocable` (enables force-burn revocation).
 
 Continuous pools also support cumulative-merkle claims for high-scale distribution accounting:
 
@@ -203,6 +226,30 @@ sequenceDiagram
     Program->>User: transfer reward tokens
 ```
 
+### Points
+
+```mermaid
+sequenceDiagram
+    participant Authority
+    participant Program
+    participant User
+
+    Authority->>Program: InitPoints
+    Program->>Program: create PointsConfig PDA
+    Program->>Program: create Token-2022 mint (NonTransferable + PermanentDelegate + MintCloseAuthority)
+
+    Authority->>Program: IssuePoints
+    Program->>Program: create user ATA (idempotent)
+    Program->>User: mint points to ATA
+
+    Authority->>Program: UsePoints (+ user cosign)
+    Program->>Program: burn points via permanent delegate
+
+    Authority->>Program: ClosePointsAccount (+ user cosign)
+    Program->>Program: verify zero balance
+    Program->>User: close ATA, return rent
+```
+
 ### Closing
 
 ```mermaid
@@ -211,7 +258,7 @@ sequenceDiagram
     participant Program
     participant Accounts
 
-    Authority->>Program: CloseDirectDistribution / CloseMerkleDistribution / CloseContinuousPool
+    Authority->>Program: CloseDirectDistribution / CloseMerkleDistribution / CloseContinuousPool / ClosePointsConfig
     Program->>Accounts: return remaining tokens
     Program->>Accounts: close PDA
     Program->>Authority: reclaim rent

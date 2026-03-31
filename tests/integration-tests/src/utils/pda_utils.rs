@@ -8,6 +8,8 @@ const MERKLE_CLAIM_SEED: &[u8] = b"merkle_claim";
 const REVOCATION_SEED: &[u8] = b"revocation";
 const REWARD_POOL_SEED: &[u8] = b"reward_pool";
 const USER_REWARD_SEED: &[u8] = b"user_reward";
+const POINTS_CONFIG_SEED: &[u8] = b"points_config";
+const POINTS_MINT_SEED: &[u8] = b"mint";
 const EVENT_AUTHORITY_SEED: &[u8] = b"event_authority";
 
 pub fn find_direct_distribution_pda(mint: &Pubkey, authority: &Pubkey, seeds: &Pubkey) -> (Pubkey, u8) {
@@ -22,6 +24,14 @@ pub fn find_direct_recipient_pda(distribution: &Pubkey, recipient: &Pubkey) -> (
         &[DIRECT_RECIPIENT_SEED, distribution.as_ref(), recipient.as_ref()],
         &REWARDS_PROGRAM_ID,
     )
+}
+
+pub fn find_points_config_pda(authority: &Pubkey, seed: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[POINTS_CONFIG_SEED, authority.as_ref(), seed.as_ref()], &REWARDS_PROGRAM_ID)
+}
+
+pub fn find_points_mint_pda(points_config: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[POINTS_MINT_SEED, points_config.as_ref()], &REWARDS_PROGRAM_ID)
 }
 
 pub fn find_event_authority_pda() -> (Pubkey, u8) {

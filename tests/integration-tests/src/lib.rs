@@ -47,3 +47,22 @@ mod test_set_balance;
 mod test_set_continuous_merkle_root;
 #[cfg(test)]
 mod test_sync_balance;
+
+#[cfg(test)]
+mod test_close_points_account;
+#[cfg(test)]
+mod test_close_points_config;
+#[cfg(test)]
+mod test_init_points;
+#[cfg(test)]
+mod test_issue_points;
+#[cfg(test)]
+mod test_points_lifecycle;
+#[cfg(test)]
+mod test_points_nontransferable;
+#[cfg(test)]
+mod test_revoke_points;
+#[cfg(test)]
+mod test_transfer_points;
+#[cfg(test)]
+mod test_use_points;
