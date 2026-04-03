@@ -3,7 +3,7 @@
 import { Button } from '@solana/design-system/button';
 import { Select, SelectItem } from '@solana/design-system/select';
 import { TextInput } from '@solana/design-system/text-input';
-import { RevokeMode, type VestingScheduleArgs } from '@solana/rewards-client';
+import { BalanceSource, RevokeMode, type VestingScheduleArgs } from '@solana/rewards-client';
 import { parseBigIntValue, validateInteger } from '@/lib/validation';
 
 interface FormFieldProps {
@@ -254,6 +254,27 @@ export function RevokeModeField({ value, onChange }: { value: RevokeMode; onChan
                 { label: 'Full (1)', value: String(RevokeMode.Full) },
             ]}
             hint="NonVested sends vested rewards to user; Full returns all to authority"
+        />
+    );
+}
+
+export function BalanceSourceField({
+    value,
+    onChange,
+}: {
+    value: BalanceSource;
+    onChange: (value: BalanceSource) => void;
+}) {
+    return (
+        <SelectField
+            label="Balance Source"
+            value={String(value)}
+            onChange={next => onChange(Number(next) as BalanceSource)}
+            options={[
+                { label: 'OnChain (0)', value: String(BalanceSource.OnChain) },
+                { label: 'AuthoritySet (1)', value: String(BalanceSource.AuthoritySet) },
+            ]}
+            hint="OnChain reads user token balance on-chain; AuthoritySet accepts authority-updated balances"
         />
     );
 }

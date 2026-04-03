@@ -22,18 +22,15 @@ fmt:
     @cd program && cargo clippy --all-targets -- -D warnings
     @cd tests && cargo clippy --all-targets -- -D warnings
     pnpm format
-    pnpm --filter @solana/rewards-client build
     pnpm lint:fix
 
 check:
     cd program && cargo check --features idl
     pnpm run format:check
-    pnpm --filter @solana/rewards-client build
     pnpm lint
 
 # TypeScript type checking across all workspaces
 typecheck:
-    pnpm --filter @solana/rewards-client build
     pnpm -r run typecheck
 
 # Run unit tests
