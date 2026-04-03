@@ -5,18 +5,10 @@ pub mod close_direct_distribution;
 pub mod close_direct_recipient;
 pub mod close_merkle_claim;
 pub mod close_merkle_distribution;
-pub mod close_points_account;
-pub mod close_points_config;
-pub mod continuous;
 pub mod create_direct_distribution;
 pub mod create_merkle_distribution;
-pub mod init_points;
-pub mod issue_points;
 pub mod revoke_direct_recipient;
 pub mod revoke_merkle_claim;
-pub mod revoke_points;
-pub mod transfer_points;
-pub mod use_points;
 
 pub use add_direct_recipient::{AddDirectRecipientFixture, AddDirectRecipientSetup, DEFAULT_RECIPIENT_AMOUNT};
 pub use claim_direct::{ClaimDirectFixture, ClaimDirectSetup};
@@ -25,17 +17,9 @@ pub use close_direct_distribution::{CloseDirectDistributionFixture, CloseDirectD
 pub use close_direct_recipient::{CloseDirectRecipientFixture, CloseDirectRecipientSetup};
 pub use close_merkle_claim::{CloseMerkleClaimFixture, CloseMerkleClaimSetup};
 pub use close_merkle_distribution::{CloseMerkleDistributionFixture, CloseMerkleDistributionSetup};
-pub use close_points_account::{ClosePointsAccountFixture, ClosePointsAccountSetup};
-pub use close_points_config::{ClosePointsConfigFixture, ClosePointsConfigSetup};
-pub use continuous::*;
 pub use create_direct_distribution::{CreateDirectDistributionFixture, CreateDirectDistributionSetup};
 pub use create_merkle_distribution::{
     CreateMerkleDistributionFixture, CreateMerkleDistributionSetup, DEFAULT_MERKLE_DISTRIBUTION_AMOUNT,
 };
-pub use init_points::{InitPointsFixture, InitPointsSetup};
-pub use issue_points::{IssuePointsFixture, IssuePointsSetup, DEFAULT_ISSUE_QUANTITY};
 pub use revoke_direct_recipient::{RevokeDirectRecipientFixture, RevokeDirectRecipientSetup};
 pub use revoke_merkle_claim::{RevokeMerkleClaimFixture, RevokeMerkleClaimSetup};
-pub use revoke_points::{RevokePointsFixture, RevokePointsSetup};
-pub use transfer_points::{TransferPointsFixture, TransferPointsSetup};
-pub use use_points::{UsePointsFixture, UsePointsSetup};
