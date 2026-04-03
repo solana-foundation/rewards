@@ -8,27 +8,16 @@ import { ProgramBadge } from '@/components/ProgramBadge';
 import { RpcBadge } from '@/components/RpcBadge';
 import { WalletButton } from '@/components/WalletButton';
 import { AddDirectRecipient } from '@/components/instructions/AddDirectRecipient';
-import { ClaimContinuous } from '@/components/instructions/ClaimContinuous';
-import { ClaimContinuousMerkle } from '@/components/instructions/ClaimContinuousMerkle';
 import { ClaimDirect } from '@/components/instructions/ClaimDirect';
 import { ClaimMerkle } from '@/components/instructions/ClaimMerkle';
-import { CloseContinuousPool } from '@/components/instructions/CloseContinuousPool';
 import { CloseDirectDistribution } from '@/components/instructions/CloseDirectDistribution';
 import { CloseDirectRecipient } from '@/components/instructions/CloseDirectRecipient';
 import { CloseMerkleClaim } from '@/components/instructions/CloseMerkleClaim';
 import { CloseMerkleDistribution } from '@/components/instructions/CloseMerkleDistribution';
-import { ContinuousOptIn } from '@/components/instructions/ContinuousOptIn';
-import { ContinuousOptOut } from '@/components/instructions/ContinuousOptOut';
-import { CreateContinuousPool } from '@/components/instructions/CreateContinuousPool';
 import { CreateDirectDistribution } from '@/components/instructions/CreateDirectDistribution';
 import { CreateMerkleDistribution } from '@/components/instructions/CreateMerkleDistribution';
-import { DistributeContinuousReward } from '@/components/instructions/DistributeContinuousReward';
-import { RevokeContinuousUser } from '@/components/instructions/RevokeContinuousUser';
 import { RevokeDirectRecipient } from '@/components/instructions/RevokeDirectRecipient';
 import { RevokeMerkleClaim } from '@/components/instructions/RevokeMerkleClaim';
-import { SetContinuousBalance } from '@/components/instructions/SetContinuousBalance';
-import { SetContinuousMerkleRoot } from '@/components/instructions/SetContinuousMerkleRoot';
-import { SyncContinuousBalance } from '@/components/instructions/SyncContinuousBalance';
 
 type InstructionId =
     | 'createDirectDistribution'
@@ -41,18 +30,7 @@ type InstructionId =
     | 'claimMerkle'
     | 'revokeMerkleClaim'
     | 'closeMerkleClaim'
-    | 'closeMerkleDistribution'
-    | 'createContinuousPool'
-    | 'continuousOptIn'
-    | 'distributeContinuousReward'
-    | 'claimContinuous'
-    | 'syncContinuousBalance'
-    | 'setContinuousBalance'
-    | 'setContinuousMerkleRoot'
-    | 'claimContinuousMerkle'
-    | 'revokeContinuousUser'
-    | 'continuousOptOut'
-    | 'closeContinuousPool';
+    | 'closeMerkleDistribution';
 
 const NAV: {
     group: string;
@@ -79,22 +57,6 @@ const NAV: {
             { id: 'closeMerkleDistribution', label: 'Close Distribution' },
         ],
     },
-    {
-        group: 'CONTINUOUS',
-        items: [
-            { id: 'createContinuousPool', label: 'Create Pool' },
-            { id: 'continuousOptIn', label: 'Opt In' },
-            { id: 'distributeContinuousReward', label: 'Distribute Reward' },
-            { id: 'claimContinuous', label: 'Claim Continuous' },
-            { id: 'syncContinuousBalance', label: 'Sync Balance' },
-            { id: 'setContinuousBalance', label: 'Set Balance' },
-            { id: 'setContinuousMerkleRoot', label: 'Set Merkle Root' },
-            { id: 'claimContinuousMerkle', label: 'Claim Merkle' },
-            { id: 'revokeContinuousUser', label: 'Revoke User' },
-            { id: 'continuousOptOut', label: 'Opt Out' },
-            { id: 'closeContinuousPool', label: 'Close Pool' },
-        ],
-    },
 ];
 
 const PANELS: Record<InstructionId, { title: string; component: React.ComponentType }> = {
@@ -109,17 +71,6 @@ const PANELS: Record<InstructionId, { title: string; component: React.ComponentT
     revokeMerkleClaim: { title: 'Revoke Merkle Claim', component: RevokeMerkleClaim },
     closeMerkleClaim: { title: 'Close Merkle Claim', component: CloseMerkleClaim },
     closeMerkleDistribution: { title: 'Close Merkle Distribution', component: CloseMerkleDistribution },
-    createContinuousPool: { title: 'Create Continuous Pool', component: CreateContinuousPool },
-    continuousOptIn: { title: 'Continuous Opt In', component: ContinuousOptIn },
-    distributeContinuousReward: { title: 'Distribute Continuous Reward', component: DistributeContinuousReward },
-    claimContinuous: { title: 'Claim Continuous', component: ClaimContinuous },
-    syncContinuousBalance: { title: 'Sync Continuous Balance', component: SyncContinuousBalance },
-    setContinuousBalance: { title: 'Set Continuous Balance', component: SetContinuousBalance },
-    setContinuousMerkleRoot: { title: 'Set Continuous Merkle Root', component: SetContinuousMerkleRoot },
-    claimContinuousMerkle: { title: 'Claim Continuous Merkle', component: ClaimContinuousMerkle },
-    revokeContinuousUser: { title: 'Revoke Continuous User', component: RevokeContinuousUser },
-    continuousOptOut: { title: 'Continuous Opt Out', component: ContinuousOptOut },
-    closeContinuousPool: { title: 'Close Continuous Pool', component: CloseContinuousPool },
 };
 
 export default function HomePage() {
