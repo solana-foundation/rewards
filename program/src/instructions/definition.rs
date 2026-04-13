@@ -16,6 +16,10 @@ pub enum RewardsProgramInstruction {
         writable,
         docs = "PDA: [b\"direct_distribution\", mint, authority, seeds] (created)"
     ))]
+    #[codama(account(
+        name = "tombstone",
+        docs = "PDA: [b\"direct_distribution_tombstone\", distribution] (must be uninitialized)"
+    ))]
     #[codama(account(name = "mint", docs = "SPL token mint"))]
     #[codama(account(
         name = "distribution_vault",
@@ -111,6 +115,11 @@ pub enum RewardsProgramInstruction {
         docs = "Distribution authority; receives rent + remaining distribution vault tokens"
     ))]
     #[codama(account(name = "distribution", writable, docs = "PDA: DirectDistribution account (closed)"))]
+    #[codama(account(
+        name = "tombstone",
+        writable,
+        docs = "PDA: [b\"direct_distribution_tombstone\", distribution] (created)"
+    ))]
     #[codama(account(name = "mint", docs = "SPL token mint"))]
     #[codama(account(
         name = "distribution_vault",
@@ -122,6 +131,7 @@ pub enum RewardsProgramInstruction {
         writable,
         docs = "Authority's token account; destination for remaining tokens"
     ))]
+    #[codama(account(name = "system_program", docs = "System program"))]
     #[codama(account(name = "token_program", docs = "SPL Token or Token-2022 program"))]
     #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
     #[codama(account(name = "rewards_program", docs = "This program's ID"))]
@@ -325,7 +335,8 @@ pub enum RewardsProgramInstruction {
     #[codama(account(name = "distribution", writable, docs = "PDA: MerkleDistribution account"))]
     #[codama(account(
         name = "claim_account",
-        docs = "PDA: [b\"merkle_claim\", distribution, claimant] (read-only, may not exist)"
+        writable,
+        docs = "PDA: [b\"merkle_claim\", distribution, claimant] (writable, may not exist)"
     ))]
     #[codama(account(
         name = "revocation_marker",

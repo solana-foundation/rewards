@@ -18,9 +18,12 @@ pub fn process_close_direct_recipient(
 ) -> ProgramResult {
     let ix = CloseDirectRecipient::try_from((instruction_data, accounts))?;
 
-    let distribution_data = ix.accounts.distribution.try_borrow()?;
-    let _distribution = DirectDistribution::from_account(&distribution_data, ix.accounts.distribution, &ID)?;
-    drop(distribution_data);
+    let distribution_closed = !ix.accounts.distribution.owned_by(&ID);
+    if !distribution_closed {
+        let distribution_data = ix.accounts.distribution.try_borrow()?;
+        let _distribution = DirectDistribution::from_account(&distribution_data, ix.accounts.distribution, &ID)?;
+        drop(distribution_data);
+    }
 
     let recipient_data = ix.accounts.recipient_account.try_borrow()?;
     let recipient = DirectRecipient::from_account(&recipient_data, ix.accounts.recipient_account, &ID)?;
@@ -34,7 +37,7 @@ pub fn process_close_direct_recipient(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    if recipient.claimed_amount < recipient.total_amount {
+    if !distribution_closed && recipient.claimed_amount < recipient.total_amount {
         return Err(RewardsProgramError::ClaimNotFullyVested.into());
     }
 

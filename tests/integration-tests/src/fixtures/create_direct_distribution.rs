@@ -7,7 +7,8 @@ use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 use spl_token_interface::ID as TOKEN_PROGRAM_ID;
 
 use crate::utils::{
-    find_direct_distribution_pda, find_event_authority_pda, InstructionTestFixture, TestContext, TestInstruction,
+    find_direct_distribution_pda, find_direct_distribution_tombstone_pda, find_event_authority_pda,
+    InstructionTestFixture, TestContext, TestInstruction,
 };
 
 pub struct CreateDirectDistributionSetup {
@@ -16,6 +17,7 @@ pub struct CreateDirectDistributionSetup {
     pub mint: Keypair,
     pub distribution_vault: Pubkey,
     pub distribution_pda: Pubkey,
+    pub tombstone_pda: Pubkey,
     pub bump: u8,
     pub token_program: Pubkey,
     pub revocable: u8,
@@ -44,6 +46,7 @@ impl CreateDirectDistributionSetup {
             .authority(self.authority.pubkey())
             .seeds(self.seed.pubkey())
             .distribution(self.distribution_pda)
+            .tombstone(self.tombstone_pda)
             .mint(self.mint.pubkey())
             .distribution_vault(self.distribution_vault)
             .token_program(self.token_program)
@@ -102,6 +105,7 @@ impl<'a> CreateDirectDistributionSetupBuilder<'a> {
 
         let (distribution_pda, bump) =
             find_direct_distribution_pda(&mint.pubkey(), &authority.pubkey(), &seeds.pubkey());
+        let (tombstone_pda, _) = find_direct_distribution_tombstone_pda(&distribution_pda);
         let distribution_vault = self.ctx.create_ata_for_program(&distribution_pda, &mint.pubkey(), &token_program);
 
         CreateDirectDistributionSetup {
@@ -110,6 +114,7 @@ impl<'a> CreateDirectDistributionSetupBuilder<'a> {
             mint,
             distribution_vault,
             distribution_pda,
+            tombstone_pda,
             bump,
             token_program,
             revocable: self.revocable,
@@ -139,17 +144,17 @@ impl InstructionTestFixture for CreateDirectDistributionFixture {
     /// Account indices that must be writable:
     /// 0: payer (handled by TestContext)
     /// 3: distribution
-    /// 5: distribution_vault
+    /// 6: distribution_vault
     fn required_writable() -> &'static [usize] {
-        &[0, 3, 5]
+        &[0, 3, 6]
     }
 
     fn system_program_index() -> Option<usize> {
-        Some(6)
+        Some(7)
     }
 
     fn current_program_index() -> Option<usize> {
-        Some(10)
+        Some(11)
     }
 
     fn data_len() -> usize {

@@ -172,6 +172,10 @@ pub enum RewardsProgramError {
     /// (41) Nothing to revoke — user has zero balance
     #[error("Nothing to revoke — user has zero balance")]
     PointsNothingToRevoke,
+
+    /// (42) Distribution has been permanently closed
+    #[error("Distribution has been permanently closed")]
+    DistributionPermanentlyClosed,
 }
 
 impl From<RewardsProgramError> for ProgramError {

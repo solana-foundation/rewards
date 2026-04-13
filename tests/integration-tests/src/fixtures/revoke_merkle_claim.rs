@@ -273,12 +273,13 @@ impl InstructionTestFixture for RevokeMerkleClaimFixture {
     /// Account indices that must be writable:
     /// 1: payer
     /// 2: distribution
+    /// 3: claim_account
     /// 4: revocation_marker
     /// 7: distribution_vault
     /// 8: claimant_token_account
     /// 9: authority_token_account
     fn required_writable() -> &'static [usize] {
-        &[1, 2, 4, 7, 8, 9]
+        &[1, 2, 3, 4, 7, 8, 9]
     }
 
     fn system_program_index() -> Option<usize> {

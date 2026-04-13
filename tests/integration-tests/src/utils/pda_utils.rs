@@ -2,6 +2,7 @@ use rewards_program_client::REWARDS_PROGRAM_ID;
 use solana_sdk::pubkey::Pubkey;
 
 const DIRECT_DISTRIBUTION_SEED: &[u8] = b"direct_distribution";
+const DIRECT_DISTRIBUTION_TOMBSTONE_SEED: &[u8] = b"direct_distribution_tombstone";
 const DIRECT_RECIPIENT_SEED: &[u8] = b"direct_recipient";
 const MERKLE_DISTRIBUTION_SEED: &[u8] = b"merkle_distribution";
 const MERKLE_CLAIM_SEED: &[u8] = b"merkle_claim";
@@ -17,6 +18,10 @@ pub fn find_direct_distribution_pda(mint: &Pubkey, authority: &Pubkey, seeds: &P
         &[DIRECT_DISTRIBUTION_SEED, mint.as_ref(), authority.as_ref(), seeds.as_ref()],
         &REWARDS_PROGRAM_ID,
     )
+}
+
+pub fn find_direct_distribution_tombstone_pda(distribution: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[DIRECT_DISTRIBUTION_TOMBSTONE_SEED, distribution.as_ref()], &REWARDS_PROGRAM_ID)
 }
 
 pub fn find_direct_recipient_pda(distribution: &Pubkey, recipient: &Pubkey) -> (Pubkey, u8) {

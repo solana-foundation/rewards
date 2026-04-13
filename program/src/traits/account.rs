@@ -91,6 +91,7 @@ pub enum RewardsAccountDiscriminators {
     RewardPool = 5,
     UserRewardAccount = 6,
     PointsConfig = 7,
+    DirectDistributionTombstone = 8,
 }
 
 /// Manual account deserialization (non-zero-copy)

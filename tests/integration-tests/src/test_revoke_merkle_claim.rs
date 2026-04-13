@@ -4,8 +4,8 @@ use solana_sdk::instruction::InstructionError;
 
 use crate::fixtures::{RevokeMerkleClaimFixture, RevokeMerkleClaimSetup};
 use crate::utils::{
-    assert_rewards_error, expected_linear_unlock, test_empty_data, test_missing_signer, test_not_writable,
-    test_wrong_account, test_wrong_current_program, RewardsError, TestContext, PROGRAM_ID,
+    assert_merkle_claim, assert_rewards_error, expected_linear_unlock, test_empty_data, test_missing_signer,
+    test_not_writable, test_wrong_account, test_wrong_current_program, RewardsError, TestContext, PROGRAM_ID,
 };
 
 // ── Generic fixture tests ──────────────────────────────────────────
@@ -26,6 +26,12 @@ fn test_revoke_merkle_missing_payer_signer() {
 fn test_revoke_merkle_distribution_not_writable() {
     let mut ctx = TestContext::new();
     test_not_writable::<RevokeMerkleClaimFixture>(&mut ctx, 2);
+}
+
+#[test]
+fn test_revoke_merkle_claim_account_not_writable() {
+    let mut ctx = TestContext::new();
+    test_not_writable::<RevokeMerkleClaimFixture>(&mut ctx, 3);
 }
 
 #[test]
@@ -306,6 +312,8 @@ fn test_revoke_merkle_non_vested_after_partial_claim() {
         claimed_at_quarter + vested_unclaimed,
         "total_claimed should reflect both claim and revoke transfer"
     );
+
+    assert_merkle_claim(&ctx, &setup.claim_pda, vested_at_midpoint, setup.claim_bump);
 }
 
 #[test]
@@ -336,6 +344,8 @@ fn test_revoke_merkle_full_after_partial_claim() {
     let dist_account = ctx.get_account(&setup.distribution_pda).expect("Distribution should exist");
     let dist = MerkleDistribution::from_bytes(&dist_account.data).expect("Should deserialize");
     assert_eq!(dist.total_claimed, claimed_at_quarter, "total_claimed should only reflect the original claim");
+
+    assert_merkle_claim(&ctx, &setup.claim_pda, claimed_at_quarter, setup.claim_bump);
 }
 
 // ── Post-revocation behavior ──────────────────────────────────────

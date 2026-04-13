@@ -6,7 +6,7 @@ use crate::fixtures::{
 };
 use crate::utils::{
     assert_account_closed, assert_rewards_error, test_empty_data, test_missing_signer, test_not_writable,
-    test_wrong_current_program, RewardsError, TestContext,
+    test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext, PROGRAM_ID,
 };
 
 #[test]
@@ -24,19 +24,31 @@ fn test_close_direct_distribution_distribution_not_writable() {
 #[test]
 fn test_close_direct_distribution_distribution_vault_not_writable() {
     let mut ctx = TestContext::new();
-    test_not_writable::<CloseDirectDistributionFixture>(&mut ctx, 3);
+    test_not_writable::<CloseDirectDistributionFixture>(&mut ctx, 4);
+}
+
+#[test]
+fn test_close_direct_distribution_tombstone_not_writable() {
+    let mut ctx = TestContext::new();
+    test_not_writable::<CloseDirectDistributionFixture>(&mut ctx, 2);
 }
 
 #[test]
 fn test_close_direct_distribution_authority_token_account_not_writable() {
     let mut ctx = TestContext::new();
-    test_not_writable::<CloseDirectDistributionFixture>(&mut ctx, 4);
+    test_not_writable::<CloseDirectDistributionFixture>(&mut ctx, 5);
 }
 
 #[test]
 fn test_close_direct_distribution_wrong_current_program() {
     let mut ctx = TestContext::new();
     test_wrong_current_program::<CloseDirectDistributionFixture>(&mut ctx);
+}
+
+#[test]
+fn test_close_direct_distribution_wrong_system_program() {
+    let mut ctx = TestContext::new();
+    test_wrong_system_program::<CloseDirectDistributionFixture>(&mut ctx);
 }
 
 #[test]
@@ -54,6 +66,8 @@ fn test_close_direct_distribution_success() {
     test_ix.send_expect_success(&mut ctx);
 
     assert_account_closed(&ctx, &setup.distribution_pda);
+    let tombstone_account = ctx.get_account(&setup.tombstone_pda).expect("Tombstone should exist after close");
+    assert_eq!(tombstone_account.owner, PROGRAM_ID);
 }
 
 #[test]
@@ -65,6 +79,8 @@ fn test_close_direct_distribution_success_token_2022() {
     test_ix.send_expect_success(&mut ctx);
 
     assert_account_closed(&ctx, &setup.distribution_pda);
+    let tombstone_account = ctx.get_account(&setup.tombstone_pda).expect("Tombstone should exist after close");
+    assert_eq!(tombstone_account.owner, PROGRAM_ID);
 }
 
 #[test]
@@ -95,6 +111,7 @@ fn test_close_direct_distribution_returns_tokens() {
     let close_setup = CloseDirectDistributionSetup {
         authority: distribution_setup.authority.insecure_clone(),
         distribution_pda: distribution_setup.distribution_pda,
+        tombstone_pda: distribution_setup.tombstone_pda,
         mint: distribution_setup.mint.pubkey(),
         distribution_vault: distribution_setup.distribution_vault,
         authority_token_account: recipient_setup.authority_token_account,
@@ -142,6 +159,7 @@ fn test_close_direct_distribution_clawback_ts_before_timestamp_fails() {
     let close_setup = CloseDirectDistributionSetup {
         authority: distribution_setup.authority.insecure_clone(),
         distribution_pda: distribution_setup.distribution_pda,
+        tombstone_pda: distribution_setup.tombstone_pda,
         mint: distribution_setup.mint.pubkey(),
         distribution_vault: distribution_setup.distribution_vault,
         authority_token_account,
@@ -172,6 +190,7 @@ fn test_close_direct_distribution_clawback_ts_after_timestamp_succeeds() {
     let close_setup = CloseDirectDistributionSetup {
         authority: distribution_setup.authority.insecure_clone(),
         distribution_pda: distribution_setup.distribution_pda,
+        tombstone_pda: distribution_setup.tombstone_pda,
         mint: distribution_setup.mint.pubkey(),
         distribution_vault: distribution_setup.distribution_vault,
         authority_token_account,

@@ -105,6 +105,24 @@
                 "format": "u8",
                 "kind": "numberTypeNode"
               }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "kind": "accountNode",
+        "name": "directDistributionTombstone"
+      },
+      {
+        "data": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "bump",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
             },
             {
               "kind": "structFieldTypeNode",
@@ -1942,6 +1960,12 @@
         "kind": "errorNode",
         "message": "Nothing to revoke — user has zero balance",
         "name": "pointsNothingToRevoke"
+      },
+      {
+        "code": 42,
+        "kind": "errorNode",
+        "message": "Distribution has been permanently closed",
+        "name": "distributionPermanentlyClosed"
       }
     ],
     "instructions": [
@@ -1982,6 +2006,15 @@
             "isWritable": true,
             "kind": "instructionAccountNode",
             "name": "distribution"
+          },
+          {
+            "docs": [
+              "PDA: [b\"direct_distribution_tombstone\", distribution] (must be uninitialized)"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "tombstone"
           },
           {
             "docs": [
@@ -2404,6 +2437,15 @@
           },
           {
             "docs": [
+              "PDA: [b\"direct_distribution_tombstone\", distribution] (created)"
+            ],
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "tombstone"
+          },
+          {
+            "docs": [
               "SPL token mint"
             ],
             "isSigner": false,
@@ -2428,6 +2470,15 @@
             "isWritable": true,
             "kind": "instructionAccountNode",
             "name": "authorityTokenAccount"
+          },
+          {
+            "docs": [
+              "System program"
+            ],
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "systemProgram"
           },
           {
             "docs": [
@@ -3314,10 +3365,10 @@
           },
           {
             "docs": [
-              "PDA: [b\"merkle_claim\", distribution, claimant] (read-only, may not exist)"
+              "PDA: [b\"merkle_claim\", distribution, claimant] (writable, may not exist)"
             ],
             "isSigner": false,
-            "isWritable": false,
+            "isWritable": true,
             "kind": "instructionAccountNode",
             "name": "claimAccount"
           },

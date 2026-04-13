@@ -14,6 +14,7 @@ pub struct CreateDirectDistributionAccounts<'a> {
     pub authority: &'a AccountView,
     pub seed: &'a AccountView,
     pub distribution: &'a AccountView,
+    pub tombstone: &'a AccountView,
     pub mint: &'a AccountView,
     pub distribution_vault: &'a AccountView,
     pub system_program: &'a AccountView,
@@ -28,7 +29,7 @@ impl<'a> TryFrom<&'a [AccountView]> for CreateDirectDistributionAccounts<'a> {
 
     #[inline(always)]
     fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
-        let [payer, authority, seeds, distribution, mint, distribution_vault, system_program, token_program, associated_token_program, event_authority, program] =
+        let [payer, authority, seeds, distribution, tombstone, mint, distribution_vault, system_program, token_program, associated_token_program, event_authority, program] =
             accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
@@ -46,6 +47,7 @@ impl<'a> TryFrom<&'a [AccountView]> for CreateDirectDistributionAccounts<'a> {
         // 2b. Validate read-only accounts
         verify_readonly(mint)?;
         verify_readonly(seeds)?;
+        verify_readonly(tombstone)?;
 
         // 3. Validate program IDs
         verify_system_program(system_program)?;
@@ -67,6 +69,7 @@ impl<'a> TryFrom<&'a [AccountView]> for CreateDirectDistributionAccounts<'a> {
             authority,
             seed: seeds,
             distribution,
+            tombstone,
             mint,
             distribution_vault,
             system_program,
