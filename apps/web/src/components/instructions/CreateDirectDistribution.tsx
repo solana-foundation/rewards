@@ -6,7 +6,7 @@ import { getCreateDirectDistributionInstruction } from '@solana/rewards-client';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useSendTx } from '@/hooks/useSendTx';
-import { deriveAta, deriveDirectDistributionPda } from '@/lib/pdas';
+import { deriveAta, deriveDirectDistributionPda, deriveDirectDistributionTombstonePda } from '@/lib/pdas';
 import {
     parseBigIntValue,
     validateAddress,
@@ -61,6 +61,7 @@ export function CreateDirectDistribution() {
         );
         setGeneratedDistribution(distribution);
 
+        const [tombstone] = deriveDirectDistributionTombstonePda(distribution, programAddress);
         const distributionVault = deriveAta(distribution, mint, tokenProgramAddress);
 
         const ix = getCreateDirectDistributionInstruction(
@@ -69,6 +70,7 @@ export function CreateDirectDistribution() {
                 authority: signer,
                 seeds: seedSigner,
                 distribution: asAddress(distribution),
+                tombstone: asAddress(tombstone),
                 mint: asAddress(mint),
                 distributionVault,
                 tokenProgram: tokenProgramAddress,

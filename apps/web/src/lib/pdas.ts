@@ -29,6 +29,10 @@ export function deriveDirectDistributionPda(
     );
 }
 
+export function deriveDirectDistributionTombstonePda(distribution: string, programId = getProgramAddress()) {
+    return deriveAddress([Buffer.from('direct_distribution_tombstone'), pk(distribution).toBuffer()], programId);
+}
+
 export function deriveDirectRecipientPda(distribution: string, recipient: string, programId = getProgramAddress()) {
     return deriveAddress(
         [Buffer.from('direct_recipient'), pk(distribution).toBuffer(), pk(recipient).toBuffer()],

@@ -5,7 +5,7 @@ import { getCloseDirectDistributionInstruction } from '@solana/rewards-client';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useSendTx } from '@/hooks/useSendTx';
-import { deriveAta, normalizeTokenProgram } from '@/lib/pdas';
+import { deriveAta, deriveDirectDistributionTombstonePda, normalizeTokenProgram } from '@/lib/pdas';
 import { firstValidationError, validateAddress, validateOptionalAddress } from '@/lib/validation';
 import { TxResult } from '@/components/TxResult';
 import { FormField, SendButton } from './shared';
@@ -40,6 +40,7 @@ export function CloseDirectDistribution() {
 
         const { programAddress, eventAuthority } = getProgramConfig();
         const tokenProgramAddress = normalizeTokenProgram(tokenProgram);
+        const [tombstone] = deriveDirectDistributionTombstonePda(distribution, programAddress);
         const distributionVault = deriveAta(distribution, mint, tokenProgramAddress);
         const authorityTokenAccount = deriveAta(signer.address, mint, tokenProgramAddress);
 
@@ -47,6 +48,7 @@ export function CloseDirectDistribution() {
             {
                 authority: signer,
                 distribution: asAddress(distribution),
+                tombstone: asAddress(tombstone),
                 mint: asAddress(mint),
                 distributionVault,
                 authorityTokenAccount,
