@@ -44,11 +44,7 @@ impl CloseDirectRecipientSetup {
             .recipient_account(self.recipient_pda)
             .event_authority(event_authority);
 
-        TestInstruction {
-            instruction: builder.instruction(),
-            signers: vec![self.recipient.insecure_clone()],
-            name: "CloseDirectRecipient",
-        }
+        TestInstruction { instruction: builder.instruction(), signers: vec![], name: "CloseDirectRecipient" }
     }
 
     pub fn build_instruction_with_wrong_recipient(
@@ -67,11 +63,7 @@ impl CloseDirectRecipientSetup {
             .recipient_account(wrong_recipient_pda)
             .event_authority(event_authority);
 
-        TestInstruction {
-            instruction: builder.instruction(),
-            signers: vec![wrong_recipient.insecure_clone()],
-            name: "CloseDirectRecipient",
-        }
+        TestInstruction { instruction: builder.instruction(), signers: vec![], name: "CloseDirectRecipient" }
     }
 
     pub fn build_instruction_with_wrong_original_payer(
@@ -89,11 +81,7 @@ impl CloseDirectRecipientSetup {
             .recipient_account(self.recipient_pda)
             .event_authority(event_authority);
 
-        TestInstruction {
-            instruction: builder.instruction(),
-            signers: vec![self.recipient.insecure_clone()],
-            name: "CloseDirectRecipient",
-        }
+        TestInstruction { instruction: builder.instruction(), signers: vec![], name: "CloseDirectRecipient" }
     }
 }
 
@@ -205,10 +193,8 @@ impl InstructionTestFixture for CloseDirectRecipientFixture {
         setup.build_instruction(ctx)
     }
 
-    /// Account indices that must be signers:
-    /// 0: recipient
     fn required_signers() -> &'static [usize] {
-        &[0]
+        &[]
     }
 
     /// Account indices that must be writable:
