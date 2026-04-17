@@ -2,43 +2,18 @@ use alloc::vec::Vec;
 
 use crate::events::EVENT_IX_TAG_LE;
 
-/// Length of event discriminator bytes (EVENT_IX_TAG_LE + discriminator byte)
-pub const EVENT_DISCRIMINATOR_LEN: usize = 8 + 1;
+/// Length of event discriminator bytes: EVENT_IX_TAG_LE (8) + Anchor discriminator (8)
+pub const EVENT_DISCRIMINATOR_LEN: usize = 8 + 8;
 
-/// Event discriminator values for this program
-#[repr(u8)]
-pub enum EventDiscriminators {
-    Claimed = 0,
-    DistributionClosed = 1,
-    DistributionCreated = 2,
-    RecipientAdded = 3,
-    ClaimClosed = 4,
-    RecipientRevoked = 5,
-    RewardDistributed = 6,
-    OptedIn = 7,
-    OptedOut = 8,
-    BalanceSynced = 9,
-    MerkleRootSet = 10,
-    PointsConfigCreated = 11,
-    PointsIssued = 12,
-    PointsUsed = 13,
-    PointsTransferred = 14,
-    PointsAccountClosed = 15,
-    PointsConfigClosed = 16,
-    PointsRevoked = 17,
-}
-
-/// Event discriminator with Anchor-compatible prefix
+/// Anchor-compatible event discriminator: `sha256("event:StructName")[..8]`
 pub trait EventDiscriminator {
-    /// Event discriminator byte
-    const DISCRIMINATOR: u8;
+    const DISCRIMINATOR: [u8; 8];
 
-    /// Full discriminator bytes including EVENT_IX_TAG_LE prefix
     #[inline(always)]
     fn discriminator_bytes() -> Vec<u8> {
         let mut data = Vec::with_capacity(EVENT_DISCRIMINATOR_LEN);
         data.extend_from_slice(EVENT_IX_TAG_LE);
-        data.push(Self::DISCRIMINATOR);
+        data.extend_from_slice(&Self::DISCRIMINATOR);
         data
     }
 }
@@ -64,20 +39,21 @@ mod tests {
     struct TestEvent;
 
     impl EventDiscriminator for TestEvent {
-        const DISCRIMINATOR: u8 = 42;
+        const DISCRIMINATOR: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
     }
 
     #[test]
     fn test_discriminator_bytes_length() {
         let bytes = TestEvent::discriminator_bytes();
         assert_eq!(bytes.len(), EVENT_DISCRIMINATOR_LEN);
+        assert_eq!(bytes.len(), 16);
     }
 
     #[test]
     fn test_discriminator_bytes_prefix() {
         let bytes = TestEvent::discriminator_bytes();
         assert_eq!(&bytes[..8], EVENT_IX_TAG_LE);
-        assert_eq!(bytes[8], 42);
+        assert_eq!(&bytes[8..16], &[1, 2, 3, 4, 5, 6, 7, 8]);
     }
 
     struct TestEventSerialize {
@@ -85,7 +61,7 @@ mod tests {
     }
 
     impl EventDiscriminator for TestEventSerialize {
-        const DISCRIMINATOR: u8 = 99;
+        const DISCRIMINATOR: [u8; 8] = [10, 20, 30, 40, 50, 60, 70, 80];
     }
 
     impl EventSerialize for TestEventSerialize {
@@ -100,8 +76,8 @@ mod tests {
         let bytes = event.to_bytes();
         assert_eq!(bytes.len(), EVENT_DISCRIMINATOR_LEN + 1);
         assert_eq!(&bytes[..8], EVENT_IX_TAG_LE);
-        assert_eq!(bytes[8], 99);
-        assert_eq!(bytes[9], 123);
+        assert_eq!(&bytes[8..16], &[10, 20, 30, 40, 50, 60, 70, 80]);
+        assert_eq!(bytes[16], 123);
     }
 
     #[test]

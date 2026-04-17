@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use codama::CodamaType;
 use pinocchio::Address;
 
-use crate::traits::{EventDiscriminator, EventDiscriminators, EventSerialize};
+use crate::traits::{EventDiscriminator, EventSerialize};
 use crate::utils::RevokeMode;
 
 #[derive(CodamaType)]
@@ -15,7 +15,7 @@ pub struct RecipientRevokedEvent {
 }
 
 impl EventDiscriminator for RecipientRevokedEvent {
-    const DISCRIMINATOR: u8 = EventDiscriminators::RecipientRevoked as u8;
+    const DISCRIMINATOR: [u8; 8] = [0xfe, 0x88, 0xaa, 0xc4, 0x02, 0xa4, 0xf9, 0x29];
 }
 
 impl EventSerialize for RecipientRevokedEvent {
@@ -90,7 +90,7 @@ mod tests {
         let bytes = event.to_bytes();
         assert_eq!(bytes.len(), EVENT_DISCRIMINATOR_LEN + RecipientRevokedEvent::DATA_LEN);
         assert_eq!(&bytes[..8], EVENT_IX_TAG_LE);
-        assert_eq!(bytes[8], EventDiscriminators::RecipientRevoked as u8);
-        assert_eq!(&bytes[9..41], distribution.as_ref());
+        assert_eq!(&bytes[8..16], RecipientRevokedEvent::DISCRIMINATOR);
+        assert_eq!(&bytes[16..48], distribution.as_ref());
     }
 }
