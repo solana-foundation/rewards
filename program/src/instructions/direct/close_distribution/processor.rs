@@ -1,16 +1,11 @@
-use pinocchio::{
-    account::AccountView,
-    error::ProgramError,
-    sysvars::{rent::Rent, Sysvar},
-    Address, ProgramResult,
-};
+use pinocchio::{account::AccountView, Address, ProgramResult};
 use pinocchio_token_2022::instructions::{CloseAccount, TransferChecked};
 
 use crate::{
     errors::RewardsProgramError,
     events::DistributionClosedEvent,
-    state::{DirectDistribution, DirectDistributionClosed},
-    traits::{AccountSize, Discriminator, Distribution, DistributionSigner, EventSerialize, Versioned},
+    state::DirectDistribution,
+    traits::{Distribution, DistributionSigner, EventSerialize},
     utils::{emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance},
     ID,
 };
@@ -65,37 +60,11 @@ pub fn process_close_direct_distribution(
         .invoke_signed(signers)
     })?;
 
-    // Flip the distribution into its closed state: overwrite header bytes with
-    // the `DirectDistributionClosed` discriminator, keep the bump at byte 2,
-    // then shrink the account to its minimum size and refund the freed rent.
-    {
-        let mut data = ix.accounts.distribution.try_borrow_mut()?;
-        data[0] = DirectDistributionClosed::DISCRIMINATOR;
-        data[1] = DirectDistributionClosed::VERSION;
-        // data[2] already holds the bump (unchanged from active layout)
-    }
-
-    ix.accounts.distribution.resize(DirectDistributionClosed::LEN)?;
-    refund_excess_rent(ix.accounts.distribution, ix.accounts.authority, DirectDistributionClosed::LEN)?;
+    // Flip the distribution PDA to its permanently-closed state and refund the freed rent.
+    DirectDistribution::close_in_place(ix.accounts.distribution, ix.accounts.authority)?;
 
     let event = DistributionClosedEvent::new(*ix.accounts.distribution.address(), remaining_amount);
     emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;
-
-    Ok(())
-}
-
-/// Refund any lamports above the rent-exempt minimum for `new_size` back to `recipient`.
-/// The account must be owned by this program so direct lamport manipulation is valid.
-fn refund_excess_rent(account: &AccountView, recipient: &AccountView, new_size: usize) -> Result<(), ProgramError> {
-    let rent = Rent::get()?;
-    let required = rent.try_minimum_balance(new_size).map_err(|_| RewardsProgramError::RentCalculationFailed)?;
-    let current = account.lamports();
-    let excess = current.saturating_sub(required);
-
-    if excess > 0 {
-        account.set_lamports(current.saturating_sub(excess));
-        recipient.set_lamports(recipient.lamports().checked_add(excess).ok_or(RewardsProgramError::MathOverflow)?);
-    }
 
     Ok(())
 }

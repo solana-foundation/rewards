@@ -5,14 +5,16 @@ use pinocchio::{
     account::AccountView,
     cpi::{Seed, Signer},
     error::ProgramError,
-    Address,
+    Address, ProgramResult,
 };
 
 use crate::errors::RewardsProgramError;
+use crate::state::DirectDistributionClosed;
 use crate::traits::{
     AccountParse, AccountSerialize, AccountSize, AccountValidation, Discriminator, Distribution, DistributionSigner,
     PdaAccount, PdaSeeds, RewardsAccountDiscriminators, Versioned,
 };
+use crate::utils::refund_excess_rent;
 use crate::{assert_no_padding, require_account_len, validate_discriminator, validate_version};
 
 /// DirectDistribution account state
@@ -218,7 +220,27 @@ impl DirectDistribution {
             return Ok(false);
         }
         let data = account.try_borrow()?;
-        Ok(!data.is_empty() && data[0] == crate::state::DirectDistributionClosed::DISCRIMINATOR)
+        Ok(!data.is_empty() && data[0] == DirectDistributionClosed::DISCRIMINATOR)
+    }
+
+    /// Transition an active distribution PDA to its permanently-closed state:
+    /// overwrite the account header with the `DirectDistributionClosed`
+    /// discriminator + version (preserving the bump at byte 2), shrink the
+    /// account to the closed marker's size, and refund the freed rent to
+    /// `rent_recipient`.
+    ///
+    /// The caller is responsible for transferring any remaining token balance
+    /// and closing the distribution vault before invoking this.
+    pub fn close_in_place(account: &AccountView, rent_recipient: &AccountView) -> ProgramResult {
+        {
+            let mut data = account.try_borrow_mut()?;
+            data[0] = DirectDistributionClosed::DISCRIMINATOR;
+            data[1] = DirectDistributionClosed::VERSION;
+            // data[2] already holds the bump (unchanged from active layout)
+        }
+
+        account.resize(DirectDistributionClosed::LEN)?;
+        refund_excess_rent(account, rent_recipient, DirectDistributionClosed::LEN)
     }
 
     pub fn remaining_unallocated(&self, vault_balance: u64) -> Result<u64, RewardsProgramError> {
