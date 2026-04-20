@@ -3,7 +3,7 @@ use codama::CodamaType;
 use pinocchio::Address;
 
 use crate::{
-    traits::{EventDiscriminator, EventSerialize},
+    traits::{event_discriminator, EventDiscriminator, EventSerialize},
     utils::VestingSchedule,
 };
 
@@ -16,7 +16,7 @@ pub struct RecipientAddedEvent {
 }
 
 impl EventDiscriminator for RecipientAddedEvent {
-    const DISCRIMINATOR: [u8; 8] = [0xda, 0xf1, 0x3c, 0xf4, 0x08, 0x58, 0xbe, 0x61];
+    const DISCRIMINATOR: [u8; 8] = event_discriminator(b"RecipientAddedEvent");
 }
 
 impl EventSerialize for RecipientAddedEvent {

@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use codama::CodamaType;
 use pinocchio::Address;
 
-use crate::traits::{EventDiscriminator, EventSerialize};
+use crate::traits::{event_discriminator, EventDiscriminator, EventSerialize};
 
 #[derive(CodamaType)]
 pub struct PointsRevokedEvent {
@@ -16,7 +16,7 @@ pub struct PointsRevokedEvent {
 }
 
 impl EventDiscriminator for PointsRevokedEvent {
-    const DISCRIMINATOR: [u8; 8] = [0xd7, 0xb7, 0xbc, 0x0b, 0x14, 0x15, 0x8a, 0xd2];
+    const DISCRIMINATOR: [u8; 8] = event_discriminator(b"PointsRevokedEvent");
 }
 
 impl EventSerialize for PointsRevokedEvent {

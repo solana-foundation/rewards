@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use codama::CodamaType;
 use pinocchio::Address;
 
-use crate::traits::{EventDiscriminator, EventSerialize};
+use crate::traits::{event_discriminator, EventDiscriminator, EventSerialize};
 
 #[derive(CodamaType)]
 pub struct OptInEvent {
@@ -12,7 +12,7 @@ pub struct OptInEvent {
 }
 
 impl EventDiscriminator for OptInEvent {
-    const DISCRIMINATOR: [u8; 8] = [0xff, 0x62, 0x7d, 0xd1, 0x19, 0x1c, 0x76, 0x00];
+    const DISCRIMINATOR: [u8; 8] = event_discriminator(b"OptInEvent");
 }
 
 impl EventSerialize for OptInEvent {

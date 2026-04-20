@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use codama::CodamaType;
 use pinocchio::Address;
 
-use crate::traits::{EventDiscriminator, EventSerialize};
+use crate::traits::{event_discriminator, EventDiscriminator, EventSerialize};
 
 #[derive(CodamaType)]
 pub struct MerkleRootSetEvent {
@@ -13,7 +13,7 @@ pub struct MerkleRootSetEvent {
 }
 
 impl EventDiscriminator for MerkleRootSetEvent {
-    const DISCRIMINATOR: [u8; 8] = [0x2f, 0xe7, 0xa1, 0xef, 0xda, 0xe1, 0xeb, 0x6d];
+    const DISCRIMINATOR: [u8; 8] = event_discriminator(b"MerkleRootSetEvent");
 }
 
 impl EventSerialize for MerkleRootSetEvent {
