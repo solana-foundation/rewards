@@ -28,7 +28,7 @@ fn test_create_direct_distribution_distribution_not_writable() {
 #[test]
 fn test_create_direct_distribution_distribution_vault_not_writable() {
     let mut ctx = TestContext::new();
-    test_not_writable::<CreateDirectDistributionFixture>(&mut ctx, 6);
+    test_not_writable::<CreateDirectDistributionFixture>(&mut ctx, 5);
 }
 
 #[test]
@@ -125,7 +125,6 @@ fn test_create_direct_distribution_fails_if_closed_before() {
     let close_setup = CloseDirectDistributionSetup {
         authority: setup.authority.insecure_clone(),
         distribution_pda: setup.distribution_pda,
-        tombstone_pda: setup.tombstone_pda,
         mint: setup.mint.pubkey(),
         distribution_vault: setup.distribution_vault,
         authority_token_account,

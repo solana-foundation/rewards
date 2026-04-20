@@ -7,9 +7,9 @@ use crate::fixtures::{
     CloseDirectRecipientSetup, CreateDirectDistributionSetup,
 };
 use crate::utils::{
-    assert_account_closed, assert_instruction_error, assert_rewards_error, find_direct_distribution_tombstone_pda,
-    find_direct_recipient_pda, find_event_authority_pda, test_empty_data, test_missing_signer, test_not_writable,
-    test_wrong_current_program, RewardsError, TestContext, TestInstruction,
+    assert_account_closed, assert_instruction_error, assert_rewards_error, find_direct_recipient_pda,
+    find_event_authority_pda, test_empty_data, test_missing_signer, test_not_writable, test_wrong_current_program,
+    RewardsError, TestContext, TestInstruction,
 };
 
 #[test]
@@ -75,7 +75,6 @@ fn test_close_direct_recipient_after_distribution_closed() {
     let close_distribution_setup = CloseDirectDistributionSetup {
         authority: recipient_setup.authority.insecure_clone(),
         distribution_pda: recipient_setup.distribution_pda,
-        tombstone_pda: find_direct_distribution_tombstone_pda(&recipient_setup.distribution_pda).0,
         mint: recipient_setup.mint,
         distribution_vault: recipient_setup.distribution_vault,
         authority_token_account: recipient_setup.authority_token_account,
@@ -84,7 +83,11 @@ fn test_close_direct_recipient_after_distribution_closed() {
 
     let close_distribution_ix = close_distribution_setup.build_instruction(&ctx);
     close_distribution_ix.send_expect_success(&mut ctx);
-    assert_account_closed(&ctx, &recipient_setup.distribution_pda);
+    // After close, the distribution PDA still lives on as a DirectDistributionClosed marker (3 bytes, disc=8).
+    let closed_account =
+        ctx.get_account(&recipient_setup.distribution_pda).expect("Distribution PDA should still exist after close");
+    assert_eq!(closed_account.data.len(), 3, "Closed distribution should be 3 bytes");
+    assert_eq!(closed_account.data[0], 8, "First byte should be DirectDistributionClosed discriminator");
 
     let close_recipient_setup = CloseDirectRecipientSetup {
         recipient: recipient_setup.recipient.insecure_clone(),

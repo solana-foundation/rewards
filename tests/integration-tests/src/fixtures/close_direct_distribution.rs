@@ -3,7 +3,6 @@ use solana_sdk::{
     pubkey::Pubkey,
     signature::{Keypair, Signer},
 };
-use solana_system_interface::program::ID as SYSTEM_PROGRAM_ID;
 use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 use spl_token_interface::ID as TOKEN_PROGRAM_ID;
 
@@ -13,7 +12,6 @@ use crate::utils::{find_event_authority_pda, InstructionTestFixture, TestContext
 pub struct CloseDirectDistributionSetup {
     pub authority: Keypair,
     pub distribution_pda: Pubkey,
-    pub tombstone_pda: Pubkey,
     pub mint: Pubkey,
     pub distribution_vault: Pubkey,
     pub authority_token_account: Pubkey,
@@ -46,7 +44,6 @@ impl CloseDirectDistributionSetup {
         Self {
             authority: distribution_setup.authority.insecure_clone(),
             distribution_pda: distribution_setup.distribution_pda,
-            tombstone_pda: distribution_setup.tombstone_pda,
             mint: distribution_setup.mint.pubkey(),
             distribution_vault: distribution_setup.distribution_vault,
             authority_token_account,
@@ -61,11 +58,9 @@ impl CloseDirectDistributionSetup {
         builder
             .authority(self.authority.pubkey())
             .distribution(self.distribution_pda)
-            .tombstone(self.tombstone_pda)
             .mint(self.mint)
             .distribution_vault(self.distribution_vault)
             .authority_token_account(self.authority_token_account)
-            .system_program(SYSTEM_PROGRAM_ID)
             .token_program(self.token_program)
             .event_authority(event_authority);
 
@@ -88,11 +83,9 @@ impl CloseDirectDistributionSetup {
         builder
             .authority(wrong_authority.pubkey())
             .distribution(self.distribution_pda)
-            .tombstone(self.tombstone_pda)
             .mint(self.mint)
             .distribution_vault(self.distribution_vault)
             .authority_token_account(wrong_token_account)
-            .system_program(SYSTEM_PROGRAM_ID)
             .token_program(self.token_program)
             .event_authority(event_authority);
 
@@ -143,7 +136,6 @@ impl<'a> CloseDirectDistributionSetupBuilder<'a> {
         CloseDirectDistributionSetup {
             authority: distribution_setup.authority,
             distribution_pda: distribution_setup.distribution_pda,
-            tombstone_pda: distribution_setup.tombstone_pda,
             mint: distribution_setup.mint.pubkey(),
             distribution_vault: distribution_setup.distribution_vault,
             authority_token_account,
@@ -171,19 +163,14 @@ impl InstructionTestFixture for CloseDirectDistributionFixture {
     /// Account indices that must be writable:
     /// 0: authority
     /// 1: distribution
-    /// 2: tombstone
-    /// 4: distribution_vault
-    /// 5: authority_token_account
+    /// 3: distribution_vault
+    /// 4: authority_token_account
     fn required_writable() -> &'static [usize] {
-        &[0, 1, 2, 4, 5]
-    }
-
-    fn system_program_index() -> Option<usize> {
-        Some(6)
+        &[0, 1, 3, 4]
     }
 
     fn current_program_index() -> Option<usize> {
-        Some(9)
+        Some(7)
     }
 
     fn data_len() -> usize {

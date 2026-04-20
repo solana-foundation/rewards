@@ -4,19 +4,16 @@ use crate::{
     traits::InstructionAccounts,
     utils::{
         validate_associated_token_account, verify_current_program, verify_current_program_account,
-        verify_event_authority, verify_owned_by, verify_readonly, verify_signer, verify_system_program,
-        verify_token_program, verify_writable,
+        verify_event_authority, verify_owned_by, verify_readonly, verify_signer, verify_token_program, verify_writable,
     },
 };
 
 pub struct CloseDirectDistributionAccounts<'a> {
     pub authority: &'a AccountView,
     pub distribution: &'a AccountView,
-    pub tombstone: &'a AccountView,
     pub mint: &'a AccountView,
     pub distribution_vault: &'a AccountView,
     pub authority_token_account: &'a AccountView,
-    pub system_program: &'a AccountView,
     pub token_program: &'a AccountView,
     pub event_authority: &'a AccountView,
     pub program: &'a AccountView,
@@ -27,7 +24,7 @@ impl<'a> TryFrom<&'a [AccountView]> for CloseDirectDistributionAccounts<'a> {
 
     #[inline(always)]
     fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
-        let [authority, distribution, tombstone, mint, distribution_vault, authority_token_account, system_program, token_program, event_authority, program] =
+        let [authority, distribution, mint, distribution_vault, authority_token_account, token_program, event_authority, program] =
             accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
@@ -38,7 +35,6 @@ impl<'a> TryFrom<&'a [AccountView]> for CloseDirectDistributionAccounts<'a> {
 
         // 2. Validate writable
         verify_writable(distribution, true)?;
-        verify_writable(tombstone, true)?;
         verify_writable(distribution_vault, true)?;
         verify_writable(authority_token_account, true)?;
 
@@ -46,7 +42,6 @@ impl<'a> TryFrom<&'a [AccountView]> for CloseDirectDistributionAccounts<'a> {
         verify_readonly(mint)?;
 
         // 3. Validate program IDs
-        verify_system_program(system_program)?;
         verify_token_program(token_program)?;
         verify_current_program(program)?;
         verify_event_authority(event_authority)?;
@@ -64,11 +59,9 @@ impl<'a> TryFrom<&'a [AccountView]> for CloseDirectDistributionAccounts<'a> {
         Ok(Self {
             authority,
             distribution,
-            tombstone,
             mint,
             distribution_vault,
             authority_token_account,
-            system_program,
             token_program,
             event_authority,
             program,

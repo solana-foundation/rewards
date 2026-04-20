@@ -14,11 +14,7 @@ pub enum RewardsProgramInstruction {
     #[codama(account(
         name = "distribution",
         writable,
-        docs = "PDA: [b\"direct_distribution\", mint, authority, seeds] (created)"
-    ))]
-    #[codama(account(
-        name = "tombstone",
-        docs = "PDA: [b\"direct_distribution_tombstone\", distribution] (must be uninitialized)"
+        docs = "PDA: [b\"direct_distribution\", mint, authority, seeds]. If a previous distribution was closed at this address, the account now holds a DirectDistributionClosed marker and re-creation is rejected."
     ))]
     #[codama(account(name = "mint", docs = "SPL token mint"))]
     #[codama(account(
@@ -114,11 +110,10 @@ pub enum RewardsProgramInstruction {
         writable,
         docs = "Distribution authority; receives rent + remaining distribution vault tokens"
     ))]
-    #[codama(account(name = "distribution", writable, docs = "PDA: DirectDistribution account (closed)"))]
     #[codama(account(
-        name = "tombstone",
+        name = "distribution",
         writable,
-        docs = "PDA: [b\"direct_distribution_tombstone\", distribution] (created)"
+        docs = "PDA: DirectDistribution account. Flipped to a compact DirectDistributionClosed marker in place; freed rent is refunded to authority."
     ))]
     #[codama(account(name = "mint", docs = "SPL token mint"))]
     #[codama(account(
@@ -131,7 +126,6 @@ pub enum RewardsProgramInstruction {
         writable,
         docs = "Authority's token account; destination for remaining tokens"
     ))]
-    #[codama(account(name = "system_program", docs = "System program"))]
     #[codama(account(name = "token_program", docs = "SPL Token or Token-2022 program"))]
     #[codama(account(name = "event_authority", docs = "PDA: [b\"__event_authority\"] for event CPI"))]
     #[codama(account(name = "rewards_program", docs = "This program's ID"))]

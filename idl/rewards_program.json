@@ -110,7 +110,7 @@
           "kind": "structTypeNode"
         },
         "kind": "accountNode",
-        "name": "directDistributionTombstone"
+        "name": "directDistributionClosed"
       },
       {
         "data": {
@@ -2000,21 +2000,12 @@
           },
           {
             "docs": [
-              "PDA: [b\"direct_distribution\", mint, authority, seeds] (created)"
+              "PDA: [b\"direct_distribution\", mint, authority, seeds]. If a previous distribution was closed at this address, the account now holds a DirectDistributionClosed marker and re-creation is rejected."
             ],
             "isSigner": false,
             "isWritable": true,
             "kind": "instructionAccountNode",
             "name": "distribution"
-          },
-          {
-            "docs": [
-              "PDA: [b\"direct_distribution_tombstone\", distribution] (must be uninitialized)"
-            ],
-            "isSigner": false,
-            "isWritable": false,
-            "kind": "instructionAccountNode",
-            "name": "tombstone"
           },
           {
             "docs": [
@@ -2428,21 +2419,12 @@
           },
           {
             "docs": [
-              "PDA: DirectDistribution account (closed)"
+              "PDA: DirectDistribution account. Flipped to a compact DirectDistributionClosed marker in place; freed rent is refunded to authority."
             ],
             "isSigner": false,
             "isWritable": true,
             "kind": "instructionAccountNode",
             "name": "distribution"
-          },
-          {
-            "docs": [
-              "PDA: [b\"direct_distribution_tombstone\", distribution] (created)"
-            ],
-            "isSigner": false,
-            "isWritable": true,
-            "kind": "instructionAccountNode",
-            "name": "tombstone"
           },
           {
             "docs": [
@@ -2470,15 +2452,6 @@
             "isWritable": true,
             "kind": "instructionAccountNode",
             "name": "authorityTokenAccount"
-          },
-          {
-            "docs": [
-              "System program"
-            ],
-            "isSigner": false,
-            "isWritable": false,
-            "kind": "instructionAccountNode",
-            "name": "systemProgram"
           },
           {
             "docs": [
