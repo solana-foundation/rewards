@@ -3,8 +3,8 @@ use pinocchio::{account::AccountView, error::ProgramError, Address, ProgramResul
 use crate::{
     errors::RewardsProgramError,
     events::ClaimClosedEvent,
-    state::{DirectDistribution, DirectDistributionClosed, DirectRecipient},
-    traits::{Discriminator, EventSerialize},
+    state::{DirectDistribution, DirectRecipient},
+    traits::EventSerialize,
     utils::{close_pda_account, emit_event},
     ID,
 };
@@ -18,13 +18,9 @@ pub fn process_close_direct_recipient(
 ) -> ProgramResult {
     let ix = CloseDirectRecipient::try_from((instruction_data, accounts))?;
 
-    // The distribution PDA always lives on. When active it holds a
-    // `DirectDistribution`; when closed it holds a compact
-    // `DirectDistributionClosed` marker. Peek at the discriminator to tell them apart.
-    let distribution_closed = {
-        let data = ix.accounts.distribution.try_borrow()?;
-        ix.accounts.distribution.owned_by(&ID) && !data.is_empty() && data[0] == DirectDistributionClosed::DISCRIMINATOR
-    };
+    // The distribution PDA always lives on: active as `DirectDistribution`,
+    // permanently closed as a compact `DirectDistributionClosed` marker.
+    let distribution_closed = DirectDistribution::is_closed(ix.accounts.distribution, &ID)?;
 
     if !distribution_closed {
         let distribution_data = ix.accounts.distribution.try_borrow()?;

@@ -207,6 +207,20 @@ impl DirectDistribution {
         Ok(state)
     }
 
+    /// Returns `true` if the given account holds a `DirectDistributionClosed` marker
+    /// — i.e., a distribution that was previously closed at this PDA address.
+    ///
+    /// An account owned by a different program (including the system program
+    /// for a fresh/uninitialized PDA) is never considered closed.
+    #[inline(always)]
+    pub fn is_closed(account: &AccountView, program_id: &Address) -> Result<bool, ProgramError> {
+        if !account.owned_by(program_id) {
+            return Ok(false);
+        }
+        let data = account.try_borrow()?;
+        Ok(!data.is_empty() && data[0] == crate::state::DirectDistributionClosed::DISCRIMINATOR)
+    }
+
     pub fn remaining_unallocated(&self, vault_balance: u64) -> Result<u64, RewardsProgramError> {
         let outstanding =
             self.total_allocated.checked_sub(self.total_claimed).ok_or(RewardsProgramError::MathOverflow)?;
