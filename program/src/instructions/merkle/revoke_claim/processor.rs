@@ -6,8 +6,8 @@ use crate::{
     events::RecipientRevokedEvent,
     state::{MerkleClaim, MerkleClaimSeeds, MerkleDistribution, Revocation, RevocationSeeds},
     traits::{
-        AccountParse, AccountSerialize, AccountSize, Distribution, DistributionSigner, EventSerialize, InstructionData,
-        PdaSeeds, VestingParams,
+        AccountParse, AccountSerialize, AccountSize, ClaimTracker, Distribution, DistributionSigner, EventSerialize,
+        InstructionData, PdaSeeds, VestingParams,
     },
     utils::{
         compute_leaf_hash, create_pda_account, emit_event, get_current_timestamp, get_mint_decimals,
@@ -61,14 +61,15 @@ pub fn process_revoke_merkle_claim(
     };
     claim_seeds.validate_pda_address(ix.accounts.claim_account, &ID)?;
 
-    let claimed_amount = if is_pda_uninitialized(ix.accounts.claim_account) {
-        0u64
+    let mut claim = if is_pda_uninitialized(ix.accounts.claim_account) {
+        None
     } else {
         let claim_data = ix.accounts.claim_account.try_borrow()?;
         let claim = MerkleClaim::parse_from_bytes(&claim_data)?;
         drop(claim_data);
-        claim.claimed_amount
+        Some(claim)
     };
+    let claimed_amount = claim.as_ref().map_or(0u64, |existing_claim| existing_claim.claimed_amount);
 
     // Calculate vesting
     let vested_amount = VestingParams::calculate_unlocked(&ix.data, current_ts)?;
@@ -77,6 +78,7 @@ pub fn process_revoke_merkle_claim(
 
     // Apply revoke mode
     let decimals = get_mint_decimals(ix.accounts.mint)?;
+    let mut claim_needs_write = false;
 
     let (vested_transferred, total_freed) = match ix.data.revoke_mode {
         RevokeMode::NonVested => {
@@ -96,6 +98,10 @@ pub fn process_revoke_merkle_claim(
             }
 
             Distribution::add_claimed(&mut distribution, vested_unclaimed)?;
+            if let Some(existing_claim) = claim.as_mut() {
+                ClaimTracker::add_claimed(existing_claim, vested_unclaimed)?;
+                claim_needs_write = vested_unclaimed > 0;
+            }
 
             (vested_unclaimed, unvested)
         }
@@ -124,6 +130,13 @@ pub fn process_revoke_merkle_claim(
     let mut distribution_data = ix.accounts.distribution.try_borrow_mut()?;
     distribution.write_to_slice(&mut distribution_data)?;
     drop(distribution_data);
+
+    if claim_needs_write {
+        let existing_claim = claim.as_ref().ok_or(RewardsProgramError::InvalidAccountData)?;
+        let mut claim_data = ix.accounts.claim_account.try_borrow_mut()?;
+        existing_claim.write_to_slice(&mut claim_data)?;
+        drop(claim_data);
+    }
 
     // Create revocation PDA
     let revocation_bump_seed = [revocation_bump];

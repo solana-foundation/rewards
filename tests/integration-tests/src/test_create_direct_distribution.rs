@@ -1,10 +1,10 @@
 use solana_sdk::{account::Account, signer::Signer};
 use solana_system_interface::program::ID as SYSTEM_PROGRAM_ID;
 
-use crate::fixtures::{CreateDirectDistributionFixture, CreateDirectDistributionSetup};
+use crate::fixtures::{CloseDirectDistributionSetup, CreateDirectDistributionFixture, CreateDirectDistributionSetup};
 use crate::utils::{
-    assert_direct_distribution, test_empty_data, test_missing_signer, test_not_writable, test_truncated_data,
-    test_wrong_current_program, test_wrong_system_program, TestContext,
+    assert_direct_distribution, assert_rewards_error, test_empty_data, test_missing_signer, test_not_writable,
+    test_truncated_data, test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext,
 };
 
 #[test]
@@ -111,4 +111,29 @@ fn test_create_direct_distribution_prefunded_distribution_pda() {
         &setup.mint.pubkey(),
         setup.bump,
     );
+}
+
+#[test]
+fn test_create_direct_distribution_fails_if_closed_before() {
+    let mut ctx = TestContext::new();
+    let setup = CreateDirectDistributionSetup::new(&mut ctx);
+    let create_ix = setup.build_instruction(&ctx);
+    create_ix.send_expect_success(&mut ctx);
+
+    let authority_token_account =
+        ctx.create_ata_for_program(&setup.authority.pubkey(), &setup.mint.pubkey(), &setup.token_program);
+    let close_setup = CloseDirectDistributionSetup {
+        authority: setup.authority.insecure_clone(),
+        distribution_pda: setup.distribution_pda,
+        mint: setup.mint.pubkey(),
+        distribution_vault: setup.distribution_vault,
+        authority_token_account,
+        token_program: setup.token_program,
+    };
+    close_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    ctx.advance_slot();
+    let recreate_ix = setup.build_instruction(&ctx);
+    let error = recreate_ix.send_expect_error(&mut ctx);
+    assert_rewards_error(error, RewardsError::DistributionPermanentlyClosed);
 }

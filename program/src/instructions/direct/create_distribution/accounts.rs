@@ -54,7 +54,7 @@ impl<'a> TryFrom<&'a [AccountView]> for CreateDirectDistributionAccounts<'a> {
         verify_current_program(program)?;
         verify_event_authority(event_authority)?;
 
-        // 4. (no accounts owned by current program for this instruction)
+        // 4. (distribution may be uninitialized or hold a closed marker; processor validates)
 
         // 5. Validate token account ownership
         verify_owned_by(mint, token_program.address())?;

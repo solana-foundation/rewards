@@ -2,6 +2,7 @@ use pinocchio::{account::AccountView, error::ProgramError, Address, ProgramResul
 use pinocchio_associated_token_account::instructions::CreateIdempotent;
 
 use crate::{
+    errors::RewardsProgramError,
     events::DistributionCreatedEvent,
     state::DirectDistribution,
     traits::{AccountSerialize, AccountSize, EventSerialize, InstructionData, PdaSeeds},
@@ -29,6 +30,12 @@ pub fn process_create_direct_distribution(
     );
 
     distribution.validate_pda(ix.accounts.distribution, &ID, ix.data.bump)?;
+
+    // If the distribution PDA was previously closed, it still lives as a
+    // `DirectDistributionClosed` marker. Reject re-creation.
+    if DirectDistribution::is_closed(ix.accounts.distribution, &ID)? {
+        return Err(RewardsProgramError::DistributionPermanentlyClosed.into());
+    }
 
     let bump_seed = [ix.data.bump];
     let distribution_seeds = distribution.seeds_with_bump(&bump_seed);

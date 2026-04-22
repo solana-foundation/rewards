@@ -3,7 +3,8 @@ use rewards_program_client::types::VestingSchedule;
 use solana_sdk::{instruction::InstructionError, signature::Signer};
 
 use crate::fixtures::{
-    ClaimDirectSetup, CloseDirectRecipientFixture, CloseDirectRecipientSetup, CreateDirectDistributionSetup,
+    AddDirectRecipientSetup, ClaimDirectSetup, CloseDirectDistributionSetup, CloseDirectRecipientFixture,
+    CloseDirectRecipientSetup, CreateDirectDistributionSetup,
 };
 use crate::utils::{
     assert_account_closed, assert_instruction_error, assert_rewards_error, find_direct_recipient_pda,
@@ -68,6 +69,45 @@ fn test_close_direct_recipient_success_token_2022() {
     test_ix.send_expect_success(&mut ctx);
 
     assert_account_closed(&ctx, &setup.recipient_pda);
+}
+
+#[test]
+fn test_close_direct_recipient_after_distribution_closed() {
+    let mut ctx = TestContext::new();
+
+    let recipient_setup = AddDirectRecipientSetup::new(&mut ctx);
+    let add_ix = recipient_setup.build_instruction(&ctx);
+    add_ix.send_expect_success(&mut ctx);
+
+    let close_distribution_setup = CloseDirectDistributionSetup {
+        authority: recipient_setup.authority.insecure_clone(),
+        distribution_pda: recipient_setup.distribution_pda,
+        mint: recipient_setup.mint,
+        distribution_vault: recipient_setup.distribution_vault,
+        authority_token_account: recipient_setup.authority_token_account,
+        token_program: recipient_setup.token_program,
+    };
+
+    let close_distribution_ix = close_distribution_setup.build_instruction(&ctx);
+    close_distribution_ix.send_expect_success(&mut ctx);
+    // After close, the distribution PDA still lives on as a DirectDistributionClosed marker (3 bytes, disc=8).
+    let closed_account =
+        ctx.get_account(&recipient_setup.distribution_pda).expect("Distribution PDA should still exist after close");
+    assert_eq!(closed_account.data.len(), 3, "Closed distribution should be 3 bytes");
+    assert_eq!(closed_account.data[0], 8, "First byte should be DirectDistributionClosed discriminator");
+
+    let close_recipient_setup = CloseDirectRecipientSetup {
+        recipient: recipient_setup.recipient.insecure_clone(),
+        original_payer: ctx.payer.insecure_clone(),
+        distribution_pda: recipient_setup.distribution_pda,
+        recipient_pda: recipient_setup.recipient_pda,
+        token_program: recipient_setup.token_program,
+    };
+
+    let close_recipient_ix = close_recipient_setup.build_instruction(&ctx);
+    close_recipient_ix.send_expect_success(&mut ctx);
+
+    assert_account_closed(&ctx, &recipient_setup.recipient_pda);
 }
 
 #[test]

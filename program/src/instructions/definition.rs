@@ -14,7 +14,7 @@ pub enum RewardsProgramInstruction {
     #[codama(account(
         name = "distribution",
         writable,
-        docs = "PDA: [b\"direct_distribution\", mint, authority, seeds] (created)"
+        docs = "PDA: [b\"direct_distribution\", mint, authority, seeds]. If a previous distribution was closed at this address, the account now holds a DirectDistributionClosed marker and re-creation is rejected."
     ))]
     #[codama(account(name = "mint", docs = "SPL token mint"))]
     #[codama(account(
@@ -110,7 +110,11 @@ pub enum RewardsProgramInstruction {
         writable,
         docs = "Distribution authority; receives rent + remaining distribution vault tokens"
     ))]
-    #[codama(account(name = "distribution", writable, docs = "PDA: DirectDistribution account (closed)"))]
+    #[codama(account(
+        name = "distribution",
+        writable,
+        docs = "PDA: DirectDistribution account. Flipped to a compact DirectDistributionClosed marker in place; freed rent is refunded to authority."
+    ))]
     #[codama(account(name = "mint", docs = "SPL token mint"))]
     #[codama(account(
         name = "distribution_vault",
@@ -324,7 +328,8 @@ pub enum RewardsProgramInstruction {
     #[codama(account(name = "distribution", writable, docs = "PDA: MerkleDistribution account"))]
     #[codama(account(
         name = "claim_account",
-        docs = "PDA: [b\"merkle_claim\", distribution, claimant] (read-only, may not exist)"
+        writable,
+        docs = "PDA: [b\"merkle_claim\", distribution, claimant] (writable, may not exist)"
     ))]
     #[codama(account(
         name = "revocation_marker",

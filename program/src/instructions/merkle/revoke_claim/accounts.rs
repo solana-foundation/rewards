@@ -43,13 +43,13 @@ impl<'a> TryFrom<&'a [AccountView]> for RevokeMerkleClaimAccounts<'a> {
 
         // 2. Validate writable
         verify_writable(distribution, true)?;
+        verify_writable(claim_account, true)?;
         verify_writable(revocation_marker, true)?;
         verify_writable(distribution_vault, true)?;
         verify_writable(claimant_token_account, true)?;
         verify_writable(authority_token_account, true)?;
 
         // 2b. Validate read-only accounts
-        verify_readonly(claim_account)?;
         verify_readonly(claimant)?;
         verify_readonly(mint)?;
 

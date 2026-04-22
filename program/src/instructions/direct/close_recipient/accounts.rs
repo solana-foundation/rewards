@@ -33,8 +33,8 @@ impl<'a> TryFrom<&'a [AccountView]> for CloseDirectRecipientAccounts<'a> {
         verify_current_program(program)?;
         verify_event_authority(event_authority)?;
 
-        // 4. Validate accounts owned by current program
-        verify_current_program_account(distribution)?;
+        // 4. distribution ownership is validated in processor:
+        // program-owned => active distribution, anything else => treated as closed.
         verify_current_program_account(recipient_account)?;
 
         Ok(Self { recipient, original_payer, distribution, recipient_account, event_authority, program })

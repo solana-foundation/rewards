@@ -6,7 +6,7 @@ use crate::{
     events::DistributionClosedEvent,
     state::DirectDistribution,
     traits::{Distribution, DistributionSigner, EventSerialize, InstructionData},
-    utils::{close_pda_account, emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance},
+    utils::{emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance},
     ID,
 };
 
@@ -24,6 +24,7 @@ pub fn process_close_direct_distribution(
     let distribution = DirectDistribution::from_account(&distribution_data, ix.accounts.distribution, &ID)?;
     distribution.validate_authority(ix.accounts.authority.address())?;
     distribution.validate_mint(ix.accounts.mint.address())?;
+    drop(distribution_data);
 
     if distribution.clawback_ts != 0 {
         let current_ts = get_current_timestamp()?;
@@ -60,9 +61,8 @@ pub fn process_close_direct_distribution(
         .invoke_signed(signers)
     })?;
 
-    drop(distribution_data);
-
-    close_pda_account(ix.accounts.distribution, ix.accounts.authority)?;
+    // Flip the distribution PDA to its permanently-closed state and refund the freed rent.
+    DirectDistribution::close_in_place(ix.accounts.distribution, ix.accounts.authority)?;
 
     let event = DistributionClosedEvent::new(*ix.accounts.distribution.address(), remaining_amount);
     emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;

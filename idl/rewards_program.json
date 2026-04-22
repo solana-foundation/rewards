@@ -105,6 +105,24 @@
                 "format": "u8",
                 "kind": "numberTypeNode"
               }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "kind": "accountNode",
+        "name": "directDistributionClosed"
+      },
+      {
+        "data": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "bump",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
             },
             {
               "kind": "structFieldTypeNode",
@@ -1942,6 +1960,12 @@
         "kind": "errorNode",
         "message": "Nothing to revoke — user has zero balance",
         "name": "pointsNothingToRevoke"
+      },
+      {
+        "code": 42,
+        "kind": "errorNode",
+        "message": "Distribution has been permanently closed",
+        "name": "distributionPermanentlyClosed"
       }
     ],
     "instructions": [
@@ -1976,7 +2000,7 @@
           },
           {
             "docs": [
-              "PDA: [b\"direct_distribution\", mint, authority, seeds] (created)"
+              "PDA: [b\"direct_distribution\", mint, authority, seeds]. If a previous distribution was closed at this address, the account now holds a DirectDistributionClosed marker and re-creation is rejected."
             ],
             "isSigner": false,
             "isWritable": true,
@@ -2395,7 +2419,7 @@
           },
           {
             "docs": [
-              "PDA: DirectDistribution account (closed)"
+              "PDA: DirectDistribution account. Flipped to a compact DirectDistributionClosed marker in place; freed rent is refunded to authority."
             ],
             "isSigner": false,
             "isWritable": true,
@@ -3314,10 +3338,10 @@
           },
           {
             "docs": [
-              "PDA: [b\"merkle_claim\", distribution, claimant] (read-only, may not exist)"
+              "PDA: [b\"merkle_claim\", distribution, claimant] (writable, may not exist)"
             ],
             "isSigner": false,
-            "isWritable": false,
+            "isWritable": true,
             "kind": "instructionAccountNode",
             "name": "claimAccount"
           },
