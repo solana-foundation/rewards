@@ -6,7 +6,7 @@ use crate::{
     events::DistributionClosedEvent,
     state::DirectDistribution,
     traits::{Distribution, DistributionSigner, EventSerialize, InstructionData},
-    utils::{close_pda_account, emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance},
+    utils::{emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance},
     ID,
 };
 
