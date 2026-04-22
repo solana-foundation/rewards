@@ -4,7 +4,8 @@ use crate::{
     traits::InstructionAccounts,
     utils::{
         validate_associated_token_account, verify_current_program, verify_current_program_account,
-        verify_event_authority, verify_owned_by, verify_readonly, verify_signer, verify_token_program, verify_writable,
+        verify_event_authority, verify_owned_by, verify_readonly, verify_signer, verify_token_account_owner,
+        verify_token_program, verify_writable,
     },
 };
 
@@ -61,6 +62,7 @@ impl<'a> TryFrom<&'a [AccountView]> for RevokeDirectRecipientAccounts<'a> {
         // 5. Validate token account ownership
         verify_owned_by(mint, token_program.address())?;
         verify_owned_by(recipient_token_account, token_program.address())?;
+        verify_token_account_owner(recipient_token_account, recipient.address())?;
         verify_owned_by(authority_token_account, token_program.address())?;
 
         // 6. Validate distribution_vault ATA
