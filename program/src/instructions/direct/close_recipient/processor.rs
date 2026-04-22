@@ -4,7 +4,7 @@ use crate::{
     errors::RewardsProgramError,
     events::ClaimClosedEvent,
     state::{DirectDistribution, DirectRecipient},
-    traits::EventSerialize,
+    traits::{EventSerialize, InstructionData},
     utils::{close_pda_account, emit_event},
     ID,
 };
@@ -17,6 +17,7 @@ pub fn process_close_direct_recipient(
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = CloseDirectRecipient::try_from((instruction_data, accounts))?;
+    ix.data.validate()?;
 
     // The distribution PDA always lives on: active as `DirectDistribution`,
     // permanently closed as a compact `DirectDistributionClosed` marker.

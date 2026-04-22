@@ -42,7 +42,7 @@ export function CloseDirectRecipient() {
 
         const ix = getCloseDirectRecipientInstruction(
             {
-                recipient: signer,
+                recipient: signer.address,
                 originalPayer: asAddress(originalPayer),
                 distribution: asAddress(distribution),
                 recipientAccount: asAddress(recipientAccount),

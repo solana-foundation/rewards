@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use codama::CodamaType;
 use pinocchio::Address;
 
-use crate::traits::{EventDiscriminator, EventDiscriminators, EventSerialize};
+use crate::traits::{event_discriminator, EventDiscriminator, EventSerialize};
 
 #[derive(CodamaType)]
 pub struct BalanceSyncedEvent {
@@ -13,7 +13,7 @@ pub struct BalanceSyncedEvent {
 }
 
 impl EventDiscriminator for BalanceSyncedEvent {
-    const DISCRIMINATOR: u8 = EventDiscriminators::BalanceSynced as u8;
+    const DISCRIMINATOR: [u8; 8] = event_discriminator(b"BalanceSyncedEvent");
 }
 
 impl EventSerialize for BalanceSyncedEvent {

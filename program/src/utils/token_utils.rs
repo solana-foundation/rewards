@@ -101,3 +101,23 @@ pub fn get_token_account_balance(token_account: &AccountView) -> Result<u64, Pro
     let account = unsafe { TokenAccount::from_bytes_unchecked(&data) };
     Ok(account.amount())
 }
+
+/// Verify that a token account's internal owner field matches the expected owner.
+///
+/// Token accounts store the wallet owner at bytes 32..64. This check prevents
+/// substituting an arbitrary token account (e.g., the authority's) where a
+/// specific recipient's account is expected.
+#[inline(always)]
+pub fn verify_token_account_owner(token_account: &AccountView, expected_owner: &Address) -> Result<(), ProgramError> {
+    let data = token_account.try_borrow()?;
+    if data.len() < TokenAccount::BASE_LEN {
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    let account = unsafe { TokenAccount::from_bytes_unchecked(&data) };
+    if account.owner() != expected_owner {
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    Ok(())
+}

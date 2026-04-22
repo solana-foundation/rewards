@@ -8,14 +8,21 @@ use crate::fixtures::{
 };
 use crate::utils::{
     assert_account_closed, assert_instruction_error, assert_rewards_error, find_direct_recipient_pda,
-    find_event_authority_pda, test_empty_data, test_missing_signer, test_not_writable, test_wrong_current_program,
-    RewardsError, TestContext, TestInstruction,
+    find_event_authority_pda, test_empty_data, test_not_writable, test_wrong_current_program, RewardsError,
+    TestContext, TestInstruction,
 };
 
 #[test]
-fn test_close_direct_recipient_missing_recipient_signer() {
+fn test_close_direct_recipient_permissionless_when_fully_claimed() {
     let mut ctx = TestContext::new();
-    test_missing_signer::<CloseDirectRecipientFixture>(&mut ctx, 0, 0);
+    let setup = CloseDirectRecipientSetup::new(&mut ctx);
+
+    // Build instruction — no signer needed since recipient is fully claimed
+    let test_ix = setup.build_instruction(&ctx);
+    assert!(test_ix.signers.is_empty(), "No signers should be required");
+    test_ix.send_expect_success(&mut ctx);
+
+    assert_account_closed(&ctx, &setup.recipient_pda);
 }
 
 #[test]

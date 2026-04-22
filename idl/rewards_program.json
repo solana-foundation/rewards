@@ -2513,7 +2513,7 @@
             "docs": [
               "Wallet address of the recipient; must match recipient_account.recipient"
             ],
-            "isSigner": true,
+            "isSigner": false,
             "isWritable": false,
             "kind": "instructionAccountNode",
             "name": "recipient"

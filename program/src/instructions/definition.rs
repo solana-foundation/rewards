@@ -134,7 +134,6 @@ pub enum RewardsProgramInstruction {
     /// Close a direct recipient account after fully claiming, recovering rent.
     #[codama(account(
         name = "recipient",
-        signer,
         docs = "Wallet address of the recipient; must match recipient_account.recipient"
     ))]
     #[codama(account(

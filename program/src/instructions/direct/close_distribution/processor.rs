@@ -5,8 +5,8 @@ use crate::{
     errors::RewardsProgramError,
     events::DistributionClosedEvent,
     state::DirectDistribution,
-    traits::{Distribution, DistributionSigner, EventSerialize},
-    utils::{emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance},
+    traits::{Distribution, DistributionSigner, EventSerialize, InstructionData},
+    utils::{close_pda_account, emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance},
     ID,
 };
 
@@ -18,6 +18,7 @@ pub fn process_close_direct_distribution(
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = CloseDirectDistribution::try_from((instruction_data, accounts))?;
+    ix.data.validate()?;
 
     let distribution_data = ix.accounts.distribution.try_borrow()?;
     let distribution = DirectDistribution::from_account(&distribution_data, ix.accounts.distribution, &ID)?;
