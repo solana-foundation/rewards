@@ -5,7 +5,7 @@ use crate::{
     errors::RewardsProgramError,
     events::DistributionClosedEvent,
     state::MerkleDistribution,
-    traits::{Distribution, DistributionSigner, EventSerialize},
+    traits::{Distribution, DistributionSigner, EventSerialize, InstructionData},
     utils::{close_pda_account, emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance},
     ID,
 };
@@ -18,6 +18,7 @@ pub fn process_close_merkle_distribution(
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = CloseMerkleDistribution::try_from((instruction_data, accounts))?;
+    ix.data.validate()?;
 
     let current_ts = get_current_timestamp()?;
 
