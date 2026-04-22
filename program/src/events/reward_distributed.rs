@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use codama::CodamaType;
 use pinocchio::Address;
 
-use crate::traits::{EventDiscriminator, EventDiscriminators, EventSerialize};
+use crate::traits::{event_discriminator, EventDiscriminator, EventSerialize};
 
 #[derive(CodamaType)]
 pub struct RewardDistributedEvent {
@@ -12,7 +12,7 @@ pub struct RewardDistributedEvent {
 }
 
 impl EventDiscriminator for RewardDistributedEvent {
-    const DISCRIMINATOR: u8 = EventDiscriminators::RewardDistributed as u8;
+    const DISCRIMINATOR: [u8; 8] = event_discriminator(b"RewardDistributedEvent");
 }
 
 impl EventSerialize for RewardDistributedEvent {
@@ -72,7 +72,7 @@ mod tests {
         let bytes = event.to_bytes();
         assert_eq!(bytes.len(), EVENT_DISCRIMINATOR_LEN + RewardDistributedEvent::DATA_LEN);
         assert_eq!(&bytes[..8], EVENT_IX_TAG_LE);
-        assert_eq!(bytes[8], EventDiscriminators::RewardDistributed as u8);
-        assert_eq!(&bytes[9..41], reward_pool.as_ref());
+        assert_eq!(&bytes[8..16], RewardDistributedEvent::DISCRIMINATOR);
+        assert_eq!(&bytes[16..48], reward_pool.as_ref());
     }
 }
