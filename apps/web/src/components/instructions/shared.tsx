@@ -3,7 +3,7 @@
 import { Button } from '@solana/design-system/button';
 import { Select, SelectItem } from '@solana/design-system/select';
 import { TextInput } from '@solana/design-system/text-input';
-import { RevokeMode, type VestingScheduleArgs } from '@solana/rewards-client';
+import { RevokeMode, type VestingScheduleArgs } from '@solana/rewards';
 import { parseBigIntValue, validateInteger } from '@/lib/validation';
 
 interface FormFieldProps {

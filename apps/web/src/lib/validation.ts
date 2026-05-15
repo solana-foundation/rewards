@@ -2,7 +2,7 @@
 
 import { PublicKey } from '@solana/web3.js';
 
-export { parseBigIntValue, parseByteArray32, parseMerkleProof } from '@solana/rewards-client';
+export { parseBigIntValue, parseByteArray32, parseMerkleProof } from '@solana/rewards';
 
 function normalize(value: string) {
     return value.trim();

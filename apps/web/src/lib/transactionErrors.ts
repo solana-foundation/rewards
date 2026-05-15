@@ -36,7 +36,7 @@ import {
     REWARDS_PROGRAM_ERROR__USER_ALREADY_REVOKED,
     REWARDS_PROGRAM_ERROR__USER_NOT_OPTED_IN,
     REWARDS_PROGRAM_ERROR__USER_REVOKED,
-} from '@solana/rewards-client';
+} from '@solana/rewards';
 
 const ERROR_MESSAGES: Record<number, string> = {
     [REWARDS_PROGRAM_ERROR__INVALID_AMOUNT]: 'Invalid amount specified',

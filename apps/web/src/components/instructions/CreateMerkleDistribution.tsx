@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { generateKeyPairSigner } from '@solana/kit';
-import { getCreateMerkleDistributionInstruction } from '@solana/rewards-client';
+import { getCreateMerkleDistributionInstruction } from '@solana/rewards';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useSendTx } from '@/hooks/useSendTx';
