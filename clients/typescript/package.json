@@ -1,11 +1,12 @@
 {
-  "name": "@solana/rewards-client",
+  "name": "@solana/rewards",
   "version": "0.0.1",
   "description": "TypeScript client for Rewards Program",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/solana-program/rewards"
+    "url": "git+https://github.com/solana-program/rewards.git",
+    "directory": "clients/typescript"
   },
   "type": "module",
   "main": "./dist/index.js",
@@ -23,6 +24,19 @@
     "build": "tsc"
   },
   "peerDependencies": {
-    "@solana/kit": "^5.0.0"
-  }
+    "@solana/kit": "^6.9.0"
+  },
+  "homepage": "https://github.com/solana-program/rewards#readme",
+  "bugs": {
+    "url": "https://github.com/solana-program/rewards/issues"
+  },
+  "keywords": [
+    "solana",
+    "solana-kit",
+    "rewards",
+    "token-rewards",
+    "vesting",
+    "merkle",
+    "pinocchio"
+  ]
 }

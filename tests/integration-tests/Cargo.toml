@@ -8,7 +8,7 @@ workspace = true
 
 [dependencies]
 litesvm = "^0.9.0"
-rewards-program-client = { path = "../../clients/rust", features = [
+rewards-program-client = { package = "rewards", path = "../../clients/rust", features = [
     "fetch",
 ], default-features = false }
 solana-sdk = "3.0.0"

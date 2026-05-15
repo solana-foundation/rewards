@@ -1,7 +1,7 @@
 'use client';
 
 import type { Address } from '@solana/kit';
-import { REWARDS_PROGRAM_PROGRAM_ADDRESS } from '@solana/rewards-client';
+import { REWARDS_PROGRAM_PROGRAM_ADDRESS } from '@solana/rewards';
 import { PublicKey } from '@solana/web3.js';
 
 export const SYSTEM_PROGRAM_ID = '11111111111111111111111111111111' as Address;
