@@ -24,6 +24,7 @@ pinocchio-log = { workspace = true }
 pinocchio-system = { workspace = true }
 pinocchio-token = { workspace = true }
 pinocchio-token-2022 = { workspace = true }
+spl-token-2022 = { workspace = true }
 thiserror = { workspace = true }
 solana-security-txt = { workspace = true }
 

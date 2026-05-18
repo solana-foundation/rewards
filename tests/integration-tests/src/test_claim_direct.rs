@@ -1,14 +1,16 @@
+use crate::fixtures::{ClaimDirectFixture, ClaimDirectSetup, ClaimDirectTransferFeeSetup};
+use crate::utils::{
+    assert_account_closed, assert_direct_recipient, assert_instruction_error, assert_rewards_error,
+    expected_linear_unlock, test_empty_data, test_missing_signer, test_not_writable, test_wrong_current_program,
+    RewardsError, TestContext,
+};
+use rewards_program_client::{
+    accounts::{DirectDistribution, DirectRecipient},
+    types::VestingSchedule,
+};
 use solana_sdk::{
     instruction::InstructionError,
     signature::{Keypair, Signer},
-};
-
-use rewards_program_client::types::VestingSchedule;
-
-use crate::fixtures::{ClaimDirectFixture, ClaimDirectSetup};
-use crate::utils::{
-    assert_direct_recipient, assert_instruction_error, assert_rewards_error, expected_linear_unlock, test_empty_data,
-    test_missing_signer, test_not_writable, test_wrong_current_program, RewardsError, TestContext,
 };
 
 #[test]
@@ -84,6 +86,64 @@ fn test_claim_direct_success_token_2022() {
 
     let balance = ctx.get_token_balance(&setup.recipient_token_account);
     assert_eq!(balance, setup.amount);
+}
+
+#[test]
+fn test_claim_direct_rejects_recipient_token_account_wrong_owner() {
+    let mut ctx = TestContext::new();
+    let setup = ClaimDirectSetup::new(&mut ctx);
+    let attacker = ctx.create_funded_keypair();
+    let attacker_token_account = ctx.create_ata_for_program(&attacker.pubkey(), &setup.mint, &setup.token_program);
+
+    let test_ix = setup.build_instruction(&ctx).with_account_at(5, attacker_token_account);
+    let error = test_ix.send_expect_error(&mut ctx);
+
+    assert_instruction_error(error, InstructionError::InvalidAccountData);
+    assert_eq!(ctx.get_token_balance(&attacker_token_account), 0);
+    assert_eq!(ctx.get_token_balance(&setup.recipient_token_account), 0);
+    assert_direct_recipient(
+        &ctx,
+        &setup.recipient_pda,
+        &setup.recipient.pubkey(),
+        setup.amount,
+        0,
+        setup.recipient_bump,
+    );
+}
+
+#[test]
+fn test_claim_direct_transfer_fee_mint_tracks_vault_debits() {
+    let mut ctx = TestContext::new();
+    let setup = ClaimDirectTransferFeeSetup::new(&mut ctx);
+
+    let recipient_account = ctx.get_account(&setup.recipient_pda).expect("recipient account should exist");
+    let recipient_state = DirectRecipient::from_bytes(&recipient_account.data).expect("recipient account should parse");
+    assert_eq!(recipient_state.total_amount, setup.vault_funded_amount);
+    assert_eq!(ctx.get_token_balance(&setup.distribution_vault), setup.vault_funded_amount);
+
+    let claim_ix = setup.build_claim_instruction();
+    claim_ix.send_expect_success(&mut ctx);
+
+    let recipient_amounts = ctx.get_token_2022_transfer_fee_amounts(&setup.recipient_token_account);
+    assert_eq!(recipient_amounts.spendable, setup.vault_funded_amount - setup.claim_fee);
+    assert_eq!(recipient_amounts.withheld, setup.claim_fee);
+    assert_eq!(ctx.get_token_balance(&setup.distribution_vault), 0);
+
+    let recipient_account = ctx.get_account(&setup.recipient_pda).expect("recipient account should exist");
+    let recipient_state = DirectRecipient::from_bytes(&recipient_account.data).expect("recipient account should parse");
+    assert_eq!(recipient_state.total_amount, setup.vault_funded_amount);
+    assert_eq!(recipient_state.claimed_amount, setup.vault_funded_amount);
+
+    let distribution_account = ctx.get_account(&setup.distribution_pda).expect("distribution account should exist");
+    let distribution_state =
+        DirectDistribution::from_bytes(&distribution_account.data).expect("distribution account should parse");
+    assert_eq!(distribution_state.total_allocated, setup.vault_funded_amount);
+    assert_eq!(distribution_state.total_claimed, setup.vault_funded_amount);
+
+    let close_ix = setup.build_close_recipient_instruction();
+    close_ix.send_expect_success(&mut ctx);
+
+    assert_account_closed(&ctx, &setup.recipient_pda);
 }
 
 #[test]

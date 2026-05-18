@@ -1,8 +1,11 @@
-use rewards_program_client::instructions::ClaimDirectBuilder;
+use rewards_program_client::instructions::{
+    AddDirectRecipientBuilder, ClaimDirectBuilder, CloseDirectRecipientBuilder, CreateDirectDistributionBuilder,
+};
 use solana_sdk::{
     pubkey::Pubkey,
     signature::{Keypair, Signer},
 };
+use spl_associated_token_account::get_associated_token_address_with_program_id;
 use spl_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 use spl_token_interface::ID as TOKEN_PROGRAM_ID;
 
@@ -10,8 +13,13 @@ use rewards_program_client::types::VestingSchedule;
 
 use crate::fixtures::{AddDirectRecipientSetup, CreateDirectDistributionSetup, DEFAULT_RECIPIENT_AMOUNT};
 use crate::utils::{
-    find_direct_recipient_pda, find_event_authority_pda, InstructionTestFixture, TestContext, TestInstruction,
+    calculate_token_2022_transfer_fee, find_direct_distribution_pda, find_direct_recipient_pda,
+    find_event_authority_pda, InstructionTestFixture, TestContext, TestInstruction,
 };
+
+pub const DIRECT_TRANSFER_FEE_BPS: u16 = 1_000;
+pub const DIRECT_TRANSFER_FEE_DECIMALS: u8 = 6;
+pub const DIRECT_TRANSFER_FEE_GROSS_DEPOSIT: u64 = 1_000_000;
 
 pub struct ClaimDirectSetup {
     pub recipient: Keypair,
@@ -152,6 +160,144 @@ impl ClaimDirectSetup {
             signers: vec![wrong_signer.insecure_clone()],
             name: "ClaimDirect",
         }
+    }
+}
+
+pub struct ClaimDirectTransferFeeSetup {
+    pub recipient: Keypair,
+    pub original_payer: Keypair,
+    pub distribution_pda: Pubkey,
+    pub recipient_pda: Pubkey,
+    pub mint: Pubkey,
+    pub distribution_vault: Pubkey,
+    pub recipient_token_account: Pubkey,
+    pub vault_funded_amount: u64,
+    pub claim_fee: u64,
+}
+
+impl ClaimDirectTransferFeeSetup {
+    pub fn new(ctx: &mut TestContext) -> Self {
+        let mint = Keypair::new();
+        let authority = ctx.create_funded_keypair();
+        let seed = Keypair::new();
+        let recipient = ctx.create_funded_keypair();
+        let original_payer = ctx.create_funded_keypair();
+
+        ctx.create_token_2022_transfer_fee_mint(
+            &mint,
+            &ctx.payer.pubkey(),
+            DIRECT_TRANSFER_FEE_DECIMALS,
+            DIRECT_TRANSFER_FEE_BPS,
+            DIRECT_TRANSFER_FEE_GROSS_DEPOSIT,
+        );
+
+        let (distribution_pda, distribution_bump) =
+            find_direct_distribution_pda(&mint.pubkey(), &authority.pubkey(), &seed.pubkey());
+        let distribution_vault =
+            get_associated_token_address_with_program_id(&distribution_pda, &mint.pubkey(), &TOKEN_2022_PROGRAM_ID);
+        let (event_authority, _) = find_event_authority_pda();
+
+        let mut create_distribution = CreateDirectDistributionBuilder::new();
+        create_distribution
+            .payer(ctx.payer.pubkey())
+            .authority(authority.pubkey())
+            .seeds(seed.pubkey())
+            .distribution(distribution_pda)
+            .mint(mint.pubkey())
+            .distribution_vault(distribution_vault)
+            .token_program(TOKEN_2022_PROGRAM_ID)
+            .event_authority(event_authority)
+            .bump(distribution_bump)
+            .revocable(0)
+            .clawback_ts(0);
+        ctx.send_transaction(create_distribution.instruction(), &[&authority, &seed]).unwrap();
+
+        let authority_token_account = ctx.create_token_2022_ata(&authority.pubkey(), &mint.pubkey());
+        ctx.mint_token_2022(
+            &mint.pubkey(),
+            &authority_token_account,
+            DIRECT_TRANSFER_FEE_GROSS_DEPOSIT,
+            DIRECT_TRANSFER_FEE_DECIMALS,
+        );
+
+        let (recipient_pda, recipient_bump) = find_direct_recipient_pda(&distribution_pda, &recipient.pubkey());
+        let mut add_recipient = AddDirectRecipientBuilder::new();
+        add_recipient
+            .payer(original_payer.pubkey())
+            .authority(authority.pubkey())
+            .distribution(distribution_pda)
+            .recipient_account(recipient_pda)
+            .recipient(recipient.pubkey())
+            .mint(mint.pubkey())
+            .distribution_vault(distribution_vault)
+            .authority_token_account(authority_token_account)
+            .token_program(TOKEN_2022_PROGRAM_ID)
+            .event_authority(event_authority)
+            .bump(recipient_bump)
+            .amount(DIRECT_TRANSFER_FEE_GROSS_DEPOSIT)
+            .schedule(VestingSchedule::Immediate);
+        ctx.send_transaction(add_recipient.instruction(), &[&original_payer, &authority]).unwrap();
+
+        let vault_funded_amount = DIRECT_TRANSFER_FEE_GROSS_DEPOSIT
+            - calculate_token_2022_transfer_fee(
+                DIRECT_TRANSFER_FEE_GROSS_DEPOSIT,
+                DIRECT_TRANSFER_FEE_BPS,
+                DIRECT_TRANSFER_FEE_GROSS_DEPOSIT,
+            );
+        let claim_fee = calculate_token_2022_transfer_fee(
+            vault_funded_amount,
+            DIRECT_TRANSFER_FEE_BPS,
+            DIRECT_TRANSFER_FEE_GROSS_DEPOSIT,
+        );
+        let recipient_token_account = ctx.create_token_2022_ata(&recipient.pubkey(), &mint.pubkey());
+
+        Self {
+            recipient,
+            original_payer,
+            distribution_pda,
+            recipient_pda,
+            mint: mint.pubkey(),
+            distribution_vault,
+            recipient_token_account,
+            vault_funded_amount,
+            claim_fee,
+        }
+    }
+
+    pub fn build_claim_instruction(&self) -> TestInstruction {
+        let (event_authority, _) = find_event_authority_pda();
+
+        let mut builder = ClaimDirectBuilder::new();
+        builder
+            .recipient(self.recipient.pubkey())
+            .distribution(self.distribution_pda)
+            .recipient_account(self.recipient_pda)
+            .mint(self.mint)
+            .distribution_vault(self.distribution_vault)
+            .recipient_token_account(self.recipient_token_account)
+            .token_program(TOKEN_2022_PROGRAM_ID)
+            .event_authority(event_authority)
+            .amount(0);
+
+        TestInstruction {
+            instruction: builder.instruction(),
+            signers: vec![self.recipient.insecure_clone()],
+            name: "ClaimDirect",
+        }
+    }
+
+    pub fn build_close_recipient_instruction(&self) -> TestInstruction {
+        let (event_authority, _) = find_event_authority_pda();
+
+        let mut builder = CloseDirectRecipientBuilder::new();
+        builder
+            .recipient(self.recipient.pubkey())
+            .original_payer(self.original_payer.pubkey())
+            .distribution(self.distribution_pda)
+            .recipient_account(self.recipient_pda)
+            .event_authority(event_authority);
+
+        TestInstruction { instruction: builder.instruction(), signers: vec![], name: "CloseDirectRecipient" }
     }
 }
 

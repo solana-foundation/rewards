@@ -17,8 +17,10 @@ pub const DEFAULT_REVOKE_MERKLE_AMOUNT: u64 = 1_000_000;
 
 pub struct RevokeMerkleClaimSetup {
     pub authority: Keypair,
+    pub seed: Keypair,
     pub payer: Keypair,
     pub distribution_pda: Pubkey,
+    pub bump: u8,
     pub claimant: Keypair,
     pub claim_pda: Pubkey,
     pub claim_bump: u8, // still needed for ClaimMerkle instruction
@@ -28,10 +30,12 @@ pub struct RevokeMerkleClaimSetup {
     pub claimant_token_account: Pubkey,
     pub authority_token_account: Pubkey,
     pub token_program: Pubkey,
+    pub amount: u64,
     pub total_amount: u64,
     pub schedule: VestingSchedule,
     pub proof: Vec<[u8; 32]>,
     pub merkle_tree: MerkleTree,
+    pub clawback_ts: i64,
     pub start_ts: i64,
     pub end_ts: i64,
 }
@@ -232,8 +236,10 @@ impl<'a> RevokeMerkleClaimSetupBuilder<'a> {
 
         RevokeMerkleClaimSetup {
             authority: distribution_setup.authority,
+            seed: distribution_setup.seed,
             payer,
             distribution_pda: distribution_setup.distribution_pda,
+            bump: distribution_setup.bump,
             claimant,
             claim_pda,
             claim_bump,
@@ -243,10 +249,12 @@ impl<'a> RevokeMerkleClaimSetupBuilder<'a> {
             claimant_token_account,
             authority_token_account: distribution_setup.authority_token_account,
             token_program: self.token_program,
+            amount: total_distribution_amount,
             total_amount: self.amount,
             schedule,
             proof,
             merkle_tree,
+            clawback_ts: distribution_setup.clawback_ts,
             start_ts,
             end_ts,
         }

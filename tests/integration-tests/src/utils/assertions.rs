@@ -1,4 +1,6 @@
-use rewards_program_client::accounts::{DirectDistribution, DirectRecipient, MerkleClaim, MerkleDistribution};
+use rewards_program_client::accounts::{
+    DirectDistribution, DirectRecipient, MerkleClaim, MerkleDistribution, MerkleDistributionClosed,
+};
 use solana_sdk::{instruction::InstructionError, pubkey::Pubkey, transaction::TransactionError};
 
 use crate::utils::{TestContext, PROGRAM_ID};
@@ -97,6 +99,13 @@ pub fn assert_merkle_distribution(
     assert_eq!(data.mint, *expected_mint);
     assert_eq!(data.merkle_root, *expected_merkle_root);
     assert_eq!(data.total_amount, expected_total_amount);
+}
+
+pub fn assert_merkle_distribution_closed(ctx: &TestContext, distribution_pda: &Pubkey) {
+    let account = ctx.get_account(distribution_pda).expect("Closed distribution marker should exist");
+    assert_eq!(account.owner, PROGRAM_ID, "Closed distribution marker should be owned by program");
+
+    MerkleDistributionClosed::from_bytes(&account.data).expect("Failed to deserialize closed marker");
 }
 
 /// Assert that a merkle claim account exists with expected values

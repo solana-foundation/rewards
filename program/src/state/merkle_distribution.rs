@@ -9,10 +9,12 @@ use pinocchio::{
 };
 
 use crate::errors::RewardsProgramError;
+use crate::state::MerkleDistributionClosed;
 use crate::traits::{
     AccountParse, AccountSerialize, AccountSize, AccountValidation, Discriminator, Distribution, DistributionSigner,
     PdaAccount, PdaSeeds, RewardsAccountDiscriminators, Versioned,
 };
+use crate::utils::refund_excess_rent;
 use crate::{assert_no_padding, require_account_len, validate_discriminator, validate_version};
 
 /// MerkleDistribution account state
@@ -220,6 +222,26 @@ impl MerkleDistribution {
         let state = Self::parse_from_bytes(data)?;
         state.validate_self(account, program_id)?;
         Ok(state)
+    }
+
+    #[inline(always)]
+    pub fn is_closed(account: &AccountView, program_id: &Address) -> Result<bool, ProgramError> {
+        if !account.owned_by(program_id) {
+            return Ok(false);
+        }
+        let data = account.try_borrow()?;
+        Ok(!data.is_empty() && data[0] == MerkleDistributionClosed::DISCRIMINATOR)
+    }
+
+    pub fn close_in_place(account: &AccountView, rent_recipient: &AccountView) -> Result<(), ProgramError> {
+        {
+            let mut data = account.try_borrow_mut()?;
+            data[0] = MerkleDistributionClosed::DISCRIMINATOR;
+            data[1] = MerkleDistributionClosed::VERSION;
+        }
+
+        account.resize(MerkleDistributionClosed::LEN)?;
+        refund_excess_rent(account, rent_recipient, MerkleDistributionClosed::LEN)
     }
 }
 
