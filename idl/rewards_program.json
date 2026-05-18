@@ -907,6 +907,7 @@
         "name": "distributionPermanentlyClosed"
       }
     ],
+    "events": [],
     "instructions": [
       {
         "accounts": [
