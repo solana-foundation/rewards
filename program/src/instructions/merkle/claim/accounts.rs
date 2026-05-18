@@ -5,7 +5,7 @@ use crate::{
     utils::{
         validate_associated_token_account, verify_current_program, verify_current_program_account,
         verify_event_authority, verify_owned_by, verify_readonly, verify_signer, verify_system_program,
-        verify_token_program, verify_writable,
+        verify_token_account_owner, verify_token_program, verify_writable,
     },
 };
 
@@ -62,6 +62,7 @@ impl<'a> TryFrom<&'a [AccountView]> for ClaimMerkleAccounts<'a> {
         // 5. Validate token account ownership
         verify_owned_by(mint, token_program.address())?;
         verify_owned_by(claimant_token_account, token_program.address())?;
+        verify_token_account_owner(claimant_token_account, claimant.address())?;
 
         // 6. Validate distribution_vault ATA
         validate_associated_token_account(distribution_vault, distribution.address(), mint, token_program)?;

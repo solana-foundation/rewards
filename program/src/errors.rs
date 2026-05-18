@@ -85,6 +85,10 @@ pub enum RewardsProgramError {
     #[error("Claimant has already been revoked")]
     ClaimantAlreadyRevoked,
 
+    /// (20) Transfer hook mints are not supported
+    #[error("Transfer hook mints are not supported")]
+    TransferHookMintUnsupported,
+
     /// (42) Distribution has been permanently closed
     #[error("Distribution has been permanently closed")]
     DistributionPermanentlyClosed = 42,
