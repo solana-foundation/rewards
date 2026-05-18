@@ -19,7 +19,7 @@ unexpected_cfgs = { level = "warn", check-cfg = [
 codama = "^0.9.2"
 serde_json = "^1.0.145"
 const-crypto = "^0.3.0"
-pinocchio = { version = "^0.10.1", features = ["copy"] }
+pinocchio = { version = "^0.11.1", features = ["copy"] }
 pinocchio-associated-token-account = "^0.3.0"
 pinocchio-log = "^0.5.1"
 pinocchio-system = "^0.5.0"
