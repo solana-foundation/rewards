@@ -8,10 +8,7 @@ const MAX_RECENT_TRANSACTIONS = 20;
 
 export interface RecentTransactionValues {
     distribution?: string;
-    rewardPool?: string;
     mint?: string;
-    trackedMint?: string;
-    rewardMint?: string;
     recipient?: string;
     claimant?: string;
     user?: string;

@@ -10,12 +10,12 @@ use crate::utils::{
 };
 
 /// `DirectDistributionClosed::DISCRIMINATOR` (matches `RewardsAccountDiscriminators::DirectDistributionClosed`).
-const DIRECT_DISTRIBUTION_CLOSED_DISCRIMINATOR: u8 = 8;
+const DIRECT_DISTRIBUTION_CLOSED_DISCRIMINATOR: u8 = 5;
 /// `DirectDistributionClosed::LEN` = 1 (disc) + 1 (version) + 1 (bump).
 const DIRECT_DISTRIBUTION_CLOSED_LEN: usize = 3;
 
 /// After close, the distribution PDA still lives on but has been flipped to a
-/// `DirectDistributionClosed` marker: discriminator byte = 8, total data length = 3.
+/// `DirectDistributionClosed` marker: discriminator byte = 5, total data length = 3.
 fn assert_distribution_closed_marker(ctx: &TestContext, distribution_pda: &solana_sdk::pubkey::Pubkey) {
     let account = ctx.get_account(distribution_pda).expect("Distribution PDA should still exist after close");
     assert_eq!(account.owner, PROGRAM_ID, "Distribution should still be owned by program");

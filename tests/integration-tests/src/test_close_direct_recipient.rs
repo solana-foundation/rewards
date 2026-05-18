@@ -90,11 +90,11 @@ fn test_close_direct_recipient_after_distribution_closed() {
 
     let close_distribution_ix = close_distribution_setup.build_instruction(&ctx);
     close_distribution_ix.send_expect_success(&mut ctx);
-    // After close, the distribution PDA still lives on as a DirectDistributionClosed marker (3 bytes, disc=8).
+    // After close, the distribution PDA still lives on as a DirectDistributionClosed marker (3 bytes, disc=5).
     let closed_account =
         ctx.get_account(&recipient_setup.distribution_pda).expect("Distribution PDA should still exist after close");
     assert_eq!(closed_account.data.len(), 3, "Closed distribution should be 3 bytes");
-    assert_eq!(closed_account.data[0], 8, "First byte should be DirectDistributionClosed discriminator");
+    assert_eq!(closed_account.data[0], 5, "First byte should be DirectDistributionClosed discriminator");
 
     let close_recipient_setup = CloseDirectRecipientSetup {
         recipient: recipient_setup.recipient.insecure_clone(),

@@ -7,7 +7,10 @@ use crate::{
     events::DistributionCreatedEvent,
     state::MerkleDistribution,
     traits::{AccountSerialize, AccountSize, EventSerialize, InstructionData, PdaSeeds},
-    utils::{create_pda_account, emit_event, get_mint_decimals, get_token_account_balance},
+    utils::{
+        create_pda_account, emit_event, get_mint_decimals, get_token_account_balance, reject_mint_extensions,
+        UNSUPPORTED_MINT_EXTENSIONS,
+    },
     ID,
 };
 
@@ -20,6 +23,7 @@ pub fn process_create_merkle_distribution(
 ) -> ProgramResult {
     let ix = CreateMerkleDistribution::try_from((instruction_data, accounts))?;
     ix.data.validate()?;
+    reject_mint_extensions(ix.accounts.mint, UNSUPPORTED_MINT_EXTENSIONS)?;
 
     // Create distribution with placeholder amount for PDA validation (amount isn't in seeds)
     let mut distribution = MerkleDistribution::new(
@@ -34,6 +38,10 @@ pub fn process_create_merkle_distribution(
     );
 
     distribution.validate_pda(ix.accounts.distribution, &ID, ix.data.bump)?;
+
+    if MerkleDistribution::is_closed(ix.accounts.distribution, &ID)? {
+        return Err(RewardsProgramError::DistributionPermanentlyClosed.into());
+    }
 
     let bump_seed = [ix.data.bump];
     let distribution_seeds = distribution.seeds_with_bump(&bump_seed);
@@ -77,6 +85,9 @@ pub fn process_create_merkle_distribution(
 
     if actual_amount == 0 {
         return Err(RewardsProgramError::InvalidAmount.into());
+    }
+    if actual_amount < ix.data.total_amount {
+        return Err(RewardsProgramError::InsufficientFunds.into());
     }
 
     // Record actual received amount in distribution state

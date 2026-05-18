@@ -48,25 +48,13 @@ function SavedField({ label, value, onChange, onSave, savedValues, datalistId, p
 export function QuickDefaults() {
     const {
         defaultDistribution,
-        defaultRewardPool,
         defaultMint,
-        defaultTrackedMint,
-        defaultRewardMint,
         distributions,
-        rewardPools,
         mints,
-        trackedMints,
-        rewardMints,
         setDefaultDistribution,
-        setDefaultRewardPool,
         setDefaultMint,
-        setDefaultTrackedMint,
-        setDefaultRewardMint,
         rememberDistribution,
-        rememberRewardPool,
         rememberMint,
-        rememberTrackedMint,
-        rememberRewardMint,
         clearSavedValues,
     } = useSavedValues();
 
@@ -103,15 +91,6 @@ export function QuickDefaults() {
                     placeholder="Distribution PDA"
                 />
                 <SavedField
-                    label="Default Reward Pool"
-                    value={defaultRewardPool}
-                    onChange={setDefaultRewardPool}
-                    onSave={rememberRewardPool}
-                    savedValues={rewardPools}
-                    datalistId="saved-pools"
-                    placeholder="Reward pool PDA"
-                />
-                <SavedField
                     label="Default Mint"
                     value={defaultMint}
                     onChange={setDefaultMint}
@@ -119,24 +98,6 @@ export function QuickDefaults() {
                     savedValues={mints}
                     datalistId="saved-mints"
                     placeholder="SPL token mint"
-                />
-                <SavedField
-                    label="Default Tracked Mint"
-                    value={defaultTrackedMint}
-                    onChange={setDefaultTrackedMint}
-                    onSave={rememberTrackedMint}
-                    savedValues={trackedMints}
-                    datalistId="saved-tracked-mints"
-                    placeholder="Tracked mint"
-                />
-                <SavedField
-                    label="Default Reward Mint"
-                    value={defaultRewardMint}
-                    onChange={setDefaultRewardMint}
-                    onSave={rememberRewardMint}
-                    savedValues={rewardMints}
-                    datalistId="saved-reward-mints"
-                    placeholder="Reward mint"
                 />
             </div>
         </section>

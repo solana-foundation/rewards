@@ -2,8 +2,8 @@ use solana_sdk::signature::Signer;
 
 use crate::fixtures::{CloseMerkleDistributionFixture, CloseMerkleDistributionSetup};
 use crate::utils::{
-    assert_account_closed, assert_rewards_error, test_empty_data, test_missing_signer, test_not_writable,
-    test_wrong_current_program, RewardsError, TestContext,
+    assert_account_closed, assert_merkle_distribution_closed, assert_rewards_error, test_empty_data,
+    test_missing_signer, test_not_writable, test_wrong_current_program, RewardsError, TestContext,
 };
 
 #[test]
@@ -50,7 +50,7 @@ fn test_close_merkle_distribution_success() {
     let test_ix = setup.build_instruction(&ctx);
     test_ix.send_expect_success(&mut ctx);
 
-    assert_account_closed(&ctx, &setup.distribution_pda);
+    assert_merkle_distribution_closed(&ctx, &setup.distribution_pda);
 }
 
 #[test]
@@ -61,7 +61,7 @@ fn test_close_merkle_distribution_success_token_2022() {
     let test_ix = setup.build_instruction(&ctx);
     test_ix.send_expect_success(&mut ctx);
 
-    assert_account_closed(&ctx, &setup.distribution_pda);
+    assert_merkle_distribution_closed(&ctx, &setup.distribution_pda);
 }
 
 #[test]

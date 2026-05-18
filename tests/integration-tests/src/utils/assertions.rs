@@ -1,7 +1,9 @@
-use rewards_program_client::accounts::{DirectDistribution, DirectRecipient, MerkleClaim, MerkleDistribution};
+use rewards_program_client::accounts::{
+    DirectDistribution, DirectRecipient, MerkleClaim, MerkleDistribution, MerkleDistributionClosed,
+};
 use solana_sdk::{instruction::InstructionError, pubkey::Pubkey, transaction::TransactionError};
 
-use crate::utils::{get_points_config, get_reward_pool, get_token_2022_ata_balance, TestContext, PROGRAM_ID};
+use crate::utils::{TestContext, PROGRAM_ID};
 
 pub use rewards_program_client::errors::RewardsProgramError as RewardsError;
 
@@ -99,6 +101,13 @@ pub fn assert_merkle_distribution(
     assert_eq!(data.total_amount, expected_total_amount);
 }
 
+pub fn assert_merkle_distribution_closed(ctx: &TestContext, distribution_pda: &Pubkey) {
+    let account = ctx.get_account(distribution_pda).expect("Closed distribution marker should exist");
+    assert_eq!(account.owner, PROGRAM_ID, "Closed distribution marker should be owned by program");
+
+    MerkleDistributionClosed::from_bytes(&account.data).expect("Failed to deserialize closed marker");
+}
+
 /// Assert that a merkle claim account exists with expected values
 pub fn assert_merkle_claim(ctx: &TestContext, claim_pda: &Pubkey, expected_claimed_amount: u64, expected_bump: u8) {
     let account = ctx.get_account(claim_pda).expect("Claim account should exist");
@@ -108,45 +117,4 @@ pub fn assert_merkle_claim(ctx: &TestContext, claim_pda: &Pubkey, expected_claim
 
     assert_eq!(data.bump, expected_bump);
     assert_eq!(data.claimed_amount, expected_claimed_amount);
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn assert_points_config(
-    ctx: &TestContext,
-    config_pda: &Pubkey,
-    expected_authority: &Pubkey,
-    expected_seed: &Pubkey,
-    expected_bump: u8,
-    expected_transferable: u8,
-    expected_revocable: u8,
-    expected_mint_bump: u8,
-) {
-    let data = get_points_config(ctx, config_pda);
-    assert_eq!(data.bump, expected_bump);
-    assert_eq!(data.authority, *expected_authority);
-    assert_eq!(data.seed, *expected_seed);
-    assert_eq!(data.transferable, expected_transferable);
-    assert_eq!(data.revocable, expected_revocable);
-    assert_eq!(data.mint_bump, expected_mint_bump);
-}
-
-/// Assert a user's points balance by reading their Token-2022 ATA.
-pub fn assert_user_points_balance(ctx: &TestContext, user: &Pubkey, mint: &Pubkey, expected_balance: u64) {
-    let balance = get_token_2022_ata_balance(ctx, user, mint);
-    assert_eq!(balance, expected_balance);
-}
-
-pub fn assert_reward_pool(
-    ctx: &TestContext,
-    pool_pda: &Pubkey,
-    expected_authority: &Pubkey,
-    expected_tracked_mint: &Pubkey,
-    expected_reward_mint: &Pubkey,
-    expected_bump: u8,
-) {
-    let data = get_reward_pool(ctx, pool_pda);
-    assert_eq!(data.bump, expected_bump);
-    assert_eq!(data.authority, *expected_authority);
-    assert_eq!(data.tracked_mint, *expected_tracked_mint);
-    assert_eq!(data.reward_mint, *expected_reward_mint);
 }
