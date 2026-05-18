@@ -88,8 +88,8 @@ pub enum RewardsAccountDiscriminators {
     MerkleDistribution = 2,
     MerkleClaim = 3,
     Revocation = 4,
-    DirectDistributionClosed = 8,
-    MerkleDistributionClosed = 9,
+    DirectDistributionClosed = 5,
+    MerkleDistributionClosed = 6,
 }
 
 /// Manual account deserialization (non-zero-copy)
@@ -179,6 +179,25 @@ mod tests {
             let mut bytes = vec![self.bump];
             bytes.extend_from_slice(&self.data);
             bytes
+        }
+    }
+
+    #[test]
+    fn account_discriminators_are_contiguous() {
+        use RewardsAccountDiscriminators::*;
+
+        let discriminators = [
+            DirectDistribution as u8,
+            DirectRecipient as u8,
+            MerkleDistribution as u8,
+            MerkleClaim as u8,
+            Revocation as u8,
+            DirectDistributionClosed as u8,
+            MerkleDistributionClosed as u8,
+        ];
+
+        for (expected, actual) in discriminators.iter().copied().enumerate() {
+            assert_eq!(actual, expected as u8);
         }
     }
 

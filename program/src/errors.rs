@@ -89,13 +89,50 @@ pub enum RewardsProgramError {
     #[error("Transfer hook mints are not supported")]
     TransferHookMintUnsupported,
 
-    /// (42) Distribution has been permanently closed
+    /// (21) Distribution has been permanently closed
     #[error("Distribution has been permanently closed")]
-    DistributionPermanentlyClosed = 42,
+    DistributionPermanentlyClosed,
 }
 
 impl From<RewardsProgramError> for ProgramError {
     fn from(e: RewardsProgramError) -> Self {
         ProgramError::Custom(e as u32)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn error_codes_are_contiguous() {
+        let codes = [
+            RewardsProgramError::InvalidAmount as u32,
+            RewardsProgramError::InvalidTimeWindow as u32,
+            RewardsProgramError::InvalidScheduleType as u32,
+            RewardsProgramError::UnauthorizedAuthority as u32,
+            RewardsProgramError::UnauthorizedRecipient as u32,
+            RewardsProgramError::InsufficientFunds as u32,
+            RewardsProgramError::NothingToClaim as u32,
+            RewardsProgramError::MathOverflow as u32,
+            RewardsProgramError::InvalidAccountData as u32,
+            RewardsProgramError::InvalidEventAuthority as u32,
+            RewardsProgramError::RentCalculationFailed as u32,
+            RewardsProgramError::ExceedsClaimableAmount as u32,
+            RewardsProgramError::InvalidMerkleProof as u32,
+            RewardsProgramError::ClawbackNotReached as u32,
+            RewardsProgramError::ClaimNotFullyVested as u32,
+            RewardsProgramError::InvalidCliffTimestamp as u32,
+            RewardsProgramError::ClaimedAmountDecreased as u32,
+            RewardsProgramError::DistributionNotRevocable as u32,
+            RewardsProgramError::InvalidRevokeMode as u32,
+            RewardsProgramError::ClaimantAlreadyRevoked as u32,
+            RewardsProgramError::TransferHookMintUnsupported as u32,
+            RewardsProgramError::DistributionPermanentlyClosed as u32,
+        ];
+
+        for (expected, actual) in codes.iter().copied().enumerate() {
+            assert_eq!(actual, expected as u32);
+        }
     }
 }

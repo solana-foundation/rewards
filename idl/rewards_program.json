@@ -901,7 +901,7 @@
         "name": "transferHookMintUnsupported"
       },
       {
-        "code": 42,
+        "code": 21,
         "kind": "errorNode",
         "message": "Distribution has been permanently closed",
         "name": "distributionPermanentlyClosed"

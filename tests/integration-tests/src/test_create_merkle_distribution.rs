@@ -1,86 +1,19 @@
 use rewards_program_client::instructions::CreateMerkleDistributionBuilder;
 use solana_sdk::{account::Account, signer::Signer};
-use solana_sdk::{instruction::Instruction, pubkey::Pubkey, signature::Keypair};
+use solana_sdk::{pubkey::Pubkey, signature::Keypair};
 use solana_system_interface::program::ID as SYSTEM_PROGRAM_ID;
-use spl_associated_token_account::{
-    get_associated_token_address_with_program_id, instruction::create_associated_token_account_idempotent,
-};
-use spl_token_2022::{
-    extension::{transfer_fee::instruction::initialize_transfer_fee_config, ExtensionType},
-    instruction::{initialize_mint2, mint_to_checked},
-    state::Mint,
-    ID as TOKEN_2022_PROGRAM_ID,
-};
+use spl_associated_token_account::get_associated_token_address_with_program_id;
 
 use crate::fixtures::{CloseMerkleDistributionSetup, CreateMerkleDistributionFixture, CreateMerkleDistributionSetup};
 use crate::utils::{
     assert_merkle_distribution, assert_rewards_error, find_event_authority_pda, find_merkle_distribution_pda,
     test_empty_data, test_missing_signer, test_not_writable, test_truncated_data, test_wrong_current_program,
-    test_wrong_system_program, RewardsError, TestContext, TestInstruction,
+    test_wrong_system_program, RewardsError, TestContext, TestInstruction, TOKEN_2022_PROGRAM_ID,
 };
 
 const TRANSFER_FEE_BPS: u16 = 1_000;
 const TRANSFER_FEE_MAX: u64 = 20;
 const TRANSFER_FEE_CREATE_AMOUNT: u64 = 200;
-
-fn send_instruction(ctx: &mut TestContext, instruction: Instruction, signers: &[&Keypair]) {
-    ctx.send_transaction(instruction, signers).expect("instruction should succeed");
-}
-
-fn create_transfer_fee_mint(ctx: &mut TestContext, mint: &Keypair, decimals: u8) {
-    let mint_len = ExtensionType::try_calculate_account_len::<Mint>(&[ExtensionType::TransferFeeConfig]).unwrap();
-    let mint_rent = ctx.svm.minimum_balance_for_rent_exemption(mint_len);
-
-    ctx.svm
-        .set_account(
-            mint.pubkey(),
-            Account {
-                lamports: mint_rent,
-                data: vec![0u8; mint_len],
-                owner: TOKEN_2022_PROGRAM_ID,
-                executable: false,
-                rent_epoch: 0,
-            },
-        )
-        .unwrap();
-
-    send_instruction(
-        ctx,
-        initialize_transfer_fee_config(
-            &TOKEN_2022_PROGRAM_ID,
-            &mint.pubkey(),
-            Some(&ctx.payer.pubkey()),
-            Some(&ctx.payer.pubkey()),
-            TRANSFER_FEE_BPS,
-            TRANSFER_FEE_MAX,
-        )
-        .unwrap(),
-        &[],
-    );
-    send_instruction(
-        ctx,
-        initialize_mint2(&TOKEN_2022_PROGRAM_ID, &mint.pubkey(), &ctx.payer.pubkey(), None, decimals).unwrap(),
-        &[],
-    );
-}
-
-fn create_token_2022_ata(ctx: &mut TestContext, owner: &Pubkey, mint: &Pubkey) -> Pubkey {
-    let ata = get_associated_token_address_with_program_id(owner, mint, &TOKEN_2022_PROGRAM_ID);
-    send_instruction(
-        ctx,
-        create_associated_token_account_idempotent(&ctx.payer.pubkey(), owner, mint, &TOKEN_2022_PROGRAM_ID),
-        &[],
-    );
-    ata
-}
-
-fn mint_token_2022(ctx: &mut TestContext, mint: &Pubkey, destination: &Pubkey, amount: u64, decimals: u8) {
-    send_instruction(
-        ctx,
-        mint_to_checked(&TOKEN_2022_PROGRAM_ID, mint, destination, &ctx.payer.pubkey(), &[], amount, decimals).unwrap(),
-        &[],
-    );
-}
 
 #[test]
 fn test_create_merkle_distribution_missing_authority_signer() {
@@ -190,9 +123,10 @@ fn test_create_merkle_distribution_rejects_transfer_fee_underfunding() {
     let seed = Keypair::new();
     let mint = Keypair::new();
 
-    create_transfer_fee_mint(&mut ctx, &mint, 0);
-    let authority_token_account = create_token_2022_ata(&mut ctx, &authority.pubkey(), &mint.pubkey());
-    mint_token_2022(&mut ctx, &mint.pubkey(), &authority_token_account, TRANSFER_FEE_CREATE_AMOUNT, 0);
+    let mint_authority = ctx.payer.pubkey();
+    ctx.create_token_2022_transfer_fee_mint(&mint, &mint_authority, 0, TRANSFER_FEE_BPS, TRANSFER_FEE_MAX);
+    let authority_token_account = ctx.create_token_2022_ata(&authority.pubkey(), &mint.pubkey());
+    ctx.mint_token_2022(&mint.pubkey(), &authority_token_account, TRANSFER_FEE_CREATE_AMOUNT, 0);
 
     let (distribution_pda, bump) = find_merkle_distribution_pda(&mint.pubkey(), &authority.pubkey(), &seed.pubkey());
     let distribution_vault =
