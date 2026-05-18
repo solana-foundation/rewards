@@ -35,6 +35,10 @@ impl CreateDirectDistributionSetup {
         Self::builder(ctx).token_2022().build()
     }
 
+    pub fn new_token_2022_transfer_hook(ctx: &mut TestContext) -> Self {
+        Self::builder(ctx).token_2022_transfer_hook().build()
+    }
+
     pub fn build_instruction(&self, ctx: &TestContext) -> TestInstruction {
         let (event_authority, _) = find_event_authority_pda();
 
@@ -63,22 +67,31 @@ impl CreateDirectDistributionSetup {
 pub struct CreateDirectDistributionSetupBuilder<'a> {
     ctx: &'a mut TestContext,
     token_program: Pubkey,
+    transfer_hook_mint: bool,
     revocable: u8,
     clawback_ts: i64,
 }
 
 impl<'a> CreateDirectDistributionSetupBuilder<'a> {
     fn new(ctx: &'a mut TestContext) -> Self {
-        Self { ctx, token_program: TOKEN_PROGRAM_ID, revocable: 0, clawback_ts: 0 }
+        Self { ctx, token_program: TOKEN_PROGRAM_ID, transfer_hook_mint: false, revocable: 0, clawback_ts: 0 }
     }
 
     pub fn token_2022(mut self) -> Self {
         self.token_program = TOKEN_2022_PROGRAM_ID;
+        self.transfer_hook_mint = false;
+        self
+    }
+
+    pub fn token_2022_transfer_hook(mut self) -> Self {
+        self.token_program = TOKEN_2022_PROGRAM_ID;
+        self.transfer_hook_mint = true;
         self
     }
 
     pub fn token_program(mut self, program: Pubkey) -> Self {
         self.token_program = program;
+        self.transfer_hook_mint = false;
         self
     }
 
@@ -98,7 +111,12 @@ impl<'a> CreateDirectDistributionSetupBuilder<'a> {
         let mint = Keypair::new();
         let token_program = self.token_program;
 
-        self.ctx.create_mint_for_program(&mint, &self.ctx.payer.pubkey(), 6, &token_program);
+        if self.transfer_hook_mint {
+            let hook_program_id = Pubkey::new_unique();
+            self.ctx.create_token_2022_transfer_hook_mint(&mint, &self.ctx.payer.pubkey(), 6, &hook_program_id);
+        } else {
+            self.ctx.create_mint_for_program(&mint, &self.ctx.payer.pubkey(), 6, &token_program);
+        }
 
         let (distribution_pda, bump) =
             find_direct_distribution_pda(&mint.pubkey(), &authority.pubkey(), &seeds.pubkey());

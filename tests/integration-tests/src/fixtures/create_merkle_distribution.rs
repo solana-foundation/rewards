@@ -41,6 +41,10 @@ impl CreateMerkleDistributionSetup {
         Self::builder(ctx).token_2022().build()
     }
 
+    pub fn new_token_2022_transfer_hook(ctx: &mut TestContext) -> Self {
+        Self::builder(ctx).token_2022_transfer_hook().build()
+    }
+
     pub fn build_instruction(&self, ctx: &TestContext) -> TestInstruction {
         let (event_authority, _) = find_event_authority_pda();
 
@@ -105,6 +109,7 @@ impl CreateMerkleDistributionSetup {
 pub struct CreateMerkleDistributionSetupBuilder<'a> {
     ctx: &'a mut TestContext,
     token_program: Pubkey,
+    transfer_hook_mint: bool,
     amount: u64,
     revocable: u8,
     total_amount: Option<u64>,
@@ -117,6 +122,7 @@ impl<'a> CreateMerkleDistributionSetupBuilder<'a> {
         Self {
             ctx,
             token_program: TOKEN_PROGRAM_ID,
+            transfer_hook_mint: false,
             amount: DEFAULT_MERKLE_DISTRIBUTION_AMOUNT,
             revocable: 0,
             total_amount: None,
@@ -127,11 +133,19 @@ impl<'a> CreateMerkleDistributionSetupBuilder<'a> {
 
     pub fn token_2022(mut self) -> Self {
         self.token_program = TOKEN_2022_PROGRAM_ID;
+        self.transfer_hook_mint = false;
+        self
+    }
+
+    pub fn token_2022_transfer_hook(mut self) -> Self {
+        self.token_program = TOKEN_2022_PROGRAM_ID;
+        self.transfer_hook_mint = true;
         self
     }
 
     pub fn token_program(mut self, program: Pubkey) -> Self {
         self.token_program = program;
+        self.transfer_hook_mint = false;
         self
     }
 
@@ -166,7 +180,12 @@ impl<'a> CreateMerkleDistributionSetupBuilder<'a> {
         let mint = Keypair::new();
         let token_program = self.token_program;
 
-        self.ctx.create_mint_for_program(&mint, &self.ctx.payer.pubkey(), 6, &token_program);
+        if self.transfer_hook_mint {
+            let hook_program_id = Pubkey::new_unique();
+            self.ctx.create_token_2022_transfer_hook_mint(&mint, &self.ctx.payer.pubkey(), 6, &hook_program_id);
+        } else {
+            self.ctx.create_mint_for_program(&mint, &self.ctx.payer.pubkey(), 6, &token_program);
+        }
 
         let (distribution_pda, bump) =
             find_merkle_distribution_pda(&mint.pubkey(), &authority.pubkey(), &seeds.pubkey());
