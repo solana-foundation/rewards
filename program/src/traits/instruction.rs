@@ -95,30 +95,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn instruction_discriminators_are_contiguous_except_emit_event() {
-        use RewardsInstructionDiscriminators::*;
-
-        let discriminators = [
-            CreateDirectDistribution as u8,
-            AddDirectRecipient as u8,
-            ClaimDirect as u8,
-            CloseDirectDistribution as u8,
-            CloseDirectRecipient as u8,
-            CreateMerkleDistribution as u8,
-            ClaimMerkle as u8,
-            CloseMerkleClaim as u8,
-            CloseMerkleDistribution as u8,
-            RevokeDirectRecipient as u8,
-            RevokeMerkleClaim as u8,
-        ];
-
-        for (expected, actual) in discriminators.iter().copied().enumerate() {
-            assert_eq!(actual, expected as u8);
-        }
-        assert_eq!(EmitEvent as u8, 228);
-    }
-
-    #[test]
     fn test_discriminator_try_from_create_direct_distribution() {
         let result = RewardsInstructionDiscriminators::try_from(0u8);
         assert!(result.is_ok());

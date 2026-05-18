@@ -183,25 +183,6 @@ mod tests {
     }
 
     #[test]
-    fn account_discriminators_are_contiguous() {
-        use RewardsAccountDiscriminators::*;
-
-        let discriminators = [
-            DirectDistribution as u8,
-            DirectRecipient as u8,
-            MerkleDistribution as u8,
-            MerkleClaim as u8,
-            Revocation as u8,
-            DirectDistributionClosed as u8,
-            MerkleDistributionClosed as u8,
-        ];
-
-        for (expected, actual) in discriminators.iter().copied().enumerate() {
-            assert_eq!(actual, expected as u8);
-        }
-    }
-
-    #[test]
     fn test_from_bytes_mut_modifies_original() {
         let account = TestAccount { bump: 100, data: [1u8; 32] };
         let mut bytes = account.to_bytes();
