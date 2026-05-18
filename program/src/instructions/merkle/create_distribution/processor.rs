@@ -82,6 +82,9 @@ pub fn process_create_merkle_distribution(
     if actual_amount == 0 {
         return Err(RewardsProgramError::InvalidAmount.into());
     }
+    if actual_amount < ix.data.total_amount {
+        return Err(RewardsProgramError::InsufficientFunds.into());
+    }
 
     // Record actual received amount in distribution state
     distribution.total_amount = actual_amount;
