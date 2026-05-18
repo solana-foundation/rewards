@@ -1,10 +1,14 @@
-'use client';
+import { useEffect, useState } from 'react';
+import { Button, TextInput } from '@solana/design-system';
+import { ChevronDown, Code2 } from 'lucide-react';
 
-import { useEffect, useRef, useState } from 'react';
-
-import { Button } from '@solana/design-system/button';
-import { TextInput } from '@solana/design-system/text-input';
-
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     clearStoredProgramAddress,
     getDefaultProgramAddress,
@@ -12,51 +16,22 @@ import {
     getStoredProgramAddress,
     setStoredProgramAddress,
 } from '@/lib/program';
+import { ellipsify } from '@/lib/utils';
 import { validateAddress } from '@/lib/validation';
 
-function truncate(value: string, start = 4, end = 4) {
-    if (value.length <= start + end + 3) return value;
-    return `${value.slice(0, start)}...${value.slice(-end)}`;
-}
-
 export function ProgramBadge() {
-    const [open, setOpen] = useState(false);
     const [customInput, setCustomInput] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [open, setOpen] = useState(false);
     const [programId, setProgramId] = useState(getDefaultProgramAddress());
     const [hasCustomProgramId, setHasCustomProgramId] = useState(false);
-    const containerRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         setProgramId(getProgramAddress());
         setHasCustomProgramId(Boolean(getStoredProgramAddress()));
     }, []);
 
-    useEffect(() => {
-        const handlePointerDown = (event: MouseEvent) => {
-            if (!open) return;
-            if (!containerRef.current?.contains(event.target as Node)) {
-                setOpen(false);
-                setError(null);
-            }
-        };
-
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                setOpen(false);
-                setError(null);
-            }
-        };
-
-        document.addEventListener('mousedown', handlePointerDown);
-        document.addEventListener('keydown', handleEscape);
-        return () => {
-            document.removeEventListener('mousedown', handlePointerDown);
-            document.removeEventListener('keydown', handleEscape);
-        };
-    }, [open]);
-
-    const applyCustomProgramId = () => {
+    function applyCustomProgramId() {
         const validationError = validateAddress(customInput, 'Program ID');
         if (validationError) {
             setError(validationError);
@@ -74,71 +49,53 @@ export function ProgramBadge() {
         setCustomInput('');
         setError(null);
         setOpen(false);
-    };
+    }
 
-    const resetToDefault = () => {
+    function resetToDefault() {
         clearStoredProgramAddress();
         setProgramId(getDefaultProgramAddress());
         setHasCustomProgramId(false);
         setCustomInput('');
         setError(null);
         setOpen(false);
-    };
+    }
 
-    const label = hasCustomProgramId ? `Custom ${truncate(programId)}` : 'Default Program';
+    const label = hasCustomProgramId ? `Custom ${ellipsify(programId, 4)}` : 'Default Program';
 
     return (
-        <div ref={containerRef} style={{ position: 'relative' }}>
-            <Button
-                onClick={() => setOpen(value => !value)}
-                variant="secondary"
-                size="sm"
-                style={{
-                    alignItems: 'center',
-                    display: 'flex',
-                    fontSize: '0.75rem',
-                    gap: 4,
-                }}
-            >
-                {label} ▾
-            </Button>
-
-            {open && (
-                <div
-                    style={{
-                        background: 'var(--color-card)',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: 6,
-                        left: 0,
-                        minWidth: 360,
-                        overflow: 'hidden',
-                        padding: 10,
-                        position: 'absolute',
-                        top: '110%',
-                        zIndex: 100,
-                    }}
+        <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    iconLeft={<Code2 />}
+                    iconRight={<ChevronDown className="opacity-60" />}
+                    size="sm"
+                    variant="secondary"
                 >
-                    <div style={{ color: 'var(--color-muted)', fontSize: '0.75rem', marginBottom: 8 }}>
-                        Active Program ID: {truncate(programId, 8, 8)}
-                    </div>
-                    <div style={{ marginBottom: 8 }}>
-                        <TextInput
-                            value={customInput}
-                            onChange={e => setCustomInput(e.target.value)}
-                            placeholder="Enter custom program ID"
-                            size="md"
-                            onKeyDown={e => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    applyCustomProgramId();
-                                }
-                            }}
-                        />
-                    </div>
-                    {error && (
-                        <div style={{ color: 'var(--color-error)', fontSize: '0.75rem', marginBottom: 8 }}>{error}</div>
-                    )}
-                    <div style={{ alignItems: 'center', display: 'flex', gap: 8 }}>
+                    {label}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-96 p-3">
+                <DropdownMenuLabel className="space-y-1 px-0">
+                    <div className="text-sm">Program ID</div>
+                    <div className="font-mono text-xs text-muted-foreground">{ellipsify(programId, 8)}</div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="space-y-3">
+                    <TextInput
+                        value={customInput}
+                        onChange={e => setCustomInput(e.target.value)}
+                        placeholder="Enter custom program ID"
+                        size="md"
+                        inputClassName="font-mono"
+                        onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                applyCustomProgramId();
+                            }
+                        }}
+                    />
+                    {error && <div className="text-xs text-destructive">{error}</div>}
+                    <div className="flex items-center gap-2">
                         <Button type="button" size="sm" onClick={applyCustomProgramId}>
                             Set Program ID
                         </Button>
@@ -147,7 +104,7 @@ export function ProgramBadge() {
                         </Button>
                     </div>
                 </div>
-            )}
-        </div>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }

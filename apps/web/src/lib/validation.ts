@@ -1,5 +1,3 @@
-'use client';
-
 import { PublicKey } from '@solana/web3.js';
 
 export { parseBigIntValue, parseByteArray32, parseMerkleProof } from '@solana/rewards';

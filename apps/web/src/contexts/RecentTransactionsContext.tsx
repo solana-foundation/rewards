@@ -1,5 +1,3 @@
-'use client';
-
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { formatTransactionError } from '@/lib/transactionErrors';
 
@@ -16,6 +14,17 @@ export interface RecentTransactionValues {
     totalAmount?: string;
     rootVersion?: string;
 }
+
+const RECENT_VALUE_KEYS = [
+    'distribution',
+    'mint',
+    'recipient',
+    'claimant',
+    'user',
+    'amount',
+    'totalAmount',
+    'rootVersion',
+] as const satisfies readonly (keyof RecentTransactionValues)[];
 
 export interface RecentTransaction {
     id: string;
@@ -37,9 +46,10 @@ const RecentTransactionsContext = createContext<RecentTransactionsContextType | 
 
 function normalizeValues(values?: RecentTransactionValues): RecentTransactionValues | undefined {
     if (!values) return undefined;
-    const normalizedEntries = Object.entries(values as Record<string, string | undefined>)
-        .map(([key, value]) => [key, value?.trim() ?? ''] as const)
-        .filter(([, value]) => value.length > 0);
+    const valueRecord = values as Record<keyof RecentTransactionValues, string | undefined>;
+    const normalizedEntries = RECENT_VALUE_KEYS.map(key => [key, valueRecord[key]?.trim() ?? ''] as const).filter(
+        ([, value]) => value.length > 0,
+    );
     if (normalizedEntries.length === 0) return undefined;
     return Object.fromEntries(normalizedEntries) as RecentTransactionValues;
 }

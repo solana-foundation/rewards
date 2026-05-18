@@ -1,5 +1,3 @@
-'use client';
-
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 const STORAGE_KEY = 'rewards-ui-saved-values-v1';
@@ -20,11 +18,8 @@ const INITIAL_STATE: SavedValuesState = {
 };
 
 interface SavedValuesContextType extends SavedValuesState {
-    setDefaultDistribution: (value: string) => void;
-    setDefaultMint: (value: string) => void;
     rememberDistribution: (value: string) => void;
     rememberMint: (value: string) => void;
-    clearSavedValues: () => void;
 }
 
 const SavedValuesContext = createContext<SavedValuesContextType | null>(null);
@@ -85,14 +80,6 @@ export function SavedValuesProvider({ children }: { children: React.ReactNode })
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }, [state, hydrated]);
 
-    const setDefaultDistribution = useCallback((value: string) => {
-        setState(current => ({ ...current, defaultDistribution: normalizeValue(value) }));
-    }, []);
-
-    const setDefaultMint = useCallback((value: string) => {
-        setState(current => ({ ...current, defaultMint: normalizeValue(value) }));
-    }, []);
-
     const rememberDistribution = useCallback((value: string) => {
         setState(current => {
             const normalized = normalizeValue(value);
@@ -117,20 +104,13 @@ export function SavedValuesProvider({ children }: { children: React.ReactNode })
         });
     }, []);
 
-    const clearSavedValues = useCallback(() => {
-        setState(INITIAL_STATE);
-    }, []);
-
     const contextValue = useMemo<SavedValuesContextType>(
         () => ({
             ...state,
-            setDefaultDistribution,
-            setDefaultMint,
             rememberDistribution,
             rememberMint,
-            clearSavedValues,
         }),
-        [state, setDefaultDistribution, setDefaultMint, rememberDistribution, rememberMint, clearSavedValues],
+        [state, rememberDistribution, rememberMint],
     );
 
     return <SavedValuesContext.Provider value={contextValue}>{children}</SavedValuesContext.Provider>;

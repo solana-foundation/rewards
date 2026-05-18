@@ -1,5 +1,3 @@
-'use client';
-
 import type { Address } from '@solana/kit';
 import { PublicKey } from '@solana/web3.js';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, getProgramAddress, TOKEN_PROGRAM_ID } from './program';
