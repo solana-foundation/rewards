@@ -35,10 +35,11 @@ async function main() {
         // Generate Rust client.
         await Promise.resolve(
             rewardsCodama.accept(
-                renderRustVisitor(path.join(rustClientsDir, 'src', 'generated'), {
-                    crateFolder: rustClientsDir,
+                renderRustVisitor(rustClientsDir, {
+                    anchorTraits: false,
                     deleteFolderBeforeRendering: true,
                     formatCode: true,
+                    generatedFolder: 'src/generated',
                 }),
             ),
         );
