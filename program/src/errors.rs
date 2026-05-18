@@ -85,97 +85,9 @@ pub enum RewardsProgramError {
     #[error("Claimant has already been revoked")]
     ClaimantAlreadyRevoked,
 
-    /// (20) No users opted in to receive rewards
-    #[error("No users opted in to receive rewards")]
-    NoOptedInUsers,
-
-    /// (21) User is already opted in
-    #[error("User is already opted in")]
-    UserAlreadyOptedIn,
-
-    /// (22) User is not opted in
-    #[error("User is not opted in")]
-    UserNotOptedIn,
-
-    /// (23) Distribution amount too small for opted-in supply
-    #[error("Distribution amount too small for opted-in supply")]
-    DistributionAmountTooSmall,
-
-    /// (24) Tracked mint does not match pool
-    #[error("Tracked mint does not match pool")]
-    TrackedMintMismatch,
-
-    /// (25) Reward mint does not match pool
-    #[error("Reward mint does not match pool")]
-    RewardMintMismatch,
-
-    /// (26) Invalid balance source mode
-    #[error("Invalid balance source mode")]
-    InvalidBalanceSource,
-
-    /// (27) Instruction not allowed for this pool's balance source mode
-    #[error("Instruction not allowed for this pool's balance source mode")]
-    BalanceSourceMismatch,
-
-    /// (28) User has been revoked from this reward pool
-    #[error("User has been revoked from this reward pool")]
-    UserRevoked,
-
-    /// (29) User has already been revoked from this reward pool
-    #[error("User has already been revoked from this reward pool")]
-    UserAlreadyRevoked,
-
-    /// (30) Invalid timestamp value
-    #[error("Invalid timestamp value")]
-    InvalidTimestamp,
-
-    /// (31) Invalid merkle root version value
-    #[error("Invalid merkle root version value")]
-    InvalidMerkleRootVersion,
-
-    /// (32) Merkle root is not configured for this pool
-    #[error("Merkle root is not configured for this pool")]
-    MerkleRootNotSet,
-
-    /// (33) Merkle proof root version does not match the pool root version
-    #[error("Merkle proof root version does not match the pool root version")]
-    MerkleRootVersionMismatch,
-
-    /// (34) This pool is configured for merkle claims
-    #[error("This pool is configured for merkle claims")]
-    ContinuousMerkleModeEnabled,
-
-    /// (35) Points max supply exceeded
-    #[error("Points max supply exceeded")]
-    PointsMaxSupplyExceeded,
-
-    /// (36) Insufficient points balance
-    #[error("Insufficient points balance")]
-    InsufficientPointsBalance,
-
-    /// (37) Points transfers not allowed for this config
-    #[error("Points transfers not allowed for this config")]
-    PointsTransfersDisabled,
-
-    /// (38) Points account balance not zero
-    #[error("Points account balance not zero")]
-    PointsBalanceNotZero,
-
-    /// (39) Points config is not revocable
-    #[error("Points config is not revocable")]
-    PointsNotRevocable,
-
-    /// (40) Cannot transfer points to the same user
-    #[error("Cannot transfer points to the same user")]
-    PointsSelfTransferNotAllowed,
-
-    /// (41) Nothing to revoke — user has zero balance
-    #[error("Nothing to revoke — user has zero balance")]
-    PointsNothingToRevoke,
-
     /// (42) Distribution has been permanently closed
     #[error("Distribution has been permanently closed")]
-    DistributionPermanentlyClosed,
+    DistributionPermanentlyClosed = 42,
 }
 
 impl From<RewardsProgramError> for ProgramError {

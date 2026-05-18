@@ -56,6 +56,5 @@ pub fn process_instruction(program_id: &Address, accounts: &[AccountView], instr
             process_revoke_merkle_claim(program_id, accounts, instruction_data)
         }
         RewardsInstructionDiscriminators::EmitEvent => process_emit_event(program_id, accounts),
-        _ => Err(ProgramError::InvalidInstructionData),
     }
 }

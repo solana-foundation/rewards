@@ -52,29 +52,6 @@ export function deriveMerkleClaimPda(parent: string, user: string, programId = g
     return deriveAddress([Buffer.from('merkle_claim'), pk(parent).toBuffer(), pk(user).toBuffer()], programId);
 }
 
-export function deriveRewardPoolPda(
-    rewardMint: string,
-    trackedMint: string,
-    authority: string,
-    seed: string,
-    programId = getProgramAddress(),
-) {
-    return deriveAddress(
-        [
-            Buffer.from('reward_pool'),
-            pk(rewardMint).toBuffer(),
-            pk(trackedMint).toBuffer(),
-            pk(authority).toBuffer(),
-            pk(seed).toBuffer(),
-        ],
-        programId,
-    );
-}
-
-export function deriveUserRewardPda(rewardPool: string, user: string, programId = getProgramAddress()) {
-    return deriveAddress([Buffer.from('user_reward'), pk(rewardPool).toBuffer(), pk(user).toBuffer()], programId);
-}
-
 export function deriveRevocationPda(parent: string, user: string, programId = getProgramAddress()) {
     return deriveAddress([Buffer.from('revocation'), pk(parent).toBuffer(), pk(user).toBuffer()], programId);
 }

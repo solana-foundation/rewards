@@ -7,41 +7,23 @@ const MAX_SAVED_VALUES = 25;
 
 interface SavedValuesState {
     defaultDistribution: string;
-    defaultRewardPool: string;
     defaultMint: string;
-    defaultTrackedMint: string;
-    defaultRewardMint: string;
     distributions: string[];
-    rewardPools: string[];
     mints: string[];
-    trackedMints: string[];
-    rewardMints: string[];
 }
 
 const INITIAL_STATE: SavedValuesState = {
     defaultDistribution: '',
-    defaultRewardPool: '',
     defaultMint: '',
-    defaultTrackedMint: '',
-    defaultRewardMint: '',
     distributions: [],
-    rewardPools: [],
     mints: [],
-    trackedMints: [],
-    rewardMints: [],
 };
 
 interface SavedValuesContextType extends SavedValuesState {
     setDefaultDistribution: (value: string) => void;
-    setDefaultRewardPool: (value: string) => void;
     setDefaultMint: (value: string) => void;
-    setDefaultTrackedMint: (value: string) => void;
-    setDefaultRewardMint: (value: string) => void;
     rememberDistribution: (value: string) => void;
-    rememberRewardPool: (value: string) => void;
     rememberMint: (value: string) => void;
-    rememberTrackedMint: (value: string) => void;
-    rememberRewardMint: (value: string) => void;
     clearSavedValues: () => void;
 }
 
@@ -66,15 +48,9 @@ function isSavedValuesState(value: unknown): value is SavedValuesState {
     const candidate = value as Record<string, unknown>;
     return (
         typeof candidate.defaultDistribution === 'string' &&
-        typeof candidate.defaultRewardPool === 'string' &&
         typeof candidate.defaultMint === 'string' &&
-        typeof candidate.defaultTrackedMint === 'string' &&
-        typeof candidate.defaultRewardMint === 'string' &&
         isStringArray(candidate.distributions) &&
-        isStringArray(candidate.rewardPools) &&
-        isStringArray(candidate.mints) &&
-        isStringArray(candidate.trackedMints) &&
-        isStringArray(candidate.rewardMints)
+        isStringArray(candidate.mints)
     );
 }
 
@@ -86,15 +62,9 @@ function readFromStorage(): SavedValuesState {
         if (!isSavedValuesState(parsed)) return INITIAL_STATE;
         return {
             defaultDistribution: normalizeValue(parsed.defaultDistribution),
-            defaultRewardPool: normalizeValue(parsed.defaultRewardPool),
             defaultMint: normalizeValue(parsed.defaultMint),
-            defaultTrackedMint: normalizeValue(parsed.defaultTrackedMint),
-            defaultRewardMint: normalizeValue(parsed.defaultRewardMint),
             distributions: parsed.distributions.map(normalizeValue).filter(Boolean).slice(0, MAX_SAVED_VALUES),
-            rewardPools: parsed.rewardPools.map(normalizeValue).filter(Boolean).slice(0, MAX_SAVED_VALUES),
             mints: parsed.mints.map(normalizeValue).filter(Boolean).slice(0, MAX_SAVED_VALUES),
-            trackedMints: parsed.trackedMints.map(normalizeValue).filter(Boolean).slice(0, MAX_SAVED_VALUES),
-            rewardMints: parsed.rewardMints.map(normalizeValue).filter(Boolean).slice(0, MAX_SAVED_VALUES),
         };
     } catch {
         return INITIAL_STATE;
@@ -119,20 +89,8 @@ export function SavedValuesProvider({ children }: { children: React.ReactNode })
         setState(current => ({ ...current, defaultDistribution: normalizeValue(value) }));
     }, []);
 
-    const setDefaultRewardPool = useCallback((value: string) => {
-        setState(current => ({ ...current, defaultRewardPool: normalizeValue(value) }));
-    }, []);
-
     const setDefaultMint = useCallback((value: string) => {
         setState(current => ({ ...current, defaultMint: normalizeValue(value) }));
-    }, []);
-
-    const setDefaultTrackedMint = useCallback((value: string) => {
-        setState(current => ({ ...current, defaultTrackedMint: normalizeValue(value) }));
-    }, []);
-
-    const setDefaultRewardMint = useCallback((value: string) => {
-        setState(current => ({ ...current, defaultRewardMint: normalizeValue(value) }));
     }, []);
 
     const rememberDistribution = useCallback((value: string) => {
@@ -143,18 +101,6 @@ export function SavedValuesProvider({ children }: { children: React.ReactNode })
                 ...current,
                 defaultDistribution: normalized,
                 distributions: addUnique(current.distributions, normalized),
-            };
-        });
-    }, []);
-
-    const rememberRewardPool = useCallback((value: string) => {
-        setState(current => {
-            const normalized = normalizeValue(value);
-            if (!normalized) return current;
-            return {
-                ...current,
-                defaultRewardPool: normalized,
-                rewardPools: addUnique(current.rewardPools, normalized),
             };
         });
     }, []);
@@ -171,30 +117,6 @@ export function SavedValuesProvider({ children }: { children: React.ReactNode })
         });
     }, []);
 
-    const rememberTrackedMint = useCallback((value: string) => {
-        setState(current => {
-            const normalized = normalizeValue(value);
-            if (!normalized) return current;
-            return {
-                ...current,
-                defaultTrackedMint: normalized,
-                trackedMints: addUnique(current.trackedMints, normalized),
-            };
-        });
-    }, []);
-
-    const rememberRewardMint = useCallback((value: string) => {
-        setState(current => {
-            const normalized = normalizeValue(value);
-            if (!normalized) return current;
-            return {
-                ...current,
-                defaultRewardMint: normalized,
-                rewardMints: addUnique(current.rewardMints, normalized),
-            };
-        });
-    }, []);
-
     const clearSavedValues = useCallback(() => {
         setState(INITIAL_STATE);
     }, []);
@@ -203,31 +125,12 @@ export function SavedValuesProvider({ children }: { children: React.ReactNode })
         () => ({
             ...state,
             setDefaultDistribution,
-            setDefaultRewardPool,
             setDefaultMint,
-            setDefaultTrackedMint,
-            setDefaultRewardMint,
             rememberDistribution,
-            rememberRewardPool,
             rememberMint,
-            rememberTrackedMint,
-            rememberRewardMint,
             clearSavedValues,
         }),
-        [
-            state,
-            setDefaultDistribution,
-            setDefaultRewardPool,
-            setDefaultMint,
-            setDefaultTrackedMint,
-            setDefaultRewardMint,
-            rememberDistribution,
-            rememberRewardPool,
-            rememberMint,
-            rememberTrackedMint,
-            rememberRewardMint,
-            clearSavedValues,
-        ],
+        [state, setDefaultDistribution, setDefaultMint, rememberDistribution, rememberMint, clearSavedValues],
     );
 
     return <SavedValuesContext.Provider value={contextValue}>{children}</SavedValuesContext.Provider>;

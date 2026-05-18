@@ -20,28 +20,6 @@ pub enum RewardsInstructionDiscriminators {
     RevokeDirectRecipient = 9,
     RevokeMerkleClaim = 10,
 
-    // Continuous Distribution
-    CreateContinuousPool = 11,
-    ContinuousOptIn = 12,
-    ContinuousOptOut = 13,
-    DistributeContinuousReward = 14,
-    ClaimContinuous = 15,
-    SyncContinuousBalance = 16,
-    SetContinuousBalance = 17,
-    CloseContinuousPool = 18,
-    RevokeContinuousUser = 19,
-    SetContinuousMerkleRoot = 20,
-    ClaimContinuousMerkle = 21,
-
-    // Points
-    InitPoints = 22,
-    IssuePoints = 23,
-    UsePoints = 24,
-    TransferPoints = 25,
-    ClosePointsAccount = 26,
-    ClosePointsConfig = 27,
-    RevokePoints = 28,
-
     // Shared
     EmitEvent = 228,
 }
@@ -65,26 +43,6 @@ impl TryFrom<u8> for RewardsInstructionDiscriminators {
             // Revoke
             9 => Ok(Self::RevokeDirectRecipient),
             10 => Ok(Self::RevokeMerkleClaim),
-            // Continuous Distribution
-            11 => Ok(Self::CreateContinuousPool),
-            12 => Ok(Self::ContinuousOptIn),
-            13 => Ok(Self::ContinuousOptOut),
-            14 => Ok(Self::DistributeContinuousReward),
-            15 => Ok(Self::ClaimContinuous),
-            16 => Ok(Self::SyncContinuousBalance),
-            17 => Ok(Self::SetContinuousBalance),
-            18 => Ok(Self::CloseContinuousPool),
-            19 => Ok(Self::RevokeContinuousUser),
-            20 => Ok(Self::SetContinuousMerkleRoot),
-            21 => Ok(Self::ClaimContinuousMerkle),
-            // Points
-            22 => Ok(Self::InitPoints),
-            23 => Ok(Self::IssuePoints),
-            24 => Ok(Self::UsePoints),
-            25 => Ok(Self::TransferPoints),
-            26 => Ok(Self::ClosePointsAccount),
-            27 => Ok(Self::ClosePointsConfig),
-            28 => Ok(Self::RevokePoints),
             // Shared
             228 => Ok(Self::EmitEvent),
             _ => Err(ProgramError::InvalidInstructionData),
@@ -212,85 +170,13 @@ mod tests {
     }
 
     #[test]
-    fn test_discriminator_try_from_continuous_instructions() {
-        let result = RewardsInstructionDiscriminators::try_from(11u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::CreateContinuousPool));
-
-        let result = RewardsInstructionDiscriminators::try_from(12u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::ContinuousOptIn));
-
-        let result = RewardsInstructionDiscriminators::try_from(13u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::ContinuousOptOut));
-
-        let result = RewardsInstructionDiscriminators::try_from(14u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::DistributeContinuousReward));
-
-        let result = RewardsInstructionDiscriminators::try_from(15u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::ClaimContinuous));
-
-        let result = RewardsInstructionDiscriminators::try_from(16u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::SyncContinuousBalance));
-
-        let result = RewardsInstructionDiscriminators::try_from(17u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::SetContinuousBalance));
-
-        let result = RewardsInstructionDiscriminators::try_from(18u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::CloseContinuousPool));
-
-        let result = RewardsInstructionDiscriminators::try_from(19u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::RevokeContinuousUser));
-
-        let result = RewardsInstructionDiscriminators::try_from(20u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::SetContinuousMerkleRoot));
-
-        let result = RewardsInstructionDiscriminators::try_from(21u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::ClaimContinuousMerkle));
-    }
-
-    #[test]
-    fn test_discriminator_try_from_points_instructions() {
-        let result = RewardsInstructionDiscriminators::try_from(22u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::InitPoints));
-
-        let result = RewardsInstructionDiscriminators::try_from(23u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::IssuePoints));
-
-        let result = RewardsInstructionDiscriminators::try_from(24u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::UsePoints));
-
-        let result = RewardsInstructionDiscriminators::try_from(25u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::TransferPoints));
-
-        let result = RewardsInstructionDiscriminators::try_from(26u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::ClosePointsAccount));
-
-        let result = RewardsInstructionDiscriminators::try_from(27u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::ClosePointsConfig));
-
-        let result = RewardsInstructionDiscriminators::try_from(28u8);
-        assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), RewardsInstructionDiscriminators::RevokePoints));
-    }
-
-    #[test]
     fn test_discriminator_try_from_invalid() {
+        let result = RewardsInstructionDiscriminators::try_from(11u8);
+        assert!(matches!(result, Err(ProgramError::InvalidInstructionData)));
+
+        let result = RewardsInstructionDiscriminators::try_from(22u8);
+        assert!(matches!(result, Err(ProgramError::InvalidInstructionData)));
+
         let result = RewardsInstructionDiscriminators::try_from(29u8);
         assert!(matches!(result, Err(ProgramError::InvalidInstructionData)));
 
