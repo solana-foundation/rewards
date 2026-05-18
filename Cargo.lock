@@ -2355,9 +2355,9 @@ checksum = "6373607a59f0be73a39b6fe456b8192fcc3585f602af20751600e974dd455e77"
 
 [[package]]
 name = "litesvm"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ac45cefd507a490cc5b8f729b8cc7f21814a8879e7663f348e56311eef248ad"
+checksum = "6a6d4edace08253a908d301768f291a7115e8e19e13473dd6e1ace78d6366433"
 dependencies = [
  "agave-feature-set",
  "agave-reserved-account-keys",
@@ -2369,6 +2369,7 @@ dependencies = [
  "log",
  "serde",
  "solana-account",
+ "solana-address 2.6.0",
  "solana-address-lookup-table-interface",
  "solana-bpf-loader-program",
  "solana-builtins",
@@ -2393,7 +2394,6 @@ dependencies = [
  "solana-precompile-error",
  "solana-program-error",
  "solana-program-runtime",
- "solana-pubkey 3.0.0",
  "solana-rent 3.0.0",
  "solana-sdk-ids",
  "solana-sha256-hasher",
