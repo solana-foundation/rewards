@@ -3290,6 +3290,7 @@ dependencies = [
  "serde_json",
  "solana-address 2.0.0",
  "solana-security-txt",
+ "spl-token-2022",
  "thiserror 2.0.18",
 ]
 

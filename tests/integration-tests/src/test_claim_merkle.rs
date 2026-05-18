@@ -92,6 +92,22 @@ fn test_claim_merkle_success_token_2022() {
 }
 
 #[test]
+fn test_claim_merkle_rejects_claimant_token_account_wrong_owner() {
+    let mut ctx = TestContext::new();
+    let setup = ClaimMerkleSetup::new(&mut ctx);
+    let attacker = ctx.create_funded_keypair();
+    let attacker_token_account = ctx.create_ata_for_program(&attacker.pubkey(), &setup.mint, &setup.token_program);
+
+    let instruction = setup.build_instruction(&ctx).with_account_at(7, attacker_token_account);
+    let error = instruction.send_expect_error(&mut ctx);
+
+    assert_instruction_error(error, InstructionError::InvalidAccountData);
+    assert_eq!(ctx.get_token_balance(&attacker_token_account), 0);
+    assert_eq!(ctx.get_token_balance(&setup.claimant_token_account), 0);
+    assert!(ctx.get_account(&setup.claim_pda).is_none());
+}
+
+#[test]
 fn test_claim_merkle_invalid_proof() {
     let mut ctx = TestContext::new();
     let setup = ClaimMerkleSetup::new(&mut ctx);
