@@ -7,6 +7,13 @@ export function getClusterFromRpcUrl(rpcUrl: string): Cluster {
     return 'localnet';
 }
 
+export function getClusterFromClusterId(clusterId: string): Cluster {
+    if (clusterId === 'solana:mainnet') return 'mainnet-beta';
+    if (clusterId === 'solana:testnet') return 'testnet';
+    if (clusterId === 'solana:devnet') return 'devnet';
+    return 'localnet';
+}
+
 export function getSolanaExplorerUrl(signature: string, cluster: Cluster): string {
     const base = 'https://explorer.solana.com/tx/';
     if (cluster === 'mainnet-beta') return `${base}${signature}`;

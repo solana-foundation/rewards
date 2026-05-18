@@ -1,5 +1,3 @@
-'use client';
-
 import type { Address } from '@solana/kit';
 import { REWARDS_PROGRAM_PROGRAM_ADDRESS } from '@solana/rewards';
 import { PublicKey } from '@solana/web3.js';
@@ -11,7 +9,7 @@ export const ASSOCIATED_TOKEN_PROGRAM_ID = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTN
 export const PROGRAM_ID_STORAGE_KEY = 'rewards-program-id';
 
 export function getDefaultProgramAddress(): Address {
-    return (process.env.NEXT_PUBLIC_PROGRAM_ID ?? REWARDS_PROGRAM_PROGRAM_ADDRESS) as Address;
+    return (import.meta.env.VITE_PROGRAM_ID ?? REWARDS_PROGRAM_PROGRAM_ADDRESS) as Address;
 }
 
 function isValidProgramAddress(value: string) {
