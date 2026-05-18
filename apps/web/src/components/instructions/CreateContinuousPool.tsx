@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BalanceSource, getCreateContinuousPoolInstruction } from '@solana/rewards-client';
+import { BalanceSource, getCreateContinuousPoolInstruction } from '@solana/rewards';
 import { generateKeyPairSigner } from '@solana/kit';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useWallet } from '@/contexts/WalletContext';

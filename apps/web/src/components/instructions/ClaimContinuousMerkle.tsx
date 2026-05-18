@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Badge } from '@solana/design-system/badge';
-import { getClaimContinuousMerkleInstruction } from '@solana/rewards-client';
+import { getClaimContinuousMerkleInstruction } from '@solana/rewards';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useSendTx } from '@/hooks/useSendTx';

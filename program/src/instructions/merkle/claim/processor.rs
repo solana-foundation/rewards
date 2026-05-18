@@ -7,7 +7,7 @@ use crate::{
     state::{MerkleClaim, MerkleClaimSeeds, MerkleDistribution},
     traits::{
         AccountParse, AccountSerialize, AccountSize, ClaimTracker, Distribution, DistributionSigner, EventSerialize,
-        PdaSeeds, VestingParams,
+        InstructionData, PdaSeeds, VestingParams,
     },
     utils::{
         compute_leaf_hash, create_pda_account_idempotent, emit_event, get_current_timestamp, get_mint_decimals,
@@ -20,6 +20,7 @@ use super::ClaimMerkle;
 
 pub fn process_claim_merkle(_program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
     let ix = ClaimMerkle::try_from((instruction_data, accounts))?;
+    ix.data.validate()?;
 
     let current_ts = get_current_timestamp()?;
 

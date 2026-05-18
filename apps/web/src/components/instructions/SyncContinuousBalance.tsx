@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { getSyncContinuousBalanceInstruction } from '@solana/rewards-client';
+import { getSyncContinuousBalanceInstruction } from '@solana/rewards';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useSendTx } from '@/hooks/useSendTx';
 import { deriveAta, deriveUserRewardPda, normalizeTokenProgram } from '@/lib/pdas';

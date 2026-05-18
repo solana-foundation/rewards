@@ -7,8 +7,6 @@ const LEAF_PREFIX: &[u8] = &[0];
 /// Maximum byte length of a leaf's inner hash input:
 /// 32 (claimant) + 8 (total_amount) + 25 (max schedule = CliffLinear)
 const MAX_LEAF_DATA_LEN: usize = 65;
-/// Maximum byte length of a continuous leaf's inner hash input:
-/// 32 (reward_pool) + 32 (claimant) + 8 (root_version) + 8 (cumulative_amount)
 const MAX_CONTINUOUS_LEAF_DATA_LEN: usize = 80;
 
 fn schedule_to_bytes(schedule: &VestingSchedule) -> Vec<u8> {
@@ -66,8 +64,6 @@ pub fn compute_leaf_hash(claimant: &Pubkey, total_amount: u64, schedule: &Vestin
     keccak256(&outer_data)
 }
 
-/// Compute the merkle leaf hash for a continuous cumulative claim.
-/// Matches the on-chain `compute_continuous_leaf_hash` helper.
 pub fn compute_continuous_leaf_hash(
     reward_pool: &Pubkey,
     claimant: &Pubkey,
@@ -220,7 +216,6 @@ impl MerkleTree {
     }
 }
 
-/// Represents a continuous-merkle tree leaf.
 #[derive(Clone, Debug)]
 pub struct ContinuousMerkleLeaf {
     pub reward_pool: Pubkey,
@@ -237,7 +232,6 @@ impl ContinuousMerkleLeaf {
     }
 }
 
-/// A simple continuous-merkle tree builder for testing.
 pub struct ContinuousMerkleTree {
     pub leaves: Vec<ContinuousMerkleLeaf>,
     pub root: [u8; 32],

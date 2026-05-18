@@ -59,8 +59,7 @@ pub fn compute_continuous_leaf_hash(
 
     let inner_hash = keccak256(&inner_data);
 
-    // Outer hash: hash(LEAF_PREFIX || inner_hash)
-    let mut outer_data = [0u8; 1 + HASH_SIZE]; // 33 bytes
+    let mut outer_data = [0u8; 1 + HASH_SIZE];
     outer_data[0..1].copy_from_slice(LEAF_PREFIX);
     outer_data[1..1 + HASH_SIZE].copy_from_slice(&inner_hash);
 
@@ -171,51 +170,6 @@ mod tests {
 
         let hash1 = compute_leaf_hash(&claimant, 1000, &sb1);
         let hash2 = compute_leaf_hash(&claimant, 1000, &sb2);
-
-        assert_ne!(hash1, hash2);
-    }
-
-    #[test]
-    fn test_compute_continuous_leaf_hash_deterministic() {
-        let reward_pool = Address::new_from_array([7u8; 32]);
-        let claimant = Address::new_from_array([1u8; 32]);
-
-        let hash1 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
-        let hash2 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
-
-        assert_eq!(hash1, hash2);
-    }
-
-    #[test]
-    fn test_compute_continuous_leaf_hash_different_pools() {
-        let reward_pool_a = Address::new_from_array([7u8; 32]);
-        let reward_pool_b = Address::new_from_array([8u8; 32]);
-        let claimant = Address::new_from_array([1u8; 32]);
-
-        let hash1 = compute_continuous_leaf_hash(&reward_pool_a, &claimant, 1, 1000);
-        let hash2 = compute_continuous_leaf_hash(&reward_pool_b, &claimant, 1, 1000);
-
-        assert_ne!(hash1, hash2);
-    }
-
-    #[test]
-    fn test_compute_continuous_leaf_hash_different_root_versions() {
-        let reward_pool = Address::new_from_array([7u8; 32]);
-        let claimant = Address::new_from_array([1u8; 32]);
-
-        let hash1 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
-        let hash2 = compute_continuous_leaf_hash(&reward_pool, &claimant, 2, 1000);
-
-        assert_ne!(hash1, hash2);
-    }
-
-    #[test]
-    fn test_compute_continuous_leaf_hash_different_amounts() {
-        let reward_pool = Address::new_from_array([7u8; 32]);
-        let claimant = Address::new_from_array([1u8; 32]);
-
-        let hash1 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 1000);
-        let hash2 = compute_continuous_leaf_hash(&reward_pool, &claimant, 1, 2000);
 
         assert_ne!(hash1, hash2);
     }

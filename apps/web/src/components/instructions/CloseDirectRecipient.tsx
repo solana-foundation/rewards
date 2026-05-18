@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Badge } from '@solana/design-system/badge';
-import { getCloseDirectRecipientInstruction } from '@solana/rewards-client';
+import { getCloseDirectRecipientInstruction } from '@solana/rewards';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useSendTx } from '@/hooks/useSendTx';
@@ -42,7 +42,7 @@ export function CloseDirectRecipient() {
 
         const ix = getCloseDirectRecipientInstruction(
             {
-                recipient: signer,
+                recipient: signer.address,
                 originalPayer: asAddress(originalPayer),
                 distribution: asAddress(distribution),
                 recipientAccount: asAddress(recipientAccount),

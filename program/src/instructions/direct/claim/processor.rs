@@ -4,7 +4,10 @@ use pinocchio_token_2022::instructions::TransferChecked;
 use crate::{
     events::ClaimedEvent,
     state::{DirectDistribution, DirectRecipient},
-    traits::{AccountSerialize, ClaimTracker, Distribution, DistributionSigner, EventSerialize, VestingParams},
+    traits::{
+        AccountSerialize, ClaimTracker, Distribution, DistributionSigner, EventSerialize, InstructionData,
+        VestingParams,
+    },
     utils::{emit_event, get_current_timestamp, get_mint_decimals, resolve_claim_amount},
     ID,
 };
@@ -13,6 +16,7 @@ use super::ClaimDirect;
 
 pub fn process_claim_direct(_program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
     let ix = ClaimDirect::try_from((instruction_data, accounts))?;
+    ix.data.validate()?;
 
     let current_ts = get_current_timestamp()?;
 

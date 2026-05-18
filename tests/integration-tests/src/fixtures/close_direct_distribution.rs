@@ -169,10 +169,6 @@ impl InstructionTestFixture for CloseDirectDistributionFixture {
         &[0, 1, 3, 4]
     }
 
-    fn system_program_index() -> Option<usize> {
-        None
-    }
-
     fn current_program_index() -> Option<usize> {
         Some(7)
     }

@@ -1,17 +1,19 @@
 [package]
-name = "rewards-program-client"
+name = "rewards"
 version = "0.0.1"
 edition = "2021"
-description = "Rust client for the Rewards Program"
+description = "Rust client for the Rewards Solana program"
 license = "MIT"
 repository = "https://github.com/solana-program/rewards"
+readme = "../../README.md"
+include = ["Cargo.toml", "../../README.md", "src/**/*.rs"]
 
 [dependencies]
-borsh = { workspace = true }
+borsh = { workspace = true, features = ["derive"] }
 solana-account-info = "3.1.0"
-solana-pubkey = "4.0.0"
+solana-pubkey = { version = "4.0.0", features = ["borsh", "curve25519"] }
 solana-address = "2.0.0"
-solana-instruction = "3.1.0"
+solana-instruction = { version = "3.1.0", features = ["borsh"] }
 solana-cpi = "3.0.1"
 num-derive = { workspace = true }
 num-traits = { workspace = true }

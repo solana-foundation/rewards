@@ -3,10 +3,14 @@ use pinocchio_associated_token_account::instructions::CreateIdempotent;
 use pinocchio_token_2022::instructions::TransferChecked;
 
 use crate::{
+    errors::RewardsProgramError,
     events::DistributionCreatedEvent,
     state::MerkleDistribution,
     traits::{AccountSerialize, AccountSize, EventSerialize, InstructionData, PdaSeeds},
-    utils::{create_pda_account, emit_event, get_mint_decimals},
+    utils::{
+        create_pda_account, emit_event, get_mint_decimals, get_token_account_balance, reject_mint_extensions,
+        UNSUPPORTED_MINT_EXTENSIONS,
+    },
     ID,
 };
 
@@ -19,8 +23,10 @@ pub fn process_create_merkle_distribution(
 ) -> ProgramResult {
     let ix = CreateMerkleDistribution::try_from((instruction_data, accounts))?;
     ix.data.validate()?;
+    reject_mint_extensions(ix.accounts.mint, UNSUPPORTED_MINT_EXTENSIONS)?;
 
-    let distribution = MerkleDistribution::new(
+    // Create distribution with placeholder amount for PDA validation (amount isn't in seeds)
+    let mut distribution = MerkleDistribution::new(
         ix.data.bump,
         ix.data.revocable,
         *ix.accounts.authority.address(),
@@ -32,6 +38,10 @@ pub fn process_create_merkle_distribution(
     );
 
     distribution.validate_pda(ix.accounts.distribution, &ID, ix.data.bump)?;
+
+    if MerkleDistribution::is_closed(ix.accounts.distribution, &ID)? {
+        return Err(RewardsProgramError::DistributionPermanentlyClosed.into());
+    }
 
     let bump_seed = [ix.data.bump];
     let distribution_seeds = distribution.seeds_with_bump(&bump_seed);
@@ -45,10 +55,6 @@ pub fn process_create_merkle_distribution(
         distribution_seeds_array,
     )?;
 
-    let mut distribution_data = ix.accounts.distribution.try_borrow_mut()?;
-    distribution.write_to_slice(&mut distribution_data)?;
-    drop(distribution_data);
-
     CreateIdempotent {
         funding_account: ix.accounts.payer,
         account: ix.accounts.distribution_vault,
@@ -59,6 +65,8 @@ pub fn process_create_merkle_distribution(
     }
     .invoke()?;
 
+    // Transfer tokens and measure actual received amount (accounts for transfer fees)
+    let pre_balance = get_token_account_balance(ix.accounts.distribution_vault)?;
     let decimals = get_mint_decimals(ix.accounts.mint)?;
 
     TransferChecked {
@@ -72,12 +80,29 @@ pub fn process_create_merkle_distribution(
     }
     .invoke()?;
 
+    let post_balance = get_token_account_balance(ix.accounts.distribution_vault)?;
+    let actual_amount = post_balance.checked_sub(pre_balance).ok_or(RewardsProgramError::MathOverflow)?;
+
+    if actual_amount == 0 {
+        return Err(RewardsProgramError::InvalidAmount.into());
+    }
+    if actual_amount < ix.data.total_amount {
+        return Err(RewardsProgramError::InsufficientFunds.into());
+    }
+
+    // Record actual received amount in distribution state
+    distribution.total_amount = actual_amount;
+
+    let mut distribution_data = ix.accounts.distribution.try_borrow_mut()?;
+    distribution.write_to_slice(&mut distribution_data)?;
+    drop(distribution_data);
+
     let event = DistributionCreatedEvent::merkle(
         *ix.accounts.authority.address(),
         *ix.accounts.mint.address(),
         *ix.accounts.seed.address(),
         ix.data.merkle_root,
-        ix.data.total_amount,
+        actual_amount,
         ix.data.clawback_ts,
     );
     emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;

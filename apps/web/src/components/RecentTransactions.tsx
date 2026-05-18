@@ -15,8 +15,7 @@ function truncate(value: string, start = 6, end = 6) {
 
 export function RecentTransactions() {
     const { recentTransactions, clearRecentTransactions } = useRecentTransactions();
-    const { rememberDistribution, rememberRewardPool, rememberMint, rememberTrackedMint, rememberRewardMint } =
-        useSavedValues();
+    const { rememberDistribution, rememberMint } = useSavedValues();
     const { rpcUrl } = useRpcContext();
     const [collapsed, setCollapsed] = useState(false);
 
@@ -115,10 +114,7 @@ export function RecentTransactions() {
                                         onClick={() => {
                                             if (!tx.values) return;
                                             if (tx.values.distribution) rememberDistribution(tx.values.distribution);
-                                            if (tx.values.rewardPool) rememberRewardPool(tx.values.rewardPool);
                                             if (tx.values.mint) rememberMint(tx.values.mint);
-                                            if (tx.values.trackedMint) rememberTrackedMint(tx.values.trackedMint);
-                                            if (tx.values.rewardMint) rememberRewardMint(tx.values.rewardMint);
                                         }}
                                         disabled={!tx.values}
                                     >

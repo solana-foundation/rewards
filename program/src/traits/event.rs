@@ -1,44 +1,36 @@
 use alloc::vec::Vec;
+use const_crypto::sha2::Sha256;
 
 use crate::events::EVENT_IX_TAG_LE;
 
-/// Length of event discriminator bytes (EVENT_IX_TAG_LE + discriminator byte)
-pub const EVENT_DISCRIMINATOR_LEN: usize = 8 + 1;
+/// Length of event discriminator bytes: EVENT_IX_TAG_LE (8) + Anchor discriminator (8)
+pub const EVENT_DISCRIMINATOR_LEN: usize = 8 + 8;
 
-/// Event discriminator values for this program
-#[repr(u8)]
-pub enum EventDiscriminators {
-    Claimed = 0,
-    DistributionClosed = 1,
-    DistributionCreated = 2,
-    RecipientAdded = 3,
-    ClaimClosed = 4,
-    RecipientRevoked = 5,
-    RewardDistributed = 6,
-    OptedIn = 7,
-    OptedOut = 8,
-    BalanceSynced = 9,
-    MerkleRootSet = 10,
-    PointsConfigCreated = 11,
-    PointsIssued = 12,
-    PointsUsed = 13,
-    PointsTransferred = 14,
-    PointsAccountClosed = 15,
-    PointsConfigClosed = 16,
-    PointsRevoked = 17,
+/// Compute an Anchor-compatible event discriminator at compile time:
+/// `sha256("event:<name>")[..8]`.
+///
+/// Call this from each event's `EventDiscriminator::DISCRIMINATOR` constant
+/// to avoid hand-computing hashes and to stay in sync with the event name.
+pub const fn event_discriminator(name: &[u8]) -> [u8; 8] {
+    const PREFIX: &[u8] = b"event:";
+    let hash = Sha256::new().update(PREFIX).update(name).finalize();
+    [hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7]]
 }
 
-/// Event discriminator with Anchor-compatible prefix
+/// Anchor-compatible event discriminator: `sha256("event:StructName")[..8]`.
+///
+/// Implementors should derive the constant via [`event_discriminator`]:
+/// ```ignore
+/// const DISCRIMINATOR: [u8; 8] = event_discriminator(b"ClaimedEvent");
+/// ```
 pub trait EventDiscriminator {
-    /// Event discriminator byte
-    const DISCRIMINATOR: u8;
+    const DISCRIMINATOR: [u8; 8];
 
-    /// Full discriminator bytes including EVENT_IX_TAG_LE prefix
     #[inline(always)]
     fn discriminator_bytes() -> Vec<u8> {
         let mut data = Vec::with_capacity(EVENT_DISCRIMINATOR_LEN);
         data.extend_from_slice(EVENT_IX_TAG_LE);
-        data.push(Self::DISCRIMINATOR);
+        data.extend_from_slice(&Self::DISCRIMINATOR);
         data
     }
 }
@@ -64,20 +56,30 @@ mod tests {
     struct TestEvent;
 
     impl EventDiscriminator for TestEvent {
-        const DISCRIMINATOR: u8 = 42;
+        const DISCRIMINATOR: [u8; 8] = event_discriminator(b"TestEvent");
     }
 
     #[test]
     fn test_discriminator_bytes_length() {
         let bytes = TestEvent::discriminator_bytes();
         assert_eq!(bytes.len(), EVENT_DISCRIMINATOR_LEN);
+        assert_eq!(bytes.len(), 16);
     }
 
     #[test]
     fn test_discriminator_bytes_prefix() {
         let bytes = TestEvent::discriminator_bytes();
         assert_eq!(&bytes[..8], EVENT_IX_TAG_LE);
-        assert_eq!(bytes[8], 42);
+        // Verify the derived discriminator matches sha256("event:TestEvent")[..8]
+        assert_eq!(&bytes[8..16], &TestEvent::DISCRIMINATOR);
+    }
+
+    #[test]
+    fn test_event_discriminator_matches_anchor_formula() {
+        // sha256("event:ClaimedEvent")[..8] — precomputed with
+        // `python3 -c "import hashlib; print(list(hashlib.sha256(b'event:ClaimedEvent').digest()[:8]))"`
+        const EXPECTED: [u8; 8] = [0x90, 0xac, 0xd1, 0x56, 0x90, 0x57, 0x54, 0x73];
+        assert_eq!(event_discriminator(b"ClaimedEvent"), EXPECTED);
     }
 
     struct TestEventSerialize {
@@ -85,7 +87,7 @@ mod tests {
     }
 
     impl EventDiscriminator for TestEventSerialize {
-        const DISCRIMINATOR: u8 = 99;
+        const DISCRIMINATOR: [u8; 8] = event_discriminator(b"TestEventSerialize");
     }
 
     impl EventSerialize for TestEventSerialize {
@@ -100,8 +102,8 @@ mod tests {
         let bytes = event.to_bytes();
         assert_eq!(bytes.len(), EVENT_DISCRIMINATOR_LEN + 1);
         assert_eq!(&bytes[..8], EVENT_IX_TAG_LE);
-        assert_eq!(bytes[8], 99);
-        assert_eq!(bytes[9], 123);
+        assert_eq!(&bytes[8..16], &TestEventSerialize::DISCRIMINATOR);
+        assert_eq!(bytes[16], 123);
     }
 
     #[test]

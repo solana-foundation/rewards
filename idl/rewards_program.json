@@ -105,6 +105,24 @@
                 "format": "u8",
                 "kind": "numberTypeNode"
               }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "kind": "accountNode",
+        "name": "directDistributionClosed"
+      },
+      {
+        "data": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "bump",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
             },
             {
               "kind": "structFieldTypeNode",
@@ -308,6 +326,24 @@
         },
         "kind": "accountNode",
         "name": "merkleDistribution"
+      },
+      {
+        "data": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "bump",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "kind": "accountNode",
+        "name": "merkleDistributionClosed"
       },
       {
         "data": {
@@ -1814,133 +1850,145 @@
       {
         "code": 20,
         "kind": "errorNode",
+        "message": "Transfer hook mints are not supported",
+        "name": "transferHookMintUnsupported"
+      },
+      {
+        "code": 21,
+        "kind": "errorNode",
+        "message": "Distribution has been permanently closed",
+        "name": "distributionPermanentlyClosed"
+      },
+      {
+        "code": 22,
+        "kind": "errorNode",
         "message": "No users opted in to receive rewards",
         "name": "noOptedInUsers"
       },
       {
-        "code": 21,
+        "code": 23,
         "kind": "errorNode",
         "message": "User is already opted in",
         "name": "userAlreadyOptedIn"
       },
       {
-        "code": 22,
+        "code": 24,
         "kind": "errorNode",
         "message": "User is not opted in",
         "name": "userNotOptedIn"
       },
       {
-        "code": 23,
+        "code": 25,
         "kind": "errorNode",
         "message": "Distribution amount too small for opted-in supply",
         "name": "distributionAmountTooSmall"
       },
       {
-        "code": 24,
+        "code": 26,
         "kind": "errorNode",
         "message": "Tracked mint does not match pool",
         "name": "trackedMintMismatch"
       },
       {
-        "code": 25,
+        "code": 27,
         "kind": "errorNode",
         "message": "Reward mint does not match pool",
         "name": "rewardMintMismatch"
       },
       {
-        "code": 26,
+        "code": 28,
         "kind": "errorNode",
         "message": "Invalid balance source mode",
         "name": "invalidBalanceSource"
       },
       {
-        "code": 27,
+        "code": 29,
         "kind": "errorNode",
         "message": "Instruction not allowed for this pool's balance source mode",
         "name": "balanceSourceMismatch"
       },
       {
-        "code": 28,
+        "code": 30,
         "kind": "errorNode",
         "message": "User has been revoked from this reward pool",
         "name": "userRevoked"
       },
       {
-        "code": 29,
+        "code": 31,
         "kind": "errorNode",
         "message": "User has already been revoked from this reward pool",
         "name": "userAlreadyRevoked"
       },
       {
-        "code": 30,
+        "code": 32,
         "kind": "errorNode",
         "message": "Invalid timestamp value",
         "name": "invalidTimestamp"
       },
       {
-        "code": 31,
+        "code": 33,
         "kind": "errorNode",
         "message": "Invalid merkle root version value",
         "name": "invalidMerkleRootVersion"
       },
       {
-        "code": 32,
+        "code": 34,
         "kind": "errorNode",
         "message": "Merkle root is not configured for this pool",
         "name": "merkleRootNotSet"
       },
       {
-        "code": 33,
+        "code": 35,
         "kind": "errorNode",
         "message": "Merkle proof root version does not match the pool root version",
         "name": "merkleRootVersionMismatch"
       },
       {
-        "code": 34,
+        "code": 36,
         "kind": "errorNode",
         "message": "This pool is configured for merkle claims",
         "name": "continuousMerkleModeEnabled"
       },
       {
-        "code": 35,
+        "code": 37,
         "kind": "errorNode",
         "message": "Points max supply exceeded",
         "name": "pointsMaxSupplyExceeded"
       },
       {
-        "code": 36,
+        "code": 38,
         "kind": "errorNode",
         "message": "Insufficient points balance",
         "name": "insufficientPointsBalance"
       },
       {
-        "code": 37,
+        "code": 39,
         "kind": "errorNode",
         "message": "Points transfers not allowed for this config",
         "name": "pointsTransfersDisabled"
       },
       {
-        "code": 38,
+        "code": 40,
         "kind": "errorNode",
         "message": "Points account balance not zero",
         "name": "pointsBalanceNotZero"
       },
       {
-        "code": 39,
+        "code": 41,
         "kind": "errorNode",
         "message": "Points config is not revocable",
         "name": "pointsNotRevocable"
       },
       {
-        "code": 40,
+        "code": 42,
         "kind": "errorNode",
         "message": "Cannot transfer points to the same user",
         "name": "pointsSelfTransferNotAllowed"
       },
       {
-        "code": 41,
+        "code": 43,
         "kind": "errorNode",
-        "message": "Nothing to revoke — user has zero balance",
+        "message": "Nothing to revoke - user has zero balance",
         "name": "pointsNothingToRevoke"
       }
     ],
@@ -1976,7 +2024,7 @@
           },
           {
             "docs": [
-              "PDA: [b\"direct_distribution\", mint, authority, seeds] (created)"
+              "PDA: [b\"direct_distribution\", mint, authority, seeds]. If a previous distribution was closed at this address, the account now holds a DirectDistributionClosed marker and re-creation is rejected."
             ],
             "isSigner": false,
             "isWritable": true,
@@ -2395,7 +2443,7 @@
           },
           {
             "docs": [
-              "PDA: DirectDistribution account (closed)"
+              "PDA: DirectDistribution account. Flipped to a compact DirectDistributionClosed marker in place; freed rent is refunded to authority."
             ],
             "isSigner": false,
             "isWritable": true,
@@ -2489,7 +2537,7 @@
             "docs": [
               "Wallet address of the recipient; must match recipient_account.recipient"
             ],
-            "isSigner": true,
+            "isSigner": false,
             "isWritable": false,
             "kind": "instructionAccountNode",
             "name": "recipient"
@@ -3314,10 +3362,10 @@
           },
           {
             "docs": [
-              "PDA: [b\"merkle_claim\", distribution, claimant] (read-only, may not exist)"
+              "PDA: [b\"merkle_claim\", distribution, claimant] (writable, may not exist)"
             ],
             "isSigner": false,
-            "isWritable": false,
+            "isWritable": true,
             "kind": "instructionAccountNode",
             "name": "claimAccount"
           },

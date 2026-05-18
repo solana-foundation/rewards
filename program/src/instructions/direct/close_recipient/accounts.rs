@@ -2,9 +2,7 @@ use pinocchio::{account::AccountView, error::ProgramError};
 
 use crate::{
     traits::InstructionAccounts,
-    utils::{
-        verify_current_program, verify_current_program_account, verify_event_authority, verify_signer, verify_writable,
-    },
+    utils::{verify_current_program, verify_current_program_account, verify_event_authority, verify_writable},
 };
 
 pub struct CloseDirectRecipientAccounts<'a> {
@@ -25,8 +23,7 @@ impl<'a> TryFrom<&'a [AccountView]> for CloseDirectRecipientAccounts<'a> {
             return Err(ProgramError::NotEnoughAccountKeys);
         };
 
-        // 1. Validate signers
-        verify_signer(recipient, false)?;
+        // 1. No signer required — permissionless when fully claimed (processor enforces the gate)
 
         // 2. Validate writable
         verify_writable(original_payer, true)?;
@@ -36,8 +33,8 @@ impl<'a> TryFrom<&'a [AccountView]> for CloseDirectRecipientAccounts<'a> {
         verify_current_program(program)?;
         verify_event_authority(event_authority)?;
 
-        // 4. Validate accounts owned by current program
-        verify_current_program_account(distribution)?;
+        // 4. distribution ownership is validated in processor:
+        // program-owned => active distribution, anything else => treated as closed.
         verify_current_program_account(recipient_account)?;
 
         Ok(Self { recipient, original_payer, distribution, recipient_account, event_authority, program })

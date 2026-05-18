@@ -1,11 +1,13 @@
-use rewards_program_client::accounts::MerkleDistribution;
 use rewards_program_client::types::{RevokeMode, VestingSchedule};
+use rewards_program_client::{accounts::MerkleDistribution, instructions::CreateMerkleDistributionBuilder};
 use solana_sdk::instruction::InstructionError;
+use solana_sdk::signature::Signer;
 
-use crate::fixtures::{RevokeMerkleClaimFixture, RevokeMerkleClaimSetup};
+use crate::fixtures::{CloseMerkleDistributionSetup, RevokeMerkleClaimFixture, RevokeMerkleClaimSetup};
 use crate::utils::{
-    assert_rewards_error, expected_linear_unlock, test_empty_data, test_missing_signer, test_not_writable,
-    test_wrong_account, test_wrong_current_program, RewardsError, TestContext, PROGRAM_ID,
+    assert_merkle_claim, assert_rewards_error, expected_linear_unlock, find_event_authority_pda, test_empty_data,
+    test_missing_signer, test_not_writable, test_wrong_account, test_wrong_current_program, RewardsError, TestContext,
+    TestInstruction, PROGRAM_ID,
 };
 
 // ── Generic fixture tests ──────────────────────────────────────────
@@ -26,6 +28,12 @@ fn test_revoke_merkle_missing_payer_signer() {
 fn test_revoke_merkle_distribution_not_writable() {
     let mut ctx = TestContext::new();
     test_not_writable::<RevokeMerkleClaimFixture>(&mut ctx, 2);
+}
+
+#[test]
+fn test_revoke_merkle_claim_account_not_writable() {
+    let mut ctx = TestContext::new();
+    test_not_writable::<RevokeMerkleClaimFixture>(&mut ctx, 3);
 }
 
 #[test]
@@ -306,6 +314,8 @@ fn test_revoke_merkle_non_vested_after_partial_claim() {
         claimed_at_quarter + vested_unclaimed,
         "total_claimed should reflect both claim and revoke transfer"
     );
+
+    assert_merkle_claim(&ctx, &setup.claim_pda, vested_at_midpoint, setup.claim_bump);
 }
 
 #[test]
@@ -336,6 +346,8 @@ fn test_revoke_merkle_full_after_partial_claim() {
     let dist_account = ctx.get_account(&setup.distribution_pda).expect("Distribution should exist");
     let dist = MerkleDistribution::from_bytes(&dist_account.data).expect("Should deserialize");
     assert_eq!(dist.total_claimed, claimed_at_quarter, "total_claimed should only reflect the original claim");
+
+    assert_merkle_claim(&ctx, &setup.claim_pda, claimed_at_quarter, setup.claim_bump);
 }
 
 // ── Post-revocation behavior ──────────────────────────────────────
@@ -353,6 +365,58 @@ fn test_claim_after_revocation_fails() {
     let claim_ix = setup.build_claim_instruction(&ctx);
     let error = claim_ix.send_expect_error(&mut ctx);
     assert_rewards_error(error, RewardsError::ClaimantAlreadyRevoked);
+}
+
+#[test]
+fn test_revoke_merkle_closed_distribution_cannot_reactivate_stale_revocation() {
+    let mut ctx = TestContext::new();
+    let setup = RevokeMerkleClaimSetup::builder(&mut ctx).schedule(VestingSchedule::Immediate).revocable(2).build();
+
+    let revoke_ix = setup.build_instruction(&ctx, RevokeMode::Full);
+    revoke_ix.send_expect_success(&mut ctx);
+    assert!(ctx.get_account(&setup.revocation_pda).is_some(), "Revocation marker should remain until reclaimed");
+
+    ctx.warp_to_timestamp(setup.clawback_ts);
+    let close_setup = CloseMerkleDistributionSetup {
+        authority: setup.authority.insecure_clone(),
+        distribution_pda: setup.distribution_pda,
+        mint: setup.mint,
+        distribution_vault: setup.distribution_vault,
+        authority_token_account: setup.authority_token_account,
+        token_program: setup.token_program,
+        funded_amount: setup.amount,
+        clawback_ts: setup.clawback_ts,
+    };
+    close_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
+    assert!(ctx.get_account(&setup.revocation_pda).is_some(), "Revocation marker should survive distribution close");
+
+    ctx.advance_slot();
+    let (event_authority, _) = find_event_authority_pda();
+    let mut recreate_builder = CreateMerkleDistributionBuilder::new();
+    recreate_builder
+        .payer(ctx.payer.pubkey())
+        .authority(setup.authority.pubkey())
+        .seeds(setup.seed.pubkey())
+        .distribution(setup.distribution_pda)
+        .mint(setup.mint)
+        .distribution_vault(setup.distribution_vault)
+        .authority_token_account(setup.authority_token_account)
+        .token_program(setup.token_program)
+        .event_authority(event_authority)
+        .bump(setup.bump)
+        .revocable(0)
+        .amount(setup.amount)
+        .merkle_root([9; 32])
+        .total_amount(setup.amount)
+        .clawback_ts(setup.clawback_ts + 1);
+
+    let recreate_ix = TestInstruction {
+        instruction: recreate_builder.instruction(),
+        signers: vec![setup.authority.insecure_clone(), setup.seed.insecure_clone()],
+        name: "CreateMerkleDistribution",
+    };
+    let error = recreate_ix.send_expect_error(&mut ctx);
+    assert_rewards_error(error, RewardsError::DistributionPermanentlyClosed);
 }
 
 // ── Token-2022 support ────────────────────────────────────────────

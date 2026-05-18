@@ -47,6 +47,25 @@ pub fn close_pda_account(pda_account: &AccountView, recipient: &AccountView) -> 
     Ok(())
 }
 
+/// Refund any lamports above the rent-exempt minimum for `new_size` back to `recipient`.
+///
+/// Call after shrinking a program-owned PDA via `account.resize(new_size)` to return
+/// the freed rent. The account must be owned by the invoking program so that direct
+/// lamport manipulation is valid.
+pub fn refund_excess_rent(account: &AccountView, recipient: &AccountView, new_size: usize) -> ProgramResult {
+    let rent = Rent::get()?;
+    let required = rent.try_minimum_balance(new_size).map_err(|_| RewardsProgramError::RentCalculationFailed)?;
+    let current = account.lamports();
+    let excess = current.saturating_sub(required);
+
+    if excess > 0 {
+        account.set_lamports(current.saturating_sub(excess));
+        recipient.set_lamports(recipient.lamports().checked_add(excess).ok_or(RewardsProgramError::MathOverflow)?);
+    }
+
+    Ok(())
+}
+
 /// Create a PDA account for the given seeds.
 ///
 /// Supports pre-funded, system-owned PDA addresses with zero data by

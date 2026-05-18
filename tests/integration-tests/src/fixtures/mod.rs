@@ -19,7 +19,7 @@ pub mod transfer_points;
 pub mod use_points;
 
 pub use add_direct_recipient::{AddDirectRecipientFixture, AddDirectRecipientSetup, DEFAULT_RECIPIENT_AMOUNT};
-pub use claim_direct::{ClaimDirectFixture, ClaimDirectSetup};
+pub use claim_direct::{ClaimDirectFixture, ClaimDirectSetup, ClaimDirectTransferFeeSetup};
 pub use claim_merkle::{ClaimMerkleFixture, ClaimMerkleSetup, DEFAULT_CLAIMANT_AMOUNT};
 pub use close_direct_distribution::{CloseDirectDistributionFixture, CloseDirectDistributionSetup};
 pub use close_direct_recipient::{CloseDirectRecipientFixture, CloseDirectRecipientSetup};

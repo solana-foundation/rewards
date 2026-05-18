@@ -3,7 +3,7 @@ use codama::CodamaType;
 use pinocchio::Address;
 
 use crate::{
-    traits::{EventDiscriminator, EventDiscriminators, EventSerialize},
+    traits::{event_discriminator, EventDiscriminator, EventSerialize},
     utils::VestingSchedule,
 };
 
@@ -16,7 +16,7 @@ pub struct RecipientAddedEvent {
 }
 
 impl EventDiscriminator for RecipientAddedEvent {
-    const DISCRIMINATOR: u8 = EventDiscriminators::RecipientAdded as u8;
+    const DISCRIMINATOR: [u8; 8] = event_discriminator(b"RecipientAddedEvent");
 }
 
 impl EventSerialize for RecipientAddedEvent {
@@ -98,7 +98,7 @@ mod tests {
         let expected_len = EVENT_DISCRIMINATOR_LEN + RecipientAddedEvent::BASE_DATA_LEN + 17;
         assert_eq!(bytes.len(), expected_len);
         assert_eq!(&bytes[..8], EVENT_IX_TAG_LE);
-        assert_eq!(bytes[8], EventDiscriminators::RecipientAdded as u8);
+        assert_eq!(&bytes[8..16], RecipientAddedEvent::DISCRIMINATOR);
     }
 
     #[test]

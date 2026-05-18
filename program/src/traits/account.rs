@@ -88,9 +88,11 @@ pub enum RewardsAccountDiscriminators {
     MerkleDistribution = 2,
     MerkleClaim = 3,
     Revocation = 4,
-    RewardPool = 5,
-    UserRewardAccount = 6,
-    PointsConfig = 7,
+    DirectDistributionClosed = 5,
+    MerkleDistributionClosed = 6,
+    RewardPool = 7,
+    UserRewardAccount = 8,
+    PointsConfig = 9,
 }
 
 /// Manual account deserialization (non-zero-copy)

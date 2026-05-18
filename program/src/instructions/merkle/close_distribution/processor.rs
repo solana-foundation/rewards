@@ -5,8 +5,8 @@ use crate::{
     errors::RewardsProgramError,
     events::DistributionClosedEvent,
     state::MerkleDistribution,
-    traits::{Distribution, DistributionSigner, EventSerialize},
-    utils::{close_pda_account, emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance},
+    traits::{Distribution, DistributionSigner, EventSerialize, InstructionData},
+    utils::{emit_event, get_current_timestamp, get_mint_decimals, get_token_account_balance},
     ID,
 };
 
@@ -18,6 +18,7 @@ pub fn process_close_merkle_distribution(
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = CloseMerkleDistribution::try_from((instruction_data, accounts))?;
+    ix.data.validate()?;
 
     let current_ts = get_current_timestamp()?;
 
@@ -66,11 +67,10 @@ pub fn process_close_merkle_distribution(
         .invoke_signed(signers)
     })?;
 
+    MerkleDistribution::close_in_place(ix.accounts.distribution, ix.accounts.authority)?;
+
     let event = DistributionClosedEvent::new(*ix.accounts.distribution.address(), remaining_amount);
     emit_event(&ID, ix.accounts.event_authority, ix.accounts.program, &event.to_bytes())?;
-
-    // Close the distribution PDA account and return rent to authority
-    close_pda_account(ix.accounts.distribution, ix.accounts.authority)?;
 
     Ok(())
 }

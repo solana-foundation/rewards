@@ -12,8 +12,7 @@ use crate::{require_account_len, validate_discriminator, validate_version};
 /// Revocation account state
 ///
 /// Minimal PDA recording that a user has been revoked from a distribution
-/// or reward pool. Its existence blocks future claims or opt-ins.
-/// Shared across merkle distributions and continuous reward pools.
+/// Its existence blocks future claims.
 ///
 /// # PDA Seeds
 /// `[b"revocation", parent.as_ref(), user.as_ref()]`
@@ -64,7 +63,7 @@ impl AccountValidation for Revocation {}
 
 /// Seed helper for deriving Revocation PDA
 ///
-/// `parent` is the distribution (merkle/direct) or reward pool (continuous) address.
+/// `parent` is the distribution address.
 /// `user` is the claimant or user address.
 pub struct RevocationSeeds {
     pub parent: Address,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { getRevokeDirectRecipientInstruction, RevokeMode } from '@solana/rewards-client';
+import { getRevokeDirectRecipientInstruction, RevokeMode } from '@solana/rewards';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useSendTx } from '@/hooks/useSendTx';

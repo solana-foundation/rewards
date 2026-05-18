@@ -4,7 +4,7 @@ use crate::{
     errors::RewardsProgramError,
     events::ClaimClosedEvent,
     state::{DirectDistribution, DirectRecipient},
-    traits::EventSerialize,
+    traits::{EventSerialize, InstructionData},
     utils::{close_pda_account, emit_event},
     ID,
 };
@@ -17,10 +17,17 @@ pub fn process_close_direct_recipient(
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = CloseDirectRecipient::try_from((instruction_data, accounts))?;
+    ix.data.validate()?;
 
-    let distribution_data = ix.accounts.distribution.try_borrow()?;
-    let _distribution = DirectDistribution::from_account(&distribution_data, ix.accounts.distribution, &ID)?;
-    drop(distribution_data);
+    // The distribution PDA always lives on: active as `DirectDistribution`,
+    // permanently closed as a compact `DirectDistributionClosed` marker.
+    let distribution_closed = DirectDistribution::is_closed(ix.accounts.distribution, &ID)?;
+
+    if !distribution_closed {
+        let distribution_data = ix.accounts.distribution.try_borrow()?;
+        let _distribution = DirectDistribution::from_account(&distribution_data, ix.accounts.distribution, &ID)?;
+        drop(distribution_data);
+    }
 
     let recipient_data = ix.accounts.recipient_account.try_borrow()?;
     let recipient = DirectRecipient::from_account(&recipient_data, ix.accounts.recipient_account, &ID)?;
@@ -34,7 +41,7 @@ pub fn process_close_direct_recipient(
         return Err(ProgramError::InvalidAccountData);
     }
 
-    if recipient.claimed_amount < recipient.total_amount {
+    if !distribution_closed && recipient.claimed_amount < recipient.total_amount {
         return Err(RewardsProgramError::ClaimNotFullyVested.into());
     }
 

@@ -1,10 +1,10 @@
-use pinocchio::{account::AccountView, Address, ProgramResult};
+use pinocchio::{account::AccountView, error::ProgramError, Address, ProgramResult};
 
 use crate::{
     events::ClaimClosedEvent,
-    state::MerkleClaim,
-    traits::EventSerialize,
-    utils::{close_pda_account, emit_event, verify_system_account},
+    state::{MerkleClaim, MerkleDistribution},
+    traits::{EventSerialize, InstructionData},
+    utils::{close_pda_account, emit_event},
     ID,
 };
 
@@ -16,9 +16,13 @@ pub fn process_close_merkle_claim(
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = CloseMerkleClaim::try_from((instruction_data, accounts))?;
+    ix.data.validate()?;
 
-    // Distribution must be closed (owner = system program means account was deleted)
-    verify_system_account(ix.accounts.distribution)?;
+    let distribution_closed = ix.accounts.distribution.owned_by(&pinocchio_system::ID)
+        || MerkleDistribution::is_closed(ix.accounts.distribution, &ID)?;
+    if !distribution_closed {
+        return Err(ProgramError::InvalidAccountOwner);
+    }
 
     let claim_data = ix.accounts.claim_account.try_borrow()?;
     let _claim = MerkleClaim::from_account(
