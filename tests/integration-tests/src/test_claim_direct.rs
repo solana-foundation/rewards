@@ -179,6 +179,29 @@ fn test_claim_direct_success_token_2022() {
 }
 
 #[test]
+fn test_claim_direct_rejects_recipient_token_account_wrong_owner() {
+    let mut ctx = TestContext::new();
+    let setup = ClaimDirectSetup::new(&mut ctx);
+    let attacker = ctx.create_funded_keypair();
+    let attacker_token_account = ctx.create_ata_for_program(&attacker.pubkey(), &setup.mint, &setup.token_program);
+
+    let test_ix = setup.build_instruction(&ctx).with_account_at(5, attacker_token_account);
+    let error = test_ix.send_expect_error(&mut ctx);
+
+    assert_instruction_error(error, InstructionError::InvalidAccountData);
+    assert_eq!(ctx.get_token_balance(&attacker_token_account), 0);
+    assert_eq!(ctx.get_token_balance(&setup.recipient_token_account), 0);
+    assert_direct_recipient(
+        &ctx,
+        &setup.recipient_pda,
+        &setup.recipient.pubkey(),
+        setup.amount,
+        0,
+        setup.recipient_bump,
+    );
+}
+
+#[test]
 fn test_claim_direct_transfer_fee_mint_tracks_vault_debits() {
     let mut ctx = TestContext::new();
     let mint = Keypair::new();
