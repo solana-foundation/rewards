@@ -12,6 +12,7 @@ use spl_associated_token_account::{
 use spl_token_2022::{
     extension::{
         transfer_fee::{instruction::initialize_transfer_fee_config, TransferFeeAmount},
+        transfer_hook::instruction::initialize as initialize_transfer_hook,
         BaseStateWithExtensions, ExtensionType, StateWithExtensions,
     },
     instruction::{initialize_mint2, mint_to_checked},
@@ -173,7 +174,47 @@ impl TestContext {
             &[],
         )
         .unwrap();
+        self.send_transaction(
+            initialize_mint2(&TOKEN_2022_PROGRAM_ID, &mint.pubkey(), mint_authority, None, decimals).unwrap(),
+            &[],
+        )
+        .unwrap();
+    }
 
+    pub fn create_token_2022_transfer_hook_mint(
+        &mut self,
+        mint: &Keypair,
+        mint_authority: &Pubkey,
+        decimals: u8,
+        transfer_hook_program_id: &Pubkey,
+    ) {
+        let mint_len =
+            ExtensionType::try_calculate_account_len::<Token2022Mint>(&[ExtensionType::TransferHook]).unwrap();
+
+        self.svm
+            .set_account(
+                mint.pubkey(),
+                Account {
+                    lamports: self.svm.minimum_balance_for_rent_exemption(mint_len),
+                    data: vec![0u8; mint_len],
+                    owner: TOKEN_2022_PROGRAM_ID,
+                    executable: false,
+                    rent_epoch: 0,
+                },
+            )
+            .unwrap();
+
+        self.send_transaction(
+            initialize_transfer_hook(
+                &TOKEN_2022_PROGRAM_ID,
+                &mint.pubkey(),
+                Some(*mint_authority),
+                Some(*transfer_hook_program_id),
+            )
+            .unwrap(),
+            &[],
+        )
+        .unwrap();
         self.send_transaction(
             initialize_mint2(&TOKEN_2022_PROGRAM_ID, &mint.pubkey(), mint_authority, None, decimals).unwrap(),
             &[],

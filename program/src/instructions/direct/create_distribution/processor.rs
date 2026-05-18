@@ -6,7 +6,7 @@ use crate::{
     events::DistributionCreatedEvent,
     state::DirectDistribution,
     traits::{AccountSerialize, AccountSize, EventSerialize, InstructionData, PdaSeeds},
-    utils::{create_pda_account, emit_event},
+    utils::{create_pda_account, emit_event, reject_mint_extensions, UNSUPPORTED_MINT_EXTENSIONS},
     ID,
 };
 
@@ -19,6 +19,7 @@ pub fn process_create_direct_distribution(
 ) -> ProgramResult {
     let ix = CreateDirectDistribution::try_from((instruction_data, accounts))?;
     ix.data.validate()?;
+    reject_mint_extensions(ix.accounts.mint, UNSUPPORTED_MINT_EXTENSIONS)?;
 
     let distribution = DirectDistribution::new(
         ix.data.bump,
