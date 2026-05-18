@@ -1,7 +1,7 @@
 use solana_sdk::{account::Account, signer::Signer};
 use solana_system_interface::program::ID as SYSTEM_PROGRAM_ID;
 
-use crate::fixtures::{CreateMerkleDistributionFixture, CreateMerkleDistributionSetup};
+use crate::fixtures::{CloseMerkleDistributionSetup, CreateMerkleDistributionFixture, CreateMerkleDistributionSetup};
 use crate::utils::{
     assert_merkle_distribution, assert_rewards_error, test_empty_data, test_missing_signer, test_not_writable,
     test_truncated_data, test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext,
@@ -78,6 +78,34 @@ fn test_create_merkle_distribution_success() {
         setup.total_amount,
         setup.bump,
     );
+}
+
+#[test]
+fn test_create_merkle_distribution_fails_if_closed_before() {
+    let mut ctx = TestContext::new();
+    let setup = CreateMerkleDistributionSetup::new(&mut ctx);
+    let create_ix = setup.build_instruction(&ctx);
+    create_ix.send_expect_success(&mut ctx);
+
+    ctx.warp_to_timestamp(setup.clawback_ts);
+    let authority_token_account =
+        ctx.create_ata_for_program(&setup.authority.pubkey(), &setup.mint.pubkey(), &setup.token_program);
+    let close_setup = CloseMerkleDistributionSetup {
+        authority: setup.authority.insecure_clone(),
+        distribution_pda: setup.distribution_pda,
+        mint: setup.mint.pubkey(),
+        distribution_vault: setup.distribution_vault,
+        authority_token_account,
+        token_program: setup.token_program,
+        funded_amount: setup.amount,
+        clawback_ts: setup.clawback_ts,
+    };
+    close_setup.build_instruction(&ctx).send_expect_success(&mut ctx);
+
+    ctx.advance_slot();
+    let recreate_ix = setup.build_instruction(&ctx);
+    let error = recreate_ix.send_expect_error(&mut ctx);
+    assert_rewards_error(error, RewardsError::DistributionPermanentlyClosed);
 }
 
 #[test]

@@ -343,6 +343,24 @@
           "kind": "structTypeNode"
         },
         "kind": "accountNode",
+        "name": "merkleDistributionClosed"
+      },
+      {
+        "data": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "bump",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "kind": "accountNode",
         "name": "revocation"
       }
     ],

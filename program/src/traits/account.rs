@@ -89,6 +89,7 @@ pub enum RewardsAccountDiscriminators {
     MerkleClaim = 3,
     Revocation = 4,
     DirectDistributionClosed = 8,
+    MerkleDistributionClosed = 9,
 }
 
 /// Manual account deserialization (non-zero-copy)

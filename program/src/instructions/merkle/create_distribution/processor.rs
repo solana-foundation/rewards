@@ -35,6 +35,10 @@ pub fn process_create_merkle_distribution(
 
     distribution.validate_pda(ix.accounts.distribution, &ID, ix.data.bump)?;
 
+    if MerkleDistribution::is_closed(ix.accounts.distribution, &ID)? {
+        return Err(RewardsProgramError::DistributionPermanentlyClosed.into());
+    }
+
     let bump_seed = [ix.data.bump];
     let distribution_seeds = distribution.seeds_with_bump(&bump_seed);
     let distribution_seeds_array: [_; 5] = distribution_seeds.try_into().map_err(|_| ProgramError::InvalidArgument)?;
