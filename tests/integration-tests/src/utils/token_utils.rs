@@ -6,7 +6,12 @@ use solana_sdk::{
     signature::{Keypair, Signer},
 };
 use spl_associated_token_account::{get_associated_token_address, get_associated_token_address_with_program_id};
-use spl_token_interface::state::{Account as TokenAccount, AccountState, Mint};
+use spl_token_2022::{
+    extension::{transfer_hook::instruction::initialize as initialize_transfer_hook, ExtensionType},
+    instruction::initialize_mint2,
+    state::Mint as Token2022Mint,
+};
+use spl_token_interface::state::{Account as TokenAccount, AccountState, Mint as TokenMint};
 
 use super::TestContext;
 
@@ -15,7 +20,7 @@ pub use spl_token_interface::ID as TOKEN_PROGRAM_ID;
 
 impl TestContext {
     pub fn create_mint(&mut self, mint: &Keypair, mint_authority: &Pubkey, decimals: u8) {
-        let mint_state = Mint {
+        let mint_state = TokenMint {
             mint_authority: COption::Some(*mint_authority),
             supply: 0,
             decimals,
@@ -23,14 +28,14 @@ impl TestContext {
             freeze_authority: COption::None,
         };
 
-        let mut data = vec![0u8; Mint::LEN];
+        let mut data = vec![0u8; TokenMint::LEN];
         mint_state.pack_into_slice(&mut data);
 
         self.svm
             .set_account(
                 mint.pubkey(),
                 Account {
-                    lamports: self.svm.minimum_balance_for_rent_exemption(Mint::LEN),
+                    lamports: self.svm.minimum_balance_for_rent_exemption(TokenMint::LEN),
                     data,
                     owner: TOKEN_PROGRAM_ID,
                     executable: false,
@@ -89,7 +94,7 @@ impl TestContext {
     }
 
     pub fn create_token_2022_mint(&mut self, mint: &Keypair, mint_authority: &Pubkey, decimals: u8) {
-        let mint_state = Mint {
+        let mint_state = TokenMint {
             mint_authority: COption::Some(*mint_authority),
             supply: 0,
             decimals,
@@ -97,14 +102,14 @@ impl TestContext {
             freeze_authority: COption::None,
         };
 
-        let mut data = vec![0u8; Mint::LEN];
+        let mut data = vec![0u8; TokenMint::LEN];
         mint_state.pack_into_slice(&mut data);
 
         self.svm
             .set_account(
                 mint.pubkey(),
                 Account {
-                    lamports: self.svm.minimum_balance_for_rent_exemption(Mint::LEN),
+                    lamports: self.svm.minimum_balance_for_rent_exemption(TokenMint::LEN),
                     data,
                     owner: TOKEN_2022_PROGRAM_ID,
                     executable: false,
@@ -112,6 +117,47 @@ impl TestContext {
                 },
             )
             .unwrap();
+    }
+
+    pub fn create_token_2022_transfer_hook_mint(
+        &mut self,
+        mint: &Keypair,
+        mint_authority: &Pubkey,
+        decimals: u8,
+        transfer_hook_program_id: &Pubkey,
+    ) {
+        let mint_len =
+            ExtensionType::try_calculate_account_len::<Token2022Mint>(&[ExtensionType::TransferHook]).unwrap();
+
+        self.svm
+            .set_account(
+                mint.pubkey(),
+                Account {
+                    lamports: self.svm.minimum_balance_for_rent_exemption(mint_len),
+                    data: vec![0u8; mint_len],
+                    owner: TOKEN_2022_PROGRAM_ID,
+                    executable: false,
+                    rent_epoch: 0,
+                },
+            )
+            .unwrap();
+
+        self.send_transaction(
+            initialize_transfer_hook(
+                &TOKEN_2022_PROGRAM_ID,
+                &mint.pubkey(),
+                Some(*mint_authority),
+                Some(*transfer_hook_program_id),
+            )
+            .unwrap(),
+            &[],
+        )
+        .unwrap();
+        self.send_transaction(
+            initialize_mint2(&TOKEN_2022_PROGRAM_ID, &mint.pubkey(), mint_authority, None, decimals).unwrap(),
+            &[],
+        )
+        .unwrap();
     }
 
     pub fn create_token_2022_account(&mut self, owner: &Pubkey, mint: &Pubkey) -> Pubkey {
