@@ -2844,13 +2844,13 @@ dependencies = [
 
 [[package]]
 name = "pinocchio-token"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "febf3bbe37f4e2723b9b41a1768c6542a1ae1b1d7bcac27f892f30cabcf70ec4"
+checksum = "825f59c8348e5c2d3fd56432ef927f5819542b3b05fae4f5b6869801113e775e"
 dependencies = [
- "solana-account-view 1.0.0",
+ "solana-account-view 2.0.0",
  "solana-address 2.6.0",
- "solana-instruction-view 1.0.0",
+ "solana-instruction-view 2.1.0",
  "solana-program-error",
 ]
 
