@@ -14,7 +14,7 @@ use super::CloseMerkleDistribution;
 
 pub fn process_close_merkle_distribution(
     _program_id: &Address,
-    accounts: &[AccountView],
+    accounts: &mut [AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = CloseMerkleDistribution::try_from((instruction_data, accounts))?;

@@ -8,18 +8,18 @@ use crate::{
 };
 
 pub struct CloseMerkleClaimAccounts<'a> {
-    pub claimant: &'a AccountView,
-    pub distribution: &'a AccountView,
-    pub claim_account: &'a AccountView,
-    pub event_authority: &'a AccountView,
-    pub program: &'a AccountView,
+    pub claimant: &'a mut AccountView,
+    pub distribution: &'a mut AccountView,
+    pub claim_account: &'a mut AccountView,
+    pub event_authority: &'a mut AccountView,
+    pub program: &'a mut AccountView,
 }
 
-impl<'a> TryFrom<&'a [AccountView]> for CloseMerkleClaimAccounts<'a> {
+impl<'a> TryFrom<&'a mut [AccountView]> for CloseMerkleClaimAccounts<'a> {
     type Error = ProgramError;
 
     #[inline(always)]
-    fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
+    fn try_from(accounts: &'a mut [AccountView]) -> Result<Self, Self::Error> {
         let [claimant, distribution, claim_account, event_authority, program] = accounts else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };

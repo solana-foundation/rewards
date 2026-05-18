@@ -6,19 +6,19 @@ use crate::{
 };
 
 pub struct CloseDirectRecipientAccounts<'a> {
-    pub recipient: &'a AccountView,
-    pub original_payer: &'a AccountView,
-    pub distribution: &'a AccountView,
-    pub recipient_account: &'a AccountView,
-    pub event_authority: &'a AccountView,
-    pub program: &'a AccountView,
+    pub recipient: &'a mut AccountView,
+    pub original_payer: &'a mut AccountView,
+    pub distribution: &'a mut AccountView,
+    pub recipient_account: &'a mut AccountView,
+    pub event_authority: &'a mut AccountView,
+    pub program: &'a mut AccountView,
 }
 
-impl<'a> TryFrom<&'a [AccountView]> for CloseDirectRecipientAccounts<'a> {
+impl<'a> TryFrom<&'a mut [AccountView]> for CloseDirectRecipientAccounts<'a> {
     type Error = ProgramError;
 
     #[inline(always)]
-    fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
+    fn try_from(accounts: &'a mut [AccountView]) -> Result<Self, Self::Error> {
         let [recipient, original_payer, distribution, recipient_account, event_authority, program] = accounts else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };

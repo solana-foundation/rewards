@@ -35,7 +35,7 @@ function defaultClusterId(): SolanaClusterId {
     const configured = viteEnv.VITE_DEFAULT_CLUSTER;
     const id = stored || configured || (viteEnv.DEV ? 'solana:localnet' : 'solana:devnet');
     return id === 'solana:devnet' || id === 'solana:testnet' || id === 'solana:localnet' || id === 'solana:mainnet'
-        ? (id as SolanaClusterId)
+        ? id
         : 'solana:devnet';
 }
 

@@ -23,6 +23,9 @@
   "scripts": {
     "build": "tsc"
   },
+  "dependencies": {
+    "@solana/program-client-core": "^6.9.0"
+  },
   "peerDependencies": {
     "@solana/kit": "^6.9.0"
   },

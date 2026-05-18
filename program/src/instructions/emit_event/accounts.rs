@@ -6,14 +6,14 @@ use crate::{
 };
 
 pub struct EmitEventAccounts<'a> {
-    pub event_authority: &'a AccountView,
+    pub event_authority: &'a mut AccountView,
 }
 
-impl<'a> TryFrom<&'a [AccountView]> for EmitEventAccounts<'a> {
+impl<'a> TryFrom<&'a mut [AccountView]> for EmitEventAccounts<'a> {
     type Error = ProgramError;
 
     #[inline(always)]
-    fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
+    fn try_from(accounts: &'a mut [AccountView]) -> Result<Self, Self::Error> {
         let [event_authority] = accounts else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };

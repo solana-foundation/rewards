@@ -14,7 +14,7 @@ use super::AddDirectRecipient;
 
 pub fn process_add_direct_recipient(
     _program_id: &Address,
-    accounts: &[AccountView],
+    accounts: &mut [AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = AddDirectRecipient::try_from((instruction_data, accounts))?;

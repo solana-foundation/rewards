@@ -5,6 +5,7 @@ use solana_sdk::{
     instruction::Instruction,
     native_token::LAMPORTS_PER_SOL,
     pubkey::Pubkey,
+    rent::{Rent, DEFAULT_BURN_PERCENT},
     signature::{Keypair, Signer},
     transaction::{Transaction, TransactionError},
 };
@@ -26,6 +27,12 @@ pub struct TestContext {
 impl TestContext {
     pub fn new() -> Self {
         let mut svm = LiteSVM::new().with_sysvars().with_default_programs();
+        // Pinocchio 0.11 reads the Solana 4 rent layout; LiteSVM 0.10 initializes the old layout.
+        svm.set_sysvar(&Rent {
+            lamports_per_byte_year: 6_960,
+            exemption_threshold: 1.0,
+            burn_percent: DEFAULT_BURN_PERCENT,
+        });
 
         let current_time = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64;
 

@@ -5,7 +5,7 @@ use pinocchio::{
     account::AccountView,
     cpi::{Seed, Signer},
     error::ProgramError,
-    Address, ProgramResult,
+    Address, ProgramResult, Resize,
 };
 
 use crate::errors::RewardsProgramError;
@@ -231,7 +231,7 @@ impl DirectDistribution {
     ///
     /// The caller is responsible for transferring any remaining token balance
     /// and closing the distribution vault before invoking this.
-    pub fn close_in_place(account: &AccountView, rent_recipient: &AccountView) -> ProgramResult {
+    pub fn close_in_place(account: &mut AccountView, rent_recipient: &mut AccountView) -> ProgramResult {
         {
             let mut data = account.try_borrow_mut()?;
             data[0] = DirectDistributionClosed::DISCRIMINATOR;

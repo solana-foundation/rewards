@@ -9,21 +9,21 @@ use crate::{
 };
 
 pub struct CloseMerkleDistributionAccounts<'a> {
-    pub authority: &'a AccountView,
-    pub distribution: &'a AccountView,
-    pub mint: &'a AccountView,
-    pub distribution_vault: &'a AccountView,
-    pub authority_token_account: &'a AccountView,
-    pub token_program: &'a AccountView,
-    pub event_authority: &'a AccountView,
-    pub program: &'a AccountView,
+    pub authority: &'a mut AccountView,
+    pub distribution: &'a mut AccountView,
+    pub mint: &'a mut AccountView,
+    pub distribution_vault: &'a mut AccountView,
+    pub authority_token_account: &'a mut AccountView,
+    pub token_program: &'a mut AccountView,
+    pub event_authority: &'a mut AccountView,
+    pub program: &'a mut AccountView,
 }
 
-impl<'a> TryFrom<&'a [AccountView]> for CloseMerkleDistributionAccounts<'a> {
+impl<'a> TryFrom<&'a mut [AccountView]> for CloseMerkleDistributionAccounts<'a> {
     type Error = ProgramError;
 
     #[inline(always)]
-    fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
+    fn try_from(accounts: &'a mut [AccountView]) -> Result<Self, Self::Error> {
         let [authority, distribution, mint, distribution_vault, authority_token_account, token_program, event_authority, program] =
             accounts
         else {

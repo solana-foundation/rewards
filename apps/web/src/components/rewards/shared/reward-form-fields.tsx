@@ -187,7 +187,7 @@ export function RevokeModeField({ value, onChange }: { value: RevokeMode; onChan
         <SelectField
             label="Revoke Mode"
             value={String(value)}
-            onChange={next => onChange(Number(next) as RevokeMode)}
+            onChange={next => onChange(Number(next))}
             options={[
                 { label: 'NonVested (0)', value: String(RevokeMode.NonVested) },
                 { label: 'Full (1)', value: String(RevokeMode.Full) },

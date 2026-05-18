@@ -13,7 +13,7 @@ use super::CloseDirectRecipient;
 
 pub fn process_close_direct_recipient(
     _program_id: &Address,
-    accounts: &[AccountView],
+    accounts: &mut [AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = CloseDirectRecipient::try_from((instruction_data, accounts))?;

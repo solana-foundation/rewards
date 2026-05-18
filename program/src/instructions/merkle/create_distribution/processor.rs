@@ -18,7 +18,7 @@ use super::CreateMerkleDistribution;
 
 pub fn process_create_merkle_distribution(
     _program_id: &Address,
-    accounts: &[AccountView],
+    accounts: &mut [AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = CreateMerkleDistribution::try_from((instruction_data, accounts))?;

@@ -14,7 +14,11 @@ use crate::{
 
 use super::ClaimDirect;
 
-pub fn process_claim_direct(_program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+pub fn process_claim_direct(
+    _program_id: &Address,
+    accounts: &mut [AccountView],
+    instruction_data: &[u8],
+) -> ProgramResult {
     let ix = ClaimDirect::try_from((instruction_data, accounts))?;
     ix.data.validate()?;
 

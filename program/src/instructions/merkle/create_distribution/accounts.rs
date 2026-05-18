@@ -10,25 +10,25 @@ use crate::{
 };
 
 pub struct CreateMerkleDistributionAccounts<'a> {
-    pub payer: &'a AccountView,
-    pub authority: &'a AccountView,
-    pub seed: &'a AccountView,
-    pub distribution: &'a AccountView,
-    pub mint: &'a AccountView,
-    pub distribution_vault: &'a AccountView,
-    pub authority_token_account: &'a AccountView,
-    pub system_program: &'a AccountView,
-    pub token_program: &'a AccountView,
-    pub associated_token_program: &'a AccountView,
-    pub event_authority: &'a AccountView,
-    pub program: &'a AccountView,
+    pub payer: &'a mut AccountView,
+    pub authority: &'a mut AccountView,
+    pub seed: &'a mut AccountView,
+    pub distribution: &'a mut AccountView,
+    pub mint: &'a mut AccountView,
+    pub distribution_vault: &'a mut AccountView,
+    pub authority_token_account: &'a mut AccountView,
+    pub system_program: &'a mut AccountView,
+    pub token_program: &'a mut AccountView,
+    pub associated_token_program: &'a mut AccountView,
+    pub event_authority: &'a mut AccountView,
+    pub program: &'a mut AccountView,
 }
 
-impl<'a> TryFrom<&'a [AccountView]> for CreateMerkleDistributionAccounts<'a> {
+impl<'a> TryFrom<&'a mut [AccountView]> for CreateMerkleDistributionAccounts<'a> {
     type Error = ProgramError;
 
     #[inline(always)]
-    fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
+    fn try_from(accounts: &'a mut [AccountView]) -> Result<Self, Self::Error> {
         let [payer, authority, seeds, distribution, mint, distribution_vault, authority_token_account, system_program, token_program, associated_token_program, event_authority, program] =
             accounts
         else {

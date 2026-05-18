@@ -10,25 +10,25 @@ use crate::{
 };
 
 pub struct ClaimMerkleAccounts<'a> {
-    pub payer: &'a AccountView,
-    pub claimant: &'a AccountView,
-    pub distribution: &'a AccountView,
-    pub claim_account: &'a AccountView,
-    pub revocation_marker: &'a AccountView,
-    pub mint: &'a AccountView,
-    pub distribution_vault: &'a AccountView,
-    pub claimant_token_account: &'a AccountView,
-    pub system_program: &'a AccountView,
-    pub token_program: &'a AccountView,
-    pub event_authority: &'a AccountView,
-    pub program: &'a AccountView,
+    pub payer: &'a mut AccountView,
+    pub claimant: &'a mut AccountView,
+    pub distribution: &'a mut AccountView,
+    pub claim_account: &'a mut AccountView,
+    pub revocation_marker: &'a mut AccountView,
+    pub mint: &'a mut AccountView,
+    pub distribution_vault: &'a mut AccountView,
+    pub claimant_token_account: &'a mut AccountView,
+    pub system_program: &'a mut AccountView,
+    pub token_program: &'a mut AccountView,
+    pub event_authority: &'a mut AccountView,
+    pub program: &'a mut AccountView,
 }
 
-impl<'a> TryFrom<&'a [AccountView]> for ClaimMerkleAccounts<'a> {
+impl<'a> TryFrom<&'a mut [AccountView]> for ClaimMerkleAccounts<'a> {
     type Error = ProgramError;
 
     #[inline(always)]
-    fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
+    fn try_from(accounts: &'a mut [AccountView]) -> Result<Self, Self::Error> {
         let [payer, claimant, distribution, claim_account, revocation_marker, mint, distribution_vault, claimant_token_account, system_program, token_program, event_authority, program] =
             accounts
         else {
