@@ -6,6 +6,9 @@ members = ["program", "clients/rust", "tests/integration-tests"]
 version = "0.1.0"
 edition = "2021"
 
+[workspace.metadata.cli]
+solana = "3.1.10"
+
 [workspace.lints.rust]
 unused_imports = "deny"
 dead_code = "warn"
