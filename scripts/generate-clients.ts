@@ -15,6 +15,7 @@ const projectRoot = path.join(__dirname, '..');
 const idlDir = path.join(projectRoot, 'idl');
 const rewardsIdl = JSON.parse(fs.readFileSync(path.join(idlDir, 'rewards_program.json'), 'utf-8')) as AnchorIdl;
 const rustClientsDir = path.join(__dirname, '..', 'clients', 'rust');
+const rustGeneratedMod = path.join(rustClientsDir, 'src', 'generated', 'mod.rs');
 const typescriptClientsDir = path.join(__dirname, '..', 'clients', 'typescript');
 
 const rewardsCodama = createRewardsCodamaBuilder(rewardsIdl)
@@ -34,13 +35,19 @@ async function main() {
         // Generate Rust client.
         await Promise.resolve(
             rewardsCodama.accept(
-                renderRustVisitor(path.join(rustClientsDir, 'src', 'generated'), {
-                    crateFolder: rustClientsDir,
+                renderRustVisitor(rustClientsDir, {
+                    anchorTraits: false,
                     deleteFolderBeforeRendering: true,
                     formatCode: true,
+                    generatedFolder: 'src/generated',
                 }),
             ),
         );
+        if (!fs.existsSync(rustGeneratedMod)) {
+            throw new Error(
+                `Rust client generation failed: ${path.relative(projectRoot, rustGeneratedMod)} was not created`,
+            );
+        }
 
         // Generate TypeScript client.
         await Promise.resolve(

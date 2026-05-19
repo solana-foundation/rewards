@@ -12,9 +12,9 @@ use crate::{
 pub struct RevokeMerkleClaimAccounts<'a> {
     pub authority: &'a AccountView,
     pub payer: &'a AccountView,
-    pub distribution: &'a AccountView,
-    pub claim_account: &'a AccountView,
-    pub revocation_marker: &'a AccountView,
+    pub distribution: &'a mut AccountView,
+    pub claim_account: &'a mut AccountView,
+    pub revocation_marker: &'a mut AccountView,
     pub claimant: &'a AccountView,
     pub mint: &'a AccountView,
     pub distribution_vault: &'a AccountView,
@@ -26,11 +26,11 @@ pub struct RevokeMerkleClaimAccounts<'a> {
     pub program: &'a AccountView,
 }
 
-impl<'a> TryFrom<&'a [AccountView]> for RevokeMerkleClaimAccounts<'a> {
+impl<'a> TryFrom<&'a mut [AccountView]> for RevokeMerkleClaimAccounts<'a> {
     type Error = ProgramError;
 
     #[inline(always)]
-    fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
+    fn try_from(accounts: &'a mut [AccountView]) -> Result<Self, Self::Error> {
         let [authority, payer, distribution, claim_account, revocation_marker, claimant, mint, distribution_vault, claimant_token_account, authority_token_account, system_program, token_program, event_authority, program] =
             accounts
         else {

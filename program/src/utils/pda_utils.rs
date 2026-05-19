@@ -1,4 +1,4 @@
-use pinocchio::{account::AccountView, address::Address, error::ProgramError};
+use pinocchio::{account::AccountView, address::Address, error::ProgramError, Resize};
 use pinocchio::{
     cpi::{Seed, Signer},
     sysvars::{rent::Rent, Sysvar},
@@ -37,7 +37,7 @@ pub fn verify_not_revoked(
 }
 
 /// Close a PDA account and return the lamports to the recipient.
-pub fn close_pda_account(pda_account: &AccountView, recipient: &AccountView) -> ProgramResult {
+pub fn close_pda_account(pda_account: &mut AccountView, recipient: &mut AccountView) -> ProgramResult {
     let payer_lamports = recipient.lamports();
     recipient
         .set_lamports(payer_lamports.checked_add(pda_account.lamports()).ok_or(RewardsProgramError::MathOverflow)?);
@@ -52,7 +52,7 @@ pub fn close_pda_account(pda_account: &AccountView, recipient: &AccountView) -> 
 /// Call after shrinking a program-owned PDA via `account.resize(new_size)` to return
 /// the freed rent. The account must be owned by the invoking program so that direct
 /// lamport manipulation is valid.
-pub fn refund_excess_rent(account: &AccountView, recipient: &AccountView, new_size: usize) -> ProgramResult {
+pub fn refund_excess_rent(account: &mut AccountView, recipient: &mut AccountView, new_size: usize) -> ProgramResult {
     let rent = Rent::get()?;
     let required = rent.try_minimum_balance(new_size).map_err(|_| RewardsProgramError::RentCalculationFailed)?;
     let current = account.lamports();
@@ -76,7 +76,7 @@ pub fn create_pda_account<const N: usize>(
     payer: &AccountView,
     space: usize,
     owner: &Address,
-    pda_account: &AccountView,
+    pda_account: &mut AccountView,
     pda_signer_seeds: [Seed; N],
 ) -> ProgramResult {
     let rent = Rent::get()?;
@@ -117,7 +117,7 @@ pub fn create_pda_account_idempotent<const N: usize>(
     payer: &AccountView,
     space: usize,
     owner: &Address,
-    pda_account: &AccountView,
+    pda_account: &mut AccountView,
     pda_signer_seeds: [Seed; N],
 ) -> ProgramResult {
     let rent = Rent::get()?;

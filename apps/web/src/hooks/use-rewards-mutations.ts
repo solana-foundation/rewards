@@ -19,7 +19,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useWalletTransactionSignAndSend } from '@/components/solana/use-wallet-transaction-sign-and-send';
 import { useTransactionToast } from '@/components/use-transaction-toast';
-import type { RecentTransactionValues } from '@/contexts/RecentTransactionsContext';
+import { RECENT_VALUE_KEYS, type RecentTransactionValues } from '@/contexts/RecentTransactionsContext';
 import { useRecentTransactions } from '@/contexts/RecentTransactionsContext';
 import {
     deriveAta,
@@ -133,11 +133,12 @@ function createTransactionId(): string {
 
 function normalizeValues(values?: RecentTransactionValues): RecentTransactionValues | undefined {
     if (!values) return undefined;
-    const entries = Object.entries(values as Record<string, string | undefined>)
-        .map(([key, value]) => [key, value?.trim() ?? ''] as const)
-        .filter(([, value]) => value.length > 0);
-    if (entries.length === 0) return undefined;
-    return Object.fromEntries(entries) as RecentTransactionValues;
+    const normalized: RecentTransactionValues = {};
+    for (const key of RECENT_VALUE_KEYS) {
+        const value = values[key]?.trim();
+        if (value) normalized[key] = value;
+    }
+    return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
 export function useRewardsMutations() {

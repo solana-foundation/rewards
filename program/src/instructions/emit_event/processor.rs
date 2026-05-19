@@ -2,7 +2,7 @@ use pinocchio::{account::AccountView, error::ProgramError, Address, ProgramResul
 
 use crate::utils::{verify_event_authority, verify_signer};
 
-pub fn process_emit_event(_program_id: &Address, accounts: &[AccountView]) -> ProgramResult {
+pub fn process_emit_event(_program_id: &Address, accounts: &mut [AccountView]) -> ProgramResult {
     let [event_authority] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };

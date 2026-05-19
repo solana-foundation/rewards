@@ -15,7 +15,7 @@ export interface RecentTransactionValues {
     rootVersion?: string;
 }
 
-const RECENT_VALUE_KEYS = [
+export const RECENT_VALUE_KEYS = [
     'distribution',
     'mint',
     'recipient',
@@ -46,12 +46,12 @@ const RecentTransactionsContext = createContext<RecentTransactionsContextType | 
 
 function normalizeValues(values?: RecentTransactionValues): RecentTransactionValues | undefined {
     if (!values) return undefined;
-    const valueRecord = values as Record<keyof RecentTransactionValues, string | undefined>;
-    const normalizedEntries = RECENT_VALUE_KEYS.map(key => [key, valueRecord[key]?.trim() ?? ''] as const).filter(
-        ([, value]) => value.length > 0,
-    );
-    if (normalizedEntries.length === 0) return undefined;
-    return Object.fromEntries(normalizedEntries) as RecentTransactionValues;
+    const normalized: RecentTransactionValues = {};
+    for (const key of RECENT_VALUE_KEYS) {
+        const value = values[key]?.trim();
+        if (value) normalized[key] = value;
+    }
+    return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -97,7 +97,7 @@ function readStoredTransactions(): RecentTransaction[] {
                     signature: typeof signatureValue === 'string' ? signatureValue : null,
                     status: statusValue === 'failed' ? ('failed' as const) : ('success' as const),
                     timestamp,
-                    values: isRecord(valuesValue) ? normalizeValues(valuesValue as RecentTransactionValues) : undefined,
+                    values: isRecord(valuesValue) ? normalizeValues(valuesValue) : undefined,
                 };
             })
             .slice(0, MAX_RECENT_TRANSACTIONS);

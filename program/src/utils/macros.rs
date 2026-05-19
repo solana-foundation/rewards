@@ -88,7 +88,7 @@ macro_rules! assert_no_padding {
 /// Generates:
 /// - The instruction struct with `accounts` and `data` fields
 /// - `From<(Accounts, Data)>` impl
-/// - `TryFrom<(&[u8], &[AccountView])>` impl
+/// - `TryFrom<(&[u8], &mut [AccountView])>` impl
 /// - `Instruction` trait implementation
 ///
 /// # Example
@@ -110,12 +110,12 @@ macro_rules! define_instruction {
             }
         }
 
-        impl<'a> TryFrom<(&'a [u8], &'a [pinocchio::account::AccountView])> for $name<'a> {
+        impl<'a> TryFrom<(&'a [u8], &'a mut [pinocchio::account::AccountView])> for $name<'a> {
             type Error = pinocchio::error::ProgramError;
 
             #[inline(always)]
             fn try_from(
-                (data, accounts): (&'a [u8], &'a [pinocchio::account::AccountView]),
+                (data, accounts): (&'a [u8], &'a mut [pinocchio::account::AccountView]),
             ) -> Result<Self, Self::Error> {
                 <Self as $crate::traits::Instruction>::parse(data, accounts)
             }

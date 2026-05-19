@@ -13,7 +13,7 @@ pub struct CreateDirectDistributionAccounts<'a> {
     pub payer: &'a AccountView,
     pub authority: &'a AccountView,
     pub seed: &'a AccountView,
-    pub distribution: &'a AccountView,
+    pub distribution: &'a mut AccountView,
     pub mint: &'a AccountView,
     pub distribution_vault: &'a AccountView,
     pub system_program: &'a AccountView,
@@ -23,11 +23,11 @@ pub struct CreateDirectDistributionAccounts<'a> {
     pub program: &'a AccountView,
 }
 
-impl<'a> TryFrom<&'a [AccountView]> for CreateDirectDistributionAccounts<'a> {
+impl<'a> TryFrom<&'a mut [AccountView]> for CreateDirectDistributionAccounts<'a> {
     type Error = ProgramError;
 
     #[inline(always)]
-    fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
+    fn try_from(accounts: &'a mut [AccountView]) -> Result<Self, Self::Error> {
         let [payer, authority, seeds, distribution, mint, distribution_vault, system_program, token_program, associated_token_program, event_authority, program] =
             accounts
         else {

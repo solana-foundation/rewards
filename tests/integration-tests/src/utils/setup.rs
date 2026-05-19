@@ -25,7 +25,7 @@ pub struct TestContext {
 
 impl TestContext {
     pub fn new() -> Self {
-        let mut svm = LiteSVM::new().with_sysvars().with_default_programs();
+        let mut svm = LiteSVM::new();
 
         let current_time = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64;
 

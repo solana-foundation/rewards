@@ -18,7 +18,11 @@ use crate::{
 
 use super::ClaimMerkle;
 
-pub fn process_claim_merkle(_program_id: &Address, accounts: &[AccountView], instruction_data: &[u8]) -> ProgramResult {
+pub fn process_claim_merkle(
+    _program_id: &Address,
+    accounts: &mut [AccountView],
+    instruction_data: &[u8],
+) -> ProgramResult {
     let ix = ClaimMerkle::try_from((instruction_data, accounts))?;
     ix.data.validate()?;
 

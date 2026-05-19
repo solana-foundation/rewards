@@ -20,7 +20,7 @@ use super::RevokeMerkleClaim;
 
 pub fn process_revoke_merkle_claim(
     _program_id: &Address,
-    accounts: &[AccountView],
+    accounts: &mut [AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = RevokeMerkleClaim::try_from((instruction_data, accounts))?;

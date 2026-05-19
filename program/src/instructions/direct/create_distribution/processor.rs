@@ -14,7 +14,7 @@ use super::CreateDirectDistribution;
 
 pub fn process_create_direct_distribution(
     _program_id: &Address,
-    accounts: &[AccountView],
+    accounts: &mut [AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = CreateDirectDistribution::try_from((instruction_data, accounts))?;

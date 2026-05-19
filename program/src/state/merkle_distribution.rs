@@ -5,7 +5,7 @@ use pinocchio::{
     account::AccountView,
     cpi::{Seed, Signer},
     error::ProgramError,
-    Address,
+    Address, Resize,
 };
 
 use crate::errors::RewardsProgramError;
@@ -233,7 +233,7 @@ impl MerkleDistribution {
         Ok(!data.is_empty() && data[0] == MerkleDistributionClosed::DISCRIMINATOR)
     }
 
-    pub fn close_in_place(account: &AccountView, rent_recipient: &AccountView) -> Result<(), ProgramError> {
+    pub fn close_in_place(account: &mut AccountView, rent_recipient: &mut AccountView) -> Result<(), ProgramError> {
         {
             let mut data = account.try_borrow_mut()?;
             data[0] = MerkleDistributionClosed::DISCRIMINATOR;

@@ -1,7 +1,7 @@
 use pinocchio::ProgramResult;
 use pinocchio::{account::AccountView, address::Address, error::ProgramError};
 use pinocchio_associated_token_account::ID as ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID;
-use pinocchio_token_2022::state::{Mint as TokenMint, TokenAccount};
+use pinocchio_token_2022::state::{Account as TokenAccount, Mint as TokenMint};
 use pinocchio_token_2022::ID as TOKEN_2022_PROGRAM_ID;
 use spl_token_2022::{
     extension::{BaseStateWithExtensions, ExtensionType, StateWithExtensions},

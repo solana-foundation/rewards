@@ -14,7 +14,7 @@ use super::CloseDirectDistribution;
 
 pub fn process_close_direct_distribution(
     _program_id: &Address,
-    accounts: &[AccountView],
+    accounts: &mut [AccountView],
     instruction_data: &[u8],
 ) -> ProgramResult {
     let ix = CloseDirectDistribution::try_from((instruction_data, accounts))?;

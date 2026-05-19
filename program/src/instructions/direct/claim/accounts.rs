@@ -11,8 +11,8 @@ use crate::{
 
 pub struct ClaimDirectAccounts<'a> {
     pub recipient: &'a AccountView,
-    pub distribution: &'a AccountView,
-    pub recipient_account: &'a AccountView,
+    pub distribution: &'a mut AccountView,
+    pub recipient_account: &'a mut AccountView,
     pub mint: &'a AccountView,
     pub distribution_vault: &'a AccountView,
     pub recipient_token_account: &'a AccountView,
@@ -21,11 +21,11 @@ pub struct ClaimDirectAccounts<'a> {
     pub program: &'a AccountView,
 }
 
-impl<'a> TryFrom<&'a [AccountView]> for ClaimDirectAccounts<'a> {
+impl<'a> TryFrom<&'a mut [AccountView]> for ClaimDirectAccounts<'a> {
     type Error = ProgramError;
 
     #[inline(always)]
-    fn try_from(accounts: &'a [AccountView]) -> Result<Self, Self::Error> {
+    fn try_from(accounts: &'a mut [AccountView]) -> Result<Self, Self::Error> {
         let [recipient, distribution, recipient_account, mint, distribution_vault, recipient_token_account, token_program, event_authority, program] =
             accounts
         else {

@@ -52,8 +52,8 @@ impl TryFrom<u8> for RewardsInstructionDiscriminators {
 
 /// Marker trait for instruction account structs
 ///
-/// Implementors should use TryFrom<&'a [AccountView]> for parsing
-pub trait InstructionAccounts<'a>: Sized + TryFrom<&'a [AccountView], Error = ProgramError> {}
+/// Implementors should use TryFrom<&'a mut [AccountView]> for parsing
+pub trait InstructionAccounts<'a>: Sized + TryFrom<&'a mut [AccountView], Error = ProgramError> {}
 
 /// Marker trait for instruction data structs
 ///
@@ -70,7 +70,7 @@ pub trait InstructionData<'a>: Sized + TryFrom<&'a [u8], Error = ProgramError> {
 
 /// Full instruction combining accounts and data
 ///
-/// Implementors get automatic TryFrom<(&'a [u8], &'a [AccountView])>
+/// Implementors get automatic TryFrom<(&'a [u8], &'a mut [AccountView])>
 pub trait Instruction<'a>: Sized {
     type Accounts: InstructionAccounts<'a>;
     type Data: InstructionData<'a>;
@@ -80,7 +80,7 @@ pub trait Instruction<'a>: Sized {
 
     /// Parse instruction from data and accounts tuple
     #[inline(always)]
-    fn parse(data: &'a [u8], accounts: &'a [AccountView]) -> Result<Self, ProgramError>
+    fn parse(data: &'a [u8], accounts: &'a mut [AccountView]) -> Result<Self, ProgramError>
     where
         Self: From<(Self::Accounts, Self::Data)>,
     {
