@@ -31,7 +31,7 @@ async function main() {
     try {
         await Promise.resolve(
             rewardsCodama.accept(
-                renderJavaScriptVisitor(path.join(typescriptClientsDir, 'src', 'generated'), {
+                renderJavaScriptVisitor(typescriptClientsDir, {
                     deleteFolderBeforeRendering: true,
                     formatCode: true,
                 }),

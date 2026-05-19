@@ -60,7 +60,11 @@
             "picomatch@^4.0.0": "4.0.4",
             "socket.io-parser@^4.0.0": "4.2.6",
             "@solana/rpc-subscriptions-channel-websocket>ws": "8.20.1",
-            "viem>ws": "8.20.1"
+            "viem>ws": "8.20.1",
+            "@walletconnect/core": "2.23.9",
+            "@walletconnect/sign-client": "2.23.9",
+            "@walletconnect/universal-provider": "2.23.9",
+            "@walletconnect/utils": "2.23.9"
         }
     },
     "packageManager": "pnpm@10.15.1+sha512.34e538c329b5553014ca8e8f4535997f96180a1d0f614339357449935350d924e22f8614682191264ec33d1462ac21561aff97f6bb18065351c162c7e8f6de67"
