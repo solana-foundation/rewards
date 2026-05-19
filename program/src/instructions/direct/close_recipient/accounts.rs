@@ -6,12 +6,12 @@ use crate::{
 };
 
 pub struct CloseDirectRecipientAccounts<'a> {
-    pub recipient: &'a mut AccountView,
+    pub recipient: &'a AccountView,
     pub original_payer: &'a mut AccountView,
-    pub distribution: &'a mut AccountView,
+    pub distribution: &'a AccountView,
     pub recipient_account: &'a mut AccountView,
-    pub event_authority: &'a mut AccountView,
-    pub program: &'a mut AccountView,
+    pub event_authority: &'a AccountView,
+    pub program: &'a AccountView,
 }
 
 impl<'a> TryFrom<&'a mut [AccountView]> for CloseDirectRecipientAccounts<'a> {

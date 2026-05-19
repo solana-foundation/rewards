@@ -6,7 +6,7 @@ use crate::{
 };
 
 pub struct EmitEventAccounts<'a> {
-    pub event_authority: &'a mut AccountView,
+    pub event_authority: &'a AccountView,
 }
 
 impl<'a> TryFrom<&'a mut [AccountView]> for EmitEventAccounts<'a> {

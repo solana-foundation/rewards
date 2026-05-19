@@ -11,12 +11,12 @@ use crate::{
 pub struct CloseMerkleDistributionAccounts<'a> {
     pub authority: &'a mut AccountView,
     pub distribution: &'a mut AccountView,
-    pub mint: &'a mut AccountView,
-    pub distribution_vault: &'a mut AccountView,
-    pub authority_token_account: &'a mut AccountView,
-    pub token_program: &'a mut AccountView,
-    pub event_authority: &'a mut AccountView,
-    pub program: &'a mut AccountView,
+    pub mint: &'a AccountView,
+    pub distribution_vault: &'a AccountView,
+    pub authority_token_account: &'a AccountView,
+    pub token_program: &'a AccountView,
+    pub event_authority: &'a AccountView,
+    pub program: &'a AccountView,
 }
 
 impl<'a> TryFrom<&'a mut [AccountView]> for CloseMerkleDistributionAccounts<'a> {
