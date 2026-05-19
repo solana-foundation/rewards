@@ -52,7 +52,7 @@ async function main() {
         // Generate TypeScript client.
         await Promise.resolve(
             rewardsCodama.accept(
-                renderJavaScriptVisitor(path.join(typescriptClientsDir, 'src', 'generated'), {
+                renderJavaScriptVisitor(typescriptClientsDir, {
                     deleteFolderBeforeRendering: true,
                     formatCode: true,
                 }),
