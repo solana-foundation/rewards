@@ -5,7 +5,6 @@ use solana_sdk::{
     instruction::Instruction,
     native_token::LAMPORTS_PER_SOL,
     pubkey::Pubkey,
-    rent::Rent,
     signature::{Keypair, Signer},
     transaction::{Transaction, TransactionError},
 };
@@ -26,9 +25,7 @@ pub struct TestContext {
 
 impl TestContext {
     pub fn new() -> Self {
-        let mut svm = LiteSVM::new().with_sysvars().with_default_programs();
-        // Pinocchio 0.11 reads the Solana 4 rent layout; keep LiteSVM's rent sysvar on the same layout.
-        svm.set_sysvar(&Rent::with_lamports_per_byte(6_960));
+        let mut svm = LiteSVM::new();
 
         let current_time = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64;
 
