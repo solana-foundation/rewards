@@ -4,8 +4,9 @@ use crate::{
     traits::InstructionAccounts,
     utils::{
         validate_associated_token_account, verify_current_program, verify_current_program_account,
-        verify_event_authority, verify_owned_by, verify_readonly, verify_signer, verify_token_account_owner,
-        verify_token_program, verify_writable,
+        verify_distinct_accounts, verify_event_authority, verify_owned_by, verify_readonly,
+        verify_readonly_or_writable_alias, verify_signer, verify_token_account_owner, verify_token_program,
+        verify_writable,
     },
 };
 
@@ -45,10 +46,13 @@ impl<'a> TryFrom<&'a mut [AccountView]> for RevokeDirectRecipientAccounts<'a> {
         verify_writable(distribution_vault, true)?;
         verify_writable(recipient_token_account, true)?;
         verify_writable(authority_token_account, true)?;
+        verify_readonly_or_writable_alias(recipient, &[original_payer])?;
+        verify_distinct_accounts(recipient, recipient_account)?;
 
         // 2b. Validate read-only accounts
-        verify_readonly(recipient)?;
         verify_readonly(mint)?;
+        verify_readonly(event_authority)?;
+        verify_readonly(program)?;
 
         // 3. Validate program IDs
         verify_token_program(token_program)?;

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@solana/design-system';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useRewardsMutations } from '@/hooks/use-rewards-mutations';
+import { useTokenFormDefaults } from '@/hooks/use-token-form-defaults';
 import {
     firstValidationError,
     validateAddress,
@@ -28,10 +29,9 @@ function timestampDaysFromNow(days: number) {
 export function CreateDirectRewardForm() {
     const { createDirectDistribution } = useRewardsMutations();
     const { defaultMint, rememberDistribution, rememberMint } = useSavedValues();
-    const [mint, setMint] = useState('');
+    const { clusterMint, mint, setMint, setTokenProgram, tokenProgram } = useTokenFormDefaults();
     const [revocable, setRevocable] = useState('0');
     const [clawbackTs, setClawbackTs] = useState('0');
-    const [tokenProgram, setTokenProgram] = useState('');
     const [generatedSeed, setGeneratedSeed] = useState('');
     const [generatedDistribution, setGeneratedDistribution] = useState('');
     const [formError, setFormError] = useState<string | null>(null);
@@ -91,7 +91,7 @@ export function CreateDirectRewardForm() {
                 label="Mint Address"
                 value={mint}
                 onChange={setMint}
-                autoFillValue={defaultMint}
+                autoFillValue={defaultMint || clusterMint}
                 onAutoFill={setMint}
                 placeholder="SPL token mint"
                 required
@@ -118,7 +118,7 @@ export function CreateDirectRewardForm() {
                 label="Token Program"
                 value={tokenProgram}
                 onChange={setTokenProgram}
-                placeholder="Defaults to Tokenkeg..."
+                placeholder="Token program address"
                 hint="Use Token-2022 program address for Token-2022 mints"
             />
             {generatedSeed && (

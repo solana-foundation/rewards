@@ -1,14 +1,15 @@
 use rewards_program_client::instructions::CreateDirectDistributionBuilder;
-use solana_sdk::{account::Account, signer::Signer};
-use solana_sdk::{pubkey::Pubkey, signature::Keypair};
+use solana_sdk::{account::Account, instruction::InstructionError, pubkey::Pubkey, signature::Keypair, signer::Signer};
 use solana_system_interface::program::ID as SYSTEM_PROGRAM_ID;
 use spl_associated_token_account::get_associated_token_address_with_program_id;
+use spl_token_interface::ID as TOKEN_PROGRAM_ID;
 
 use crate::fixtures::{CloseDirectDistributionSetup, CreateDirectDistributionFixture, CreateDirectDistributionSetup};
 use crate::utils::{
-    assert_direct_distribution, assert_rewards_error, find_direct_distribution_pda, find_event_authority_pda,
-    test_empty_data, test_missing_signer, test_not_writable, test_truncated_data, test_wrong_current_program,
-    test_wrong_system_program, RewardsError, TestContext, TestInstruction, TOKEN_2022_PROGRAM_ID,
+    assert_direct_distribution, assert_instruction_error, assert_rewards_error, find_direct_distribution_pda,
+    find_event_authority_pda, test_empty_data, test_missing_signer, test_not_writable, test_truncated_data,
+    test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext, TestInstruction,
+    TOKEN_2022_PROGRAM_ID,
 };
 
 #[test]
@@ -91,6 +92,56 @@ fn test_create_direct_distribution_success_token_2022() {
         &setup.mint.pubkey(),
         setup.bump,
     );
+}
+
+#[test]
+fn test_create_direct_distribution_payer_can_be_seed() {
+    let mut ctx = TestContext::new();
+    let authority = ctx.create_funded_keypair();
+    let mint = Keypair::new();
+
+    ctx.create_mint_for_program(&mint, &ctx.payer.pubkey(), 6, &TOKEN_PROGRAM_ID);
+
+    let (distribution_pda, bump) =
+        find_direct_distribution_pda(&mint.pubkey(), &authority.pubkey(), &ctx.payer.pubkey());
+    let distribution_vault = ctx.create_ata_for_program(&distribution_pda, &mint.pubkey(), &TOKEN_PROGRAM_ID);
+    let (event_authority, _) = find_event_authority_pda();
+
+    let mut builder = CreateDirectDistributionBuilder::new();
+    builder
+        .payer(ctx.payer.pubkey())
+        .authority(authority.pubkey())
+        .seeds(ctx.payer.pubkey())
+        .distribution(distribution_pda)
+        .mint(mint.pubkey())
+        .distribution_vault(distribution_vault)
+        .token_program(TOKEN_PROGRAM_ID)
+        .event_authority(event_authority)
+        .bump(bump)
+        .revocable(0)
+        .clawback_ts(0);
+
+    let instruction = TestInstruction {
+        instruction: builder.instruction(),
+        signers: vec![authority.insecure_clone()],
+        name: "CreateDirectDistribution",
+    };
+
+    instruction.send_expect_success(&mut ctx);
+
+    assert_direct_distribution(&ctx, &distribution_pda, &authority.pubkey(), &mint.pubkey(), bump);
+}
+
+#[test]
+fn test_create_direct_distribution_rejects_unrelated_writable_seed() {
+    let mut ctx = TestContext::new();
+    let setup = CreateDirectDistributionSetup::new(&mut ctx);
+    let mut instruction = setup.build_instruction(&ctx);
+
+    instruction.instruction.accounts[2].is_writable = true;
+    let error = instruction.send_expect_error(&mut ctx);
+
+    assert_instruction_error(error, InstructionError::AccountBorrowFailed);
 }
 
 #[test]

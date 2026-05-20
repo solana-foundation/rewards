@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { RevokeMode } from '@solana/rewards';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useRewardsMutations } from '@/hooks/use-rewards-mutations';
+import { useTokenFormDefaults } from '@/hooks/use-token-form-defaults';
 import { firstValidationError, validateAddress, validateOptionalAddress } from '@/lib/validation';
 import { TxResult } from '@/components/TxResult';
 import { FormField, RevokeModeField, SendButton } from '../shared/reward-form-fields';
@@ -24,10 +25,9 @@ export function RevokeDirectRecipientForm({
     const { revokeDirectRecipient } = useRewardsMutations();
     const { defaultDistribution, defaultMint, rememberDistribution, rememberMint } = useSavedValues();
     const [distribution, setDistribution] = useState(initialDistribution);
-    const [mint, setMint] = useState(initialMint);
+    const { clusterMint, mint, setMint, setTokenProgram, tokenProgram } = useTokenFormDefaults(initialMint);
     const [recipient, setRecipient] = useState('');
     const [originalPayer, setOriginalPayer] = useState('');
-    const [tokenProgram, setTokenProgram] = useState('');
     const [revokeMode, setRevokeMode] = useState<RevokeMode>(RevokeMode.NonVested);
     const [formError, setFormError] = useState<string | null>(null);
 
@@ -83,7 +83,7 @@ export function RevokeDirectRecipientForm({
                         label="Mint Address"
                         value={mint}
                         onChange={setMint}
-                        autoFillValue={defaultMint}
+                        autoFillValue={defaultMint || clusterMint}
                         onAutoFill={setMint}
                         placeholder="SPL token mint"
                         required
@@ -108,7 +108,7 @@ export function RevokeDirectRecipientForm({
                 label="Token Program"
                 value={tokenProgram}
                 onChange={setTokenProgram}
-                placeholder="Defaults to Tokenkeg..."
+                placeholder="Token program address"
             />
             <RevokeModeField value={revokeMode} onChange={setRevokeMode} />
             <SendButton sending={revokeDirectRecipient.isPending} label={submitLabel} />

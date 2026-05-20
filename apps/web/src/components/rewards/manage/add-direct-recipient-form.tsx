@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@solana/design-system';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useRewardsMutations } from '@/hooks/use-rewards-mutations';
+import { useTokenFormDefaults } from '@/hooks/use-token-form-defaults';
 import {
     firstValidationError,
     parseBigIntValue,
@@ -75,10 +76,9 @@ export function AddDirectRecipientForm({
     const { addDirectRecipient } = useRewardsMutations();
     const { defaultDistribution, defaultMint, rememberDistribution, rememberMint } = useSavedValues();
     const [distribution, setDistribution] = useState(initialDistribution);
-    const [mint, setMint] = useState(initialMint);
+    const { clusterMint, mint, setMint, setTokenProgram, tokenProgram } = useTokenFormDefaults(initialMint);
     const [recipient, setRecipient] = useState('');
     const [amount, setAmount] = useState('');
-    const [tokenProgram, setTokenProgram] = useState('');
     const [schedule, setSchedule] = useState<VestingScheduleState>(INITIAL_VESTING_SCHEDULE);
     const [formError, setFormError] = useState<string | null>(null);
 
@@ -155,7 +155,7 @@ export function AddDirectRecipientForm({
                 label="Mint Address"
                 value={mint}
                 onChange={setMint}
-                autoFillValue={defaultMint}
+                autoFillValue={defaultMint || clusterMint}
                 onAutoFill={setMint}
                 placeholder="SPL token mint"
                 required
@@ -179,7 +179,7 @@ export function AddDirectRecipientForm({
                 label="Token Program"
                 value={tokenProgram}
                 onChange={setTokenProgram}
-                placeholder="Defaults to Tokenkeg..."
+                placeholder="Token program address"
             />
             <VestingScheduleField value={schedule} onChange={setSchedule} />
             <SendButton sending={addDirectRecipient.isPending} label={submitLabel} />

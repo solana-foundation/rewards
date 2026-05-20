@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useRewardsMutations } from '@/hooks/use-rewards-mutations';
+import { useTokenFormDefaults } from '@/hooks/use-token-form-defaults';
 import { firstValidationError, validateAddress, validateOptionalAddress } from '@/lib/validation';
 import { TxResult } from '@/components/TxResult';
 import { FormField, SendButton } from '../shared/reward-form-fields';
@@ -23,8 +24,7 @@ export function CloseDirectRewardForm({
     const { closeDirectDistribution } = useRewardsMutations();
     const { defaultDistribution, defaultMint, rememberDistribution, rememberMint } = useSavedValues();
     const [distribution, setDistribution] = useState(initialDistribution);
-    const [mint, setMint] = useState(initialMint);
-    const [tokenProgram, setTokenProgram] = useState('');
+    const { clusterMint, mint, setMint, setTokenProgram, tokenProgram } = useTokenFormDefaults(initialMint);
     const [formError, setFormError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -73,7 +73,7 @@ export function CloseDirectRewardForm({
                         label="Mint Address"
                         value={mint}
                         onChange={setMint}
-                        autoFillValue={defaultMint}
+                        autoFillValue={defaultMint || clusterMint}
                         onAutoFill={setMint}
                         placeholder="SPL token mint"
                         required
@@ -84,7 +84,7 @@ export function CloseDirectRewardForm({
                 label="Token Program"
                 value={tokenProgram}
                 onChange={setTokenProgram}
-                placeholder="Defaults to Tokenkeg..."
+                placeholder="Token program address"
             />
             <SendButton sending={closeDirectDistribution.isPending} label={submitLabel} />
             <TxResult
