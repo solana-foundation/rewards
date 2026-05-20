@@ -49,6 +49,27 @@ pub fn verify_readonly(account: &AccountView) -> Result<(), ProgramError> {
     Ok(())
 }
 
+#[inline(always)]
+pub fn verify_distinct_accounts(left: &AccountView, right: &AccountView) -> Result<(), ProgramError> {
+    if left.address() == right.address() {
+        return Err(ProgramError::InvalidArgument);
+    }
+
+    Ok(())
+}
+
+#[inline(always)]
+pub fn verify_readonly_or_writable_alias(
+    account: &AccountView,
+    writable_aliases: &[&AccountView],
+) -> Result<(), ProgramError> {
+    if !account.is_writable() || writable_aliases.iter().any(|alias| account.address() == alias.address()) {
+        return Ok(());
+    }
+
+    Err(ProgramError::AccountBorrowFailed)
+}
+
 /// Verify account as a signer, returning an error if it is not or if it is not writable while
 /// expected to be.
 ///

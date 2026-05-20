@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@solana/design-system';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useRewardsMutations } from '@/hooks/use-rewards-mutations';
+import { useTokenFormDefaults } from '@/hooks/use-token-form-defaults';
 import {
     buildProofDropBundle,
     parseProofDropRecipients,
@@ -80,13 +81,12 @@ const PROOF_DROP_TEMPLATES: readonly ProofDropTemplate[] = [
 export function CreateMerkleDropForm() {
     const { createMerkleDistribution } = useRewardsMutations();
     const { defaultMint, rememberDistribution, rememberMint } = useSavedValues();
-    const [mint, setMint] = useState('');
+    const { clusterMint, mint, setMint, setTokenProgram, tokenProgram } = useTokenFormDefaults();
     const [revocable, setRevocable] = useState('0');
     const [amount, setAmount] = useState('');
     const [clawbackTs, setClawbackTs] = useState('0');
     const [recipients, setRecipients] = useState('');
     const [schedule, setSchedule] = useState<VestingScheduleState>(INITIAL_VESTING_SCHEDULE);
-    const [tokenProgram, setTokenProgram] = useState('');
     const [builtBundle, setBuiltBundle] = useState<BuiltProofDropBundle | null>(null);
     const [generatedSeed, setGeneratedSeed] = useState('');
     const [generatedDistribution, setGeneratedDistribution] = useState('');
@@ -205,7 +205,7 @@ export function CreateMerkleDropForm() {
                 label="Mint Address"
                 value={mint}
                 onChange={setMint}
-                autoFillValue={defaultMint}
+                autoFillValue={defaultMint || clusterMint}
                 onAutoFill={setMint}
                 placeholder="SPL token mint"
                 required
@@ -268,7 +268,7 @@ export function CreateMerkleDropForm() {
                 label="Token Program"
                 value={tokenProgram}
                 onChange={setTokenProgram}
-                placeholder="Defaults to Tokenkeg..."
+                placeholder="Token program address"
             />
             {generatedSeed && (
                 <FormField

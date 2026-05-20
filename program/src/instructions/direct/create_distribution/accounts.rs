@@ -4,8 +4,8 @@ use crate::{
     traits::InstructionAccounts,
     utils::{
         validate_associated_token_account_address, verify_associated_token_program, verify_current_program,
-        verify_event_authority, verify_owned_by, verify_readonly, verify_signer, verify_system_program,
-        verify_token_program, verify_writable,
+        verify_event_authority, verify_owned_by, verify_readonly, verify_readonly_or_writable_alias, verify_signer,
+        verify_system_program, verify_token_program, verify_writable,
     },
 };
 
@@ -42,10 +42,12 @@ impl<'a> TryFrom<&'a mut [AccountView]> for CreateDirectDistributionAccounts<'a>
         // 2. Validate writable
         verify_writable(distribution, true)?;
         verify_writable(distribution_vault, true)?;
+        verify_readonly_or_writable_alias(seeds, &[payer])?;
 
         // 2b. Validate read-only accounts
         verify_readonly(mint)?;
-        verify_readonly(seeds)?;
+        verify_readonly(event_authority)?;
+        verify_readonly(program)?;
 
         // 3. Validate program IDs
         verify_system_program(system_program)?;

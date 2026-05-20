@@ -1,13 +1,17 @@
-use rewards_program_client::types::VestingSchedule;
-use solana_sdk::signature::Signer;
+use rewards_program_client::{instructions::CreateDirectDistributionBuilder, types::VestingSchedule};
+use solana_sdk::{
+    instruction::InstructionError,
+    signature::{Keypair, Signer},
+};
+use spl_token_interface::ID as TOKEN_PROGRAM_ID;
 
 use crate::fixtures::{
     AddDirectRecipientFixture, AddDirectRecipientSetup, CreateDirectDistributionSetup, DEFAULT_RECIPIENT_AMOUNT,
 };
 use crate::utils::{
-    assert_direct_recipient, assert_rewards_error, find_direct_recipient_pda, test_empty_data, test_missing_signer,
-    test_not_writable, test_truncated_data, test_wrong_current_program, test_wrong_system_program, RewardsError,
-    TestContext,
+    assert_direct_recipient, assert_instruction_error, assert_rewards_error, find_direct_distribution_pda,
+    find_direct_recipient_pda, find_event_authority_pda, test_empty_data, test_missing_signer, test_not_writable,
+    test_truncated_data, test_wrong_current_program, test_wrong_system_program, RewardsError, TestContext,
 };
 
 #[test]
@@ -86,6 +90,85 @@ fn test_add_direct_recipient_success_token_2022() {
         0,
         setup.recipient_bump,
     );
+}
+
+#[test]
+fn test_add_direct_recipient_authority_can_add_self() {
+    let mut ctx = TestContext::new();
+    let seed = Keypair::new();
+    let mint = Keypair::new();
+    let token_program = TOKEN_PROGRAM_ID;
+
+    ctx.create_mint_for_program(&mint, &ctx.payer.pubkey(), 6, &token_program);
+
+    let (distribution_pda, distribution_bump) =
+        find_direct_distribution_pda(&mint.pubkey(), &ctx.payer.pubkey(), &seed.pubkey());
+    let distribution_vault = ctx.create_ata_for_program(&distribution_pda, &mint.pubkey(), &token_program);
+    let (event_authority, _) = find_event_authority_pda();
+
+    let mut create_builder = CreateDirectDistributionBuilder::new();
+    create_builder
+        .payer(ctx.payer.pubkey())
+        .authority(ctx.payer.pubkey())
+        .seeds(seed.pubkey())
+        .distribution(distribution_pda)
+        .mint(mint.pubkey())
+        .distribution_vault(distribution_vault)
+        .token_program(token_program)
+        .event_authority(event_authority)
+        .bump(distribution_bump)
+        .revocable(0)
+        .clawback_ts(0);
+
+    ctx.send_transaction(create_builder.instruction(), &[&seed]).expect("distribution create should succeed");
+
+    let recipient = ctx.payer.insecure_clone();
+    let (recipient_pda, recipient_bump) = find_direct_recipient_pda(&distribution_pda, &recipient.pubkey());
+    let authority_token_account = ctx.create_ata_for_program_with_balance(
+        &ctx.payer.pubkey(),
+        &mint.pubkey(),
+        DEFAULT_RECIPIENT_AMOUNT,
+        &token_program,
+    );
+    let current_ts = ctx.get_current_timestamp();
+
+    let setup = AddDirectRecipientSetup {
+        authority: ctx.payer.insecure_clone(),
+        distribution_pda,
+        recipient,
+        recipient_pda,
+        recipient_bump,
+        amount: DEFAULT_RECIPIENT_AMOUNT,
+        schedule: VestingSchedule::Linear { start_ts: current_ts, end_ts: current_ts + 86400 * 365 },
+        token_program,
+        mint: mint.pubkey(),
+        distribution_vault,
+        authority_token_account,
+    };
+
+    let instruction = setup.build_instruction(&ctx);
+    instruction.send_expect_success(&mut ctx);
+
+    assert_direct_recipient(
+        &ctx,
+        &setup.recipient_pda,
+        &setup.recipient.pubkey(),
+        setup.amount,
+        0,
+        setup.recipient_bump,
+    );
+}
+
+#[test]
+fn test_add_direct_recipient_rejects_unrelated_writable_recipient() {
+    let mut ctx = TestContext::new();
+    let setup = AddDirectRecipientSetup::new(&mut ctx);
+    let mut instruction = setup.build_instruction(&ctx);
+
+    instruction.instruction.accounts[4].is_writable = true;
+    let error = instruction.send_expect_error(&mut ctx);
+
+    assert_instruction_error(error, InstructionError::AccountBorrowFailed);
 }
 
 #[test]

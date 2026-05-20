@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { RevokeMode } from '@solana/rewards';
 import { useSavedValues } from '@/contexts/SavedValuesContext';
 import { useRewardsMutations } from '@/hooks/use-rewards-mutations';
+import { useTokenFormDefaults } from '@/hooks/use-token-form-defaults';
 import { parseProofDropClaimBundle } from '@/lib/proof-drop-bundle';
 import { firstValidationError, parseBigIntValue, validateAddress, validateOptionalAddress } from '@/lib/validation';
 import { TxResult } from '@/components/TxResult';
@@ -31,10 +32,9 @@ export function RevokeMerkleClaimForm({
     const { revokeMerkleClaim } = useRewardsMutations();
     const { defaultDistribution, defaultMint, rememberDistribution, rememberMint } = useSavedValues();
     const [distribution, setDistribution] = useState(initialDistribution);
-    const [mint, setMint] = useState(initialMint);
+    const { clusterMint, mint, setMint, setTokenProgram, tokenProgram } = useTokenFormDefaults(initialMint);
     const [claimant, setClaimant] = useState('');
     const [bundle, setBundle] = useState('');
-    const [tokenProgram, setTokenProgram] = useState('');
     const [revokeMode, setRevokeMode] = useState<RevokeMode>(RevokeMode.NonVested);
     const [formError, setFormError] = useState<string | null>(null);
 
@@ -107,7 +107,7 @@ export function RevokeMerkleClaimForm({
                         label="Mint Address"
                         value={mint}
                         onChange={setMint}
-                        autoFillValue={defaultMint}
+                        autoFillValue={defaultMint || clusterMint}
                         onAutoFill={setMint}
                         placeholder="SPL token mint"
                         required
@@ -132,7 +132,7 @@ export function RevokeMerkleClaimForm({
                 label="Token Program"
                 value={tokenProgram}
                 onChange={setTokenProgram}
-                placeholder="Defaults to Tokenkeg..."
+                placeholder="Token program address"
             />
             <RevokeModeField value={revokeMode} onChange={setRevokeMode} />
             <SendButton sending={revokeMerkleClaim.isPending} label={submitLabel} />
