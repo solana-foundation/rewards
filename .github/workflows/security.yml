@@ -19,9 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@master
+      - uses: ./.github/actions/setup
         with:
-          toolchain: '1.92'
+          install-solana: 'false'
+          install-just: 'false'
+          install-pnpm: 'false'
+          rust-cache-key: 'cargo-audit'
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-audit
@@ -31,26 +34,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6.0.7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
         with:
-          node-version-file: '.nvmrc'
+          install-rust: 'false'
+          enable-rust-cache: 'false'
+          install-solana: 'false'
+          install-just: 'false'
+          install-pnpm-dependencies: 'false'
       - run: pnpm audit
 
   miri:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: ./.github/actions/setup
         with:
-          components: miri
+          rust-toolchain: 'nightly'
+          rust-components: 'miri'
+          install-solana: 'false'
+          install-just: 'false'
+          install-pnpm: 'false'
+          rust-cache-key: 'miri'
       - uses: actions/cache@v5
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
             ~/.cache/org.rust-lang.miri
-            target/miri
           key: miri-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
       - run: cargo +nightly miri setup
       - run: cargo +nightly miri test -p rewards-program
