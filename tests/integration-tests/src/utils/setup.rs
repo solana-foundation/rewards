@@ -24,8 +24,7 @@ use surfpool_core::surfnet::{
 };
 use surfpool_sdk::cheatcodes::builders::{CheatcodeBuilder, SetAccount};
 use surfpool_types::{
-    parse_feature_pubkey, BlockProductionMode, RpcConfig, SimnetCommand, SimnetConfig, SimnetEvent, SurfpoolConfig,
-    SvmFeatureConfig,
+    BlockProductionMode, RpcConfig, SimnetCommand, SimnetConfig, SimnetEvent, SurfpoolConfig, SvmFeatureConfig,
 };
 use tokio::runtime::Runtime;
 
@@ -246,7 +245,7 @@ impl TestSurfnet {
             instruction_profiling_enabled: surfpool_config.simnets[0].instruction_profiling_enabled,
             max_profiles: surfpool_config.simnets[0].max_profiles,
             log_bytes_limit: surfpool_config.simnets[0].log_bytes_limit,
-            feature_config: all_enabled_feature_config(),
+            feature_config: mainnet_feature_config(),
             skip_blockhash_check: surfpool_config.simnets[0].skip_blockhash_check,
         };
 
@@ -383,9 +382,6 @@ fn wait_for_ready(events_rx: &Receiver<SimnetEvent>) -> Result<(), Box<dyn std::
     }
 }
 
-fn all_enabled_feature_config() -> SvmFeatureConfig {
-    // SurfnetSvm only applies non-default feature configs; forcing one known enable
-    // preserves the all-enabled feature set used by the previous test harness.
-    let feature = parse_feature_pubkey("enable_loader_v4").expect("feature name should resolve");
-    SvmFeatureConfig::new().enable(feature)
+fn mainnet_feature_config() -> SvmFeatureConfig {
+    SvmFeatureConfig::default_mainnet_features()
 }
