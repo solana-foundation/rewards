@@ -188,12 +188,10 @@ fn test_create_direct_distribution_prefunded_distribution_pda() {
     let mut ctx = TestContext::new();
     let setup = CreateDirectDistributionSetup::new(&mut ctx);
 
-    ctx.svm
-        .set_account(
-            setup.distribution_pda,
-            Account { lamports: 1, data: vec![], owner: SYSTEM_PROGRAM_ID, executable: false, rent_epoch: 0 },
-        )
-        .unwrap();
+    ctx.set_account(
+        setup.distribution_pda,
+        Account { lamports: 1, data: vec![], owner: SYSTEM_PROGRAM_ID, executable: false, rent_epoch: 0 },
+    );
 
     let instruction = setup.build_instruction(&ctx);
     instruction.send_expect_success(&mut ctx);

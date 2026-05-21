@@ -49,18 +49,16 @@ impl TestContext {
         let mut data = vec![0u8; TokenMint::LEN];
         mint_state.pack_into_slice(&mut data);
 
-        self.svm
-            .set_account(
-                mint.pubkey(),
-                Account {
-                    lamports: self.svm.minimum_balance_for_rent_exemption(TokenMint::LEN),
-                    data,
-                    owner: TOKEN_PROGRAM_ID,
-                    executable: false,
-                    rent_epoch: 0,
-                },
-            )
-            .unwrap();
+        self.set_account(
+            mint.pubkey(),
+            Account {
+                lamports: self.minimum_balance_for_rent_exemption(TokenMint::LEN),
+                data,
+                owner: TOKEN_PROGRAM_ID,
+                executable: false,
+                rent_epoch: 0,
+            },
+        );
     }
 
     pub fn create_token_account(&mut self, owner: &Pubkey, mint: &Pubkey) -> Pubkey {
@@ -84,30 +82,28 @@ impl TestContext {
         let mut data = vec![0u8; TokenAccount::LEN];
         token_account.pack_into_slice(&mut data);
 
-        self.svm
-            .set_account(
-                ata,
-                Account {
-                    lamports: self.svm.minimum_balance_for_rent_exemption(TokenAccount::LEN),
-                    data,
-                    owner: TOKEN_PROGRAM_ID,
-                    executable: false,
-                    rent_epoch: 0,
-                },
-            )
-            .unwrap();
+        self.set_account(
+            ata,
+            Account {
+                lamports: self.minimum_balance_for_rent_exemption(TokenAccount::LEN),
+                data,
+                owner: TOKEN_PROGRAM_ID,
+                executable: false,
+                rent_epoch: 0,
+            },
+        );
 
         ata
     }
 
     pub fn set_token_balance(&mut self, token_account: &Pubkey, amount: u64) {
-        let mut account = self.svm.get_account(token_account).expect("Token account not found");
+        let mut account = self.get_account(token_account).expect("Token account not found");
         account.data[64..72].copy_from_slice(&amount.to_le_bytes());
-        self.svm.set_account(*token_account, account).unwrap();
+        self.set_account(*token_account, account);
     }
 
     pub fn get_token_balance(&self, token_account: &Pubkey) -> u64 {
-        let account = self.svm.get_account(token_account).expect("Token account not found");
+        let account = self.get_account(token_account).expect("Token account not found");
         u64::from_le_bytes(account.data[64..72].try_into().unwrap())
     }
 
@@ -123,18 +119,16 @@ impl TestContext {
         let mut data = vec![0u8; TokenMint::LEN];
         mint_state.pack_into_slice(&mut data);
 
-        self.svm
-            .set_account(
-                mint.pubkey(),
-                Account {
-                    lamports: self.svm.minimum_balance_for_rent_exemption(TokenMint::LEN),
-                    data,
-                    owner: TOKEN_2022_PROGRAM_ID,
-                    executable: false,
-                    rent_epoch: 0,
-                },
-            )
-            .unwrap();
+        self.set_account(
+            mint.pubkey(),
+            Account {
+                lamports: self.minimum_balance_for_rent_exemption(TokenMint::LEN),
+                data,
+                owner: TOKEN_2022_PROGRAM_ID,
+                executable: false,
+                rent_epoch: 0,
+            },
+        );
     }
 
     pub fn create_token_2022_transfer_fee_mint(
@@ -148,18 +142,16 @@ impl TestContext {
         let mint_len =
             ExtensionType::try_calculate_account_len::<Token2022Mint>(&[ExtensionType::TransferFeeConfig]).unwrap();
 
-        self.svm
-            .set_account(
-                mint.pubkey(),
-                Account {
-                    lamports: self.svm.minimum_balance_for_rent_exemption(mint_len),
-                    data: vec![0u8; mint_len],
-                    owner: TOKEN_2022_PROGRAM_ID,
-                    executable: false,
-                    rent_epoch: 0,
-                },
-            )
-            .unwrap();
+        self.set_account(
+            mint.pubkey(),
+            Account {
+                lamports: self.minimum_balance_for_rent_exemption(mint_len),
+                data: vec![0u8; mint_len],
+                owner: TOKEN_2022_PROGRAM_ID,
+                executable: false,
+                rent_epoch: 0,
+            },
+        );
 
         self.send_transaction(
             initialize_transfer_fee_config(
@@ -191,18 +183,16 @@ impl TestContext {
         let mint_len =
             ExtensionType::try_calculate_account_len::<Token2022Mint>(&[ExtensionType::TransferHook]).unwrap();
 
-        self.svm
-            .set_account(
-                mint.pubkey(),
-                Account {
-                    lamports: self.svm.minimum_balance_for_rent_exemption(mint_len),
-                    data: vec![0u8; mint_len],
-                    owner: TOKEN_2022_PROGRAM_ID,
-                    executable: false,
-                    rent_epoch: 0,
-                },
-            )
-            .unwrap();
+        self.set_account(
+            mint.pubkey(),
+            Account {
+                lamports: self.minimum_balance_for_rent_exemption(mint_len),
+                data: vec![0u8; mint_len],
+                owner: TOKEN_2022_PROGRAM_ID,
+                executable: false,
+                rent_epoch: 0,
+            },
+        );
 
         self.send_transaction(
             initialize_transfer_hook(
@@ -253,18 +243,16 @@ impl TestContext {
         let mut data = vec![0u8; TokenAccount::LEN];
         token_account.pack_into_slice(&mut data);
 
-        self.svm
-            .set_account(
-                ata,
-                Account {
-                    lamports: self.svm.minimum_balance_for_rent_exemption(TokenAccount::LEN),
-                    data,
-                    owner: TOKEN_2022_PROGRAM_ID,
-                    executable: false,
-                    rent_epoch: 0,
-                },
-            )
-            .unwrap();
+        self.set_account(
+            ata,
+            Account {
+                lamports: self.minimum_balance_for_rent_exemption(TokenAccount::LEN),
+                data,
+                owner: TOKEN_2022_PROGRAM_ID,
+                executable: false,
+                rent_epoch: 0,
+            },
+        );
 
         ata
     }
@@ -279,7 +267,7 @@ impl TestContext {
     }
 
     pub fn get_token_2022_transfer_fee_amounts(&self, account: &Pubkey) -> Token2022TransferFeeAmounts {
-        let account_data = self.svm.get_account(account).expect("Token account not found");
+        let account_data = self.get_account(account).expect("Token account not found");
         let parsed =
             StateWithExtensions::<Token2022Account>::unpack(&account_data.data).expect("Token account should parse");
         let transfer_fee_amount =

@@ -128,7 +128,6 @@ fn test_revoke_merkle_double_revoke() {
     let revoke_ix = setup.build_instruction(&ctx, RevokeMode::NonVested);
     revoke_ix.send_expect_success(&mut ctx);
 
-    // Advance clock so LiteSVM doesn't reject as duplicate transaction
     ctx.warp_to_timestamp(setup.start_ts + 1);
 
     // Second revoke should fail
