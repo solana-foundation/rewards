@@ -17,6 +17,7 @@ export default [
             'apps/web/postcss.config.mjs',
             'eslint.config.mjs',
             '.coverage/**',
+            '**/.remember/**',
         ],
     },
 ];
