@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/solana-program/rewards.git",
+    "url": "git+https://github.com/solana-foundation/rewards.git",
     "directory": "clients/typescript"
   },
   "type": "module",
@@ -29,9 +29,9 @@
   "peerDependencies": {
     "@solana/kit": "^6.9.0"
   },
-  "homepage": "https://github.com/solana-program/rewards#readme",
+  "homepage": "https://github.com/solana-foundation/rewards#readme",
   "bugs": {
-    "url": "https://github.com/solana-program/rewards/issues"
+    "url": "https://github.com/solana-foundation/rewards/issues"
   },
   "keywords": [
     "solana",

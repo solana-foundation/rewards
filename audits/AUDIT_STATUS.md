@@ -7,7 +7,7 @@ Last updated: 2026-04-24
 - Auditor: OtterSec
 - Report: `audits/2026-ottersec-solana-foundation-rewards-audit.pdf`
 - Audited-through commit: `aa1cfd9276375e44e57d1917d110ff095fb6d475`
-- Compare unaudited delta: https://github.com/solana-program/rewards/compare/aa1cfd9276375e44e57d1917d110ff095fb6d475...main
+- Compare unaudited delta: https://github.com/solana-foundation/rewards/compare/aa1cfd9276375e44e57d1917d110ff095fb6d475...main
 
 Audit scope is commit-based. The audit was performed against commit `d795849` and all 8 findings were resolved and re-reviewed in PRs #32–#37 (last merged: PR #32, `aa1cfd9`). Commits after the audited-through SHA are considered unaudited until a new audit or mitigation review updates this file.
 

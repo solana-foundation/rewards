@@ -321,4 +321,4 @@ Licensed under MIT. See [LICENSE](LICENSE) for details.
 ## Support
 
 - [**Solana StackExchange**](https://solana.stackexchange.com/) - tag `rewards-program`
-- [**Open an Issue**](https://github.com/solana-program/rewards/issues/new)
+- [**Open an Issue**](https://github.com/solana-foundation/rewards/issues/new)

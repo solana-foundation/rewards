@@ -38,8 +38,8 @@ use solana_security_txt::security_txt;
 #[cfg(not(feature = "no-entrypoint"))]
 security_txt! {
     name: "Rewards Program",
-    project_url: "https://github.com/solana-program/rewards",
-    contacts: "link:https://github.com/solana-program/rewards/security/advisories/new",
-    policy: "https://github.com/solana-program/rewards/security/policy",
-    source_code: "https://github.com/solana-program/rewards"
+    project_url: "https://github.com/solana-foundation/rewards",
+    contacts: "link:https://github.com/solana-foundation/rewards/security/advisories/new",
+    policy: "https://github.com/solana-foundation/rewards/security/policy",
+    source_code: "https://github.com/solana-foundation/rewards"
 }

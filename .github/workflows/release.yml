@@ -24,7 +24,7 @@ concurrency:
 env:
   PROGRAM: rewards_program
   PROGRAM_ID: REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi
-  REPO_URL: https://github.com/solana-program/rewards
+  REPO_URL: https://github.com/solana-foundation/rewards
 
 jobs:
   release:
