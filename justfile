@@ -127,7 +127,7 @@ check-solana-verify:
 # so the SBF build fails on getrandom under arm64 emulation without it.
 verify-mainnet: check-solana-verify
     solana-verify verify-from-repo \
-        https://github.com/solana-program/rewards \
+        https://github.com/solana-foundation/rewards \
         --program-id REWArDioXgQJ2fZKkfu9LCLjQfRwYWVVfsvcsR5hoXi \
         --library-name rewards_program \
         --remote \

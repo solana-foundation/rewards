@@ -4,7 +4,7 @@ version = "0.0.1"
 edition = "2021"
 description = "Rust client for the Rewards Solana program"
 license = "MIT"
-repository = "https://github.com/solana-program/rewards"
+repository = "https://github.com/solana-foundation/rewards"
 readme = "../../README.md"
 include = ["Cargo.toml", "../../README.md", "src/**/*.rs"]
 
