@@ -1,0 +1,27 @@
+name: Web
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - 'clients/typescript/**'
+      - 'scripts/generate-ts-client.ts'
+      - 'idl/**'
+      - '.nvmrc'
+      - 'pnpm-lock.yaml'
+
+jobs:
+  web-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6.0.7
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Build web app
+        run: pnpm --filter @solana/rewards-program-web build
