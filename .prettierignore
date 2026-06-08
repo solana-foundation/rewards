@@ -5,10 +5,6 @@ idl/
 clients/typescript/src/generated/
 apps/web/next-env.d.ts
 
-# CU benchmark (generated)
-**/cu_baseline.md
-**/cu_report.md
-
 # Build outputs
 dist/
 build/
