@@ -58,34 +58,4 @@ jobs:
           pnpm run generate-clients
           cd program && cargo-build-sbf
       - name: Run integration tests
-        run: |
-          mkdir -p .cus
-          cargo test -p tests-rewards-program -- --test-threads=1
-        env:
-          CU_TRACKING: '1'
-      - name: Compute Units Summary
-        if: always()
-        run: |
-          echo "## Compute Units Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ -f .cus/results.txt ]; then
-            echo "| Instruction | Best | Avg | Worst | Count |" >> $GITHUB_STEP_SUMMARY
-            echo "|-------------|------|-----|-------|-------|" >> $GITHUB_STEP_SUMMARY
-            awk -F',' '
-            {
-              name = $1
-              cus = $2
-              count[name]++
-              sum[name] += cus
-              if (!(name in min) || cus < min[name]) min[name] = cus
-              if (!(name in max) || cus > max[name]) max[name] = cus
-            }
-            END {
-              for (name in count) {
-                avg = int(sum[name] / count[name])
-                printf "| %s | %d | %d | %d | %d |\n", name, min[name], avg, max[name], count[name]
-              }
-            }' .cus/results.txt | sort >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No CU tracking data found." >> $GITHUB_STEP_SUMMARY
-          fi
+        run: cargo test -p tests-rewards-program

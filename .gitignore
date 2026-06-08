@@ -32,7 +32,7 @@
 .local/
 
 # CU tracking
-.cus/
+**/cu_report.md
 
 # Coverage
 .coverage/
