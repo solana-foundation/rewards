@@ -9,18 +9,14 @@ use solana_sdk::{
     transaction::{Transaction, TransactionError},
 };
 
-use crate::utils::cu_utils::CuTracker;
-
 pub use rewards_program_client::REWARDS_PROGRAM_ID as PROGRAM_ID;
 
 const MIN_LAMPORTS: u64 = 500_000_000;
-const CU_TRACKING_ENV_VAR: &str = "CU_TRACKING";
 
 pub struct TestContext {
     pub svm: LiteSVM,
     pub payer: Keypair,
     pub authority: Keypair,
-    pub cu_tracker: Option<CuTracker>,
 }
 
 impl TestContext {
@@ -46,9 +42,7 @@ impl TestContext {
         svm.airdrop(&payer.pubkey(), 100 * LAMPORTS_PER_SOL).unwrap();
         svm.airdrop(&authority.pubkey(), 100 * LAMPORTS_PER_SOL).unwrap();
 
-        let cu_tracker = if std::env::var(CU_TRACKING_ENV_VAR).is_ok() { CuTracker::new() } else { None };
-
-        Self { svm, payer, authority, cu_tracker }
+        Self { svm, payer, authority }
     }
 
     pub fn airdrop_if_required(&mut self, pubkey: &Pubkey, lamports: u64) -> Result<(), Box<dyn std::error::Error>> {

@@ -40,17 +40,15 @@ typecheck:
 unit-test:
     cargo test -p rewards-program
 
-# Run integration tests (use --with-cu to track compute units and update README)
+# Run integration tests
 integration-test *args:
-    #!/usr/bin/env bash
-    set -e
-    if [[ "{{ args }}" == *"--with-cu"* ]]; then
-    	./scripts/integration-test-with-cu.sh
-    else
-    	cargo test -p tests-rewards-program "$@"
-    fi
+    cargo test -p tests-rewards-program {{ args }}
 
-# Run all tests (use --with-cu to track compute units)
+# Run integration tests with a compute unit benchmark report (writes cu_report.md)
+test-and-benchmark: build
+    CU_REPORT=1 CU_REPORT_DATE=$(date +%Y-%m-%d) cargo test -p tests-rewards-program
+
+# Run all tests
 test *args: build unit-test (integration-test args)
 
 # Run unit tests with code coverage (generates HTML report in .coverage/)
