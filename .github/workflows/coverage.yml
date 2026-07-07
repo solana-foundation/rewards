@@ -18,7 +18,7 @@ jobs:
           toolchain: '1.84'
           components: llvm-tools-preview
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6.1.0
         with:
           path: |
             ~/.cargo/registry
