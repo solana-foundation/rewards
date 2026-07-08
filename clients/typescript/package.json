@@ -24,10 +24,10 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@solana/program-client-core": "^6.9.0"
+    "@solana/program-client-core": "^6.10.0"
   },
   "peerDependencies": {
-    "@solana/kit": "^6.9.0"
+    "@solana/kit": "^6.10.0"
   },
   "homepage": "https://github.com/solana-foundation/rewards#readme",
   "bugs": {
