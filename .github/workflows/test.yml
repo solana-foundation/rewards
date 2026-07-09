@@ -35,7 +35,7 @@ jobs:
         with:
           toolchain: '1.92'
           components: rustfmt
-      - uses: pnpm/action-setup@v6.0.7
+      - uses: pnpm/action-setup@v6.0.9
       - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
