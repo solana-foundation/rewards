@@ -1,3 +1,29 @@
 packages:
   - 'clients/typescript'
   - 'apps/web'
+
+allowBuilds:
+  bufferutil: false
+  esbuild: true
+  unrs-resolver: true
+  utf-8-validate: false
+
+overrides:
+  'ajv@^6.0.0': 6.14.0
+  'brace-expansion@^1.0.0': 1.1.13
+  'brace-expansion@^2.0.0': 2.0.3
+  'flatted@^3.0.0': 3.4.2
+  'handlebars@^4.0.0': 4.7.9
+  'h3@^1.0.0': 1.15.9
+  'lodash@^4.0.0': 4.17.23
+  'minimatch@^3.0.0': 3.1.4
+  'minimatch@^9.0.0': 9.0.7
+  'picomatch@^2.0.0': 2.3.2
+  'picomatch@^4.0.0': 4.0.4
+  'socket.io-parser@^4.0.0': 4.2.6
+  '@solana/rpc-subscriptions-channel-websocket>ws': 8.20.1
+  'viem>ws': 8.20.1
+  '@walletconnect/core': 2.23.9
+  '@walletconnect/sign-client': 2.23.9
+  '@walletconnect/universal-provider': 2.23.9
+  '@walletconnect/utils': 2.23.9
