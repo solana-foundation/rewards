@@ -14,9 +14,9 @@
         "lint:fix": "eslint . --fix"
     },
     "devDependencies": {
-        "@codama/nodes-from-anchor": "^1.5.2",
-        "@codama/renderers-js": "^2.3.0",
-        "@codama/renderers-rust": "^3.1.1",
+        "@codama/nodes-from-anchor": "^1.5.3",
+        "@codama/renderers-js": "^2.3.1",
+        "@codama/renderers-rust": "^3.1.3",
         "@eslint/js": "^9.39.5",
         "@jest/globals": "^30.4.1",
         "@solana-program/system": "^0.12.0",
@@ -28,7 +28,7 @@
         "@types/eslint": "^9.6.1",
         "@types/eslint__js": "^9.14.0",
         "@types/jest": "^30.0.0",
-        "@types/node": "^26.1.1",
+        "@types/node": "^26.1.2",
         "codama": "^1.8.0",
         "eslint": "^9.39.5",
         "eslint-plugin-jest": "^29.15.5",
@@ -41,9 +41,9 @@
         "prettier": "^3.9.6",
         "ts-jest": "^29.4.12",
         "ts-node": "^10.9.2",
-        "tsx": "^4.23.1",
+        "tsx": "^4.23.11",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.62.0"
     },
-    "packageManager": "pnpm@11.13.0+sha512.88d94724d8f2e6c186744a5584c6e59ecac869ec7ba15e9cb4cd628e8dc7066820b2481d8ee3b51ea8da323a7378068aa58c556a3720d32b7c20a051d088363a"
+    "packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621"
 }
