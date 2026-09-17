@@ -12,6 +12,9 @@ on:
       - '.nvmrc'
       - 'pnpm-lock.yaml'
 
+permissions:
+  contents: read
+
 jobs:
   web-build:
     runs-on: ubuntu-latest
