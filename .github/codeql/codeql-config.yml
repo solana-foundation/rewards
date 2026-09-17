@@ -1,0 +1,6 @@
+name: rewards-codeql
+
+paths-ignore:
+  - tests
+  - "**/node_modules"
+  - "**/target"
