@@ -42,12 +42,15 @@ export function buildVestingSchedule(
         if (startErr) return { ok: false, error: startErr };
         const endErr = validateInteger(value.endTs, 'End timestamp');
         if (endErr) return { ok: false, error: endErr };
+        const startTs = parseBigIntValue(value.startTs);
+        const endTs = parseBigIntValue(value.endTs);
+        if (endTs <= startTs) return { ok: false, error: 'End timestamp must be after start timestamp.' };
         return {
             ok: true,
             value: {
                 __kind: 'Linear',
-                startTs: parseBigIntValue(value.startTs),
-                endTs: parseBigIntValue(value.endTs),
+                startTs,
+                endTs,
             },
         };
     }
@@ -55,11 +58,13 @@ export function buildVestingSchedule(
     if (value.kind === 'Cliff') {
         const cliffErr = validateInteger(value.cliffTs, 'Cliff timestamp');
         if (cliffErr) return { ok: false, error: cliffErr };
+        const cliffTs = parseBigIntValue(value.cliffTs);
+        if (cliffTs <= 0n) return { ok: false, error: 'Cliff timestamp must be greater than 0.' };
         return {
             ok: true,
             value: {
                 __kind: 'Cliff',
-                cliffTs: parseBigIntValue(value.cliffTs),
+                cliffTs,
             },
         };
     }
@@ -70,14 +75,21 @@ export function buildVestingSchedule(
     if (cliffErr) return { ok: false, error: cliffErr };
     const endErr = validateInteger(value.endTs, 'End timestamp');
     if (endErr) return { ok: false, error: endErr };
+    const startTs = parseBigIntValue(value.startTs);
+    const cliffTs = parseBigIntValue(value.cliffTs);
+    const endTs = parseBigIntValue(value.endTs);
+    if (endTs <= startTs) return { ok: false, error: 'End timestamp must be after start timestamp.' };
+    if (cliffTs < startTs || cliffTs > endTs) {
+        return { ok: false, error: 'Cliff timestamp must be between start and end timestamps.' };
+    }
 
     return {
         ok: true,
         value: {
             __kind: 'CliffLinear',
-            startTs: parseBigIntValue(value.startTs),
-            cliffTs: parseBigIntValue(value.cliffTs),
-            endTs: parseBigIntValue(value.endTs),
+            startTs,
+            cliffTs,
+            endTs,
         },
     };
 }
