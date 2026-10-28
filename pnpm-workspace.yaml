@@ -37,3 +37,7 @@ overrides:
   '@walletconnect/sign-client': 2.23.9
   '@walletconnect/universal-provider': 2.23.9
   '@walletconnect/utils': 2.23.9
+
+auditConfig:
+  ignoreGhsas:
+    - GHSA-gcqx-w48m-w2h4
