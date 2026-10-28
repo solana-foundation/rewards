@@ -9,7 +9,6 @@ import {
     type MerkleDistribution,
 } from '@solana/rewards';
 import {
-    address,
     getBase64Encoder,
     type Address,
     type Base58EncodedBytes,
@@ -203,21 +202,17 @@ export async function fetchProofDropRewardAllocations(
         if (account.exists) distributionByAddress.set(account.address, account.data);
     }
 
-    const claimAddresses = proofDrops.map(drop => deriveMerkleClaimPda(drop.distribution, claimant, programAddress)[0]);
-    const claimAccounts =
-        claimAddresses.length > 0
-            ? await fetchAllMaybeMerkleClaim(
-                  rpc,
-                  claimAddresses.map(claim => address(claim)),
-              )
-            : [];
+    const claimAddresses = await Promise.all(
+        proofDrops.map(async drop => (await deriveMerkleClaimPda(drop.distribution, claimant, programAddress))[0]),
+    );
+    const claimAccounts = claimAddresses.length > 0 ? await fetchAllMaybeMerkleClaim(rpc, claimAddresses) : [];
     const claimedByAddress = new Map<Address, MerkleClaim['claimedAmount']>();
     for (const account of claimAccounts) {
         if (account.exists) claimedByAddress.set(account.address, account.data.claimedAmount);
     }
 
-    return proofDrops.map(drop => {
-        const claimAccount = address(deriveMerkleClaimPda(drop.distribution, claimant, programAddress)[0]);
+    return proofDrops.map((drop, index) => {
+        const claimAccount = claimAddresses[index];
         const distribution = distributionByAddress.get(drop.distribution);
         const claimedAmount = claimedByAddress.get(claimAccount) ?? 0n;
         const remainingAmount = drop.totalAmount > claimedAmount ? drop.totalAmount - claimedAmount : 0n;

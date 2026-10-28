@@ -119,10 +119,10 @@ function asAddress(value: string): Address {
     return address(value.trim());
 }
 
-function getProgramConfig() {
+async function getProgramConfig() {
     const programAddress = getProgramAddress();
     return {
-        eventAuthority: deriveEventAuthority(programAddress),
+        eventAuthority: await deriveEventAuthority(programAddress),
         programAddress,
     } as const;
 }
@@ -200,17 +200,17 @@ export function useRewardsMutations() {
     const createDirectDistribution = useMutation({
         mutationFn: async (input: CreateDirectDistributionInput): Promise<DistributionMutationResult> => {
             const txSigner = requireSigner();
-            const { programAddress, eventAuthority } = getProgramConfig();
+            const { programAddress, eventAuthority } = await getProgramConfig();
             const mint = input.mint.trim();
             const tokenProgram = normalizeTokenProgram(input.tokenProgram);
             const seedSigner = await generateKeyPairSigner();
-            const [distribution, bump] = deriveDirectDistributionPda(
+            const [distribution, bump] = await deriveDirectDistributionPda(
                 mint,
                 txSigner.address,
                 seedSigner.address,
                 programAddress,
             );
-            const distributionVault = deriveAta(distribution, mint, tokenProgram);
+            const distributionVault = await deriveAta(distribution, mint, tokenProgram);
 
             const instruction = getCreateDirectDistributionInstruction(
                 {
@@ -242,18 +242,18 @@ export function useRewardsMutations() {
     const createMerkleDistribution = useMutation({
         mutationFn: async (input: CreateMerkleDistributionInput): Promise<DistributionMutationResult> => {
             const txSigner = requireSigner();
-            const { programAddress, eventAuthority } = getProgramConfig();
+            const { programAddress, eventAuthority } = await getProgramConfig();
             const mint = input.mint.trim();
             const tokenProgram = normalizeTokenProgram(input.tokenProgram);
             const seedSigner = await generateKeyPairSigner();
-            const [distribution, bump] = deriveMerkleDistributionPda(
+            const [distribution, bump] = await deriveMerkleDistributionPda(
                 mint,
                 txSigner.address,
                 seedSigner.address,
                 programAddress,
             );
-            const distributionVault = deriveAta(distribution, mint, tokenProgram);
-            const authorityTokenAccount = deriveAta(txSigner.address, mint, tokenProgram);
+            const distributionVault = await deriveAta(distribution, mint, tokenProgram);
+            const authorityTokenAccount = await deriveAta(txSigner.address, mint, tokenProgram);
 
             const instruction = getCreateMerkleDistributionInstruction(
                 {
@@ -291,14 +291,14 @@ export function useRewardsMutations() {
     const addDirectRecipient = useMutation({
         mutationFn: async (input: AddDirectRecipientInput): Promise<RewardsMutationResult> => {
             const txSigner = requireSigner();
-            const { programAddress, eventAuthority } = getProgramConfig();
+            const { programAddress, eventAuthority } = await getProgramConfig();
             const distribution = input.distribution.trim();
             const mint = input.mint.trim();
             const recipient = input.recipient.trim();
             const tokenProgram = normalizeTokenProgram(input.tokenProgram);
-            const [recipientAccount, bump] = deriveDirectRecipientPda(distribution, recipient, programAddress);
-            const distributionVault = deriveAta(distribution, mint, tokenProgram);
-            const authorityTokenAccount = deriveAta(txSigner.address, mint, tokenProgram);
+            const [recipientAccount, bump] = await deriveDirectRecipientPda(distribution, recipient, programAddress);
+            const distributionVault = await deriveAta(distribution, mint, tokenProgram);
+            const authorityTokenAccount = await deriveAta(txSigner.address, mint, tokenProgram);
 
             const instruction = getAddDirectRecipientInstruction(
                 {
@@ -334,12 +334,12 @@ export function useRewardsMutations() {
     const closeDirectDistribution = useMutation({
         mutationFn: async (input: CloseDistributionInput): Promise<RewardsMutationResult> => {
             const txSigner = requireSigner();
-            const { programAddress, eventAuthority } = getProgramConfig();
+            const { programAddress, eventAuthority } = await getProgramConfig();
             const distribution = input.distribution.trim();
             const mint = input.mint.trim();
             const tokenProgram = normalizeTokenProgram(input.tokenProgram);
-            const distributionVault = deriveAta(distribution, mint, tokenProgram);
-            const authorityTokenAccount = deriveAta(txSigner.address, mint, tokenProgram);
+            const distributionVault = await deriveAta(distribution, mint, tokenProgram);
+            const authorityTokenAccount = await deriveAta(txSigner.address, mint, tokenProgram);
 
             const instruction = getCloseDirectDistributionInstruction(
                 {
@@ -367,12 +367,12 @@ export function useRewardsMutations() {
     const closeMerkleDistribution = useMutation({
         mutationFn: async (input: CloseDistributionInput): Promise<RewardsMutationResult> => {
             const txSigner = requireSigner();
-            const { programAddress, eventAuthority } = getProgramConfig();
+            const { programAddress, eventAuthority } = await getProgramConfig();
             const distribution = input.distribution.trim();
             const mint = input.mint.trim();
             const tokenProgram = normalizeTokenProgram(input.tokenProgram);
-            const distributionVault = deriveAta(distribution, mint, tokenProgram);
-            const authorityTokenAccount = deriveAta(txSigner.address, mint, tokenProgram);
+            const distributionVault = await deriveAta(distribution, mint, tokenProgram);
+            const authorityTokenAccount = await deriveAta(txSigner.address, mint, tokenProgram);
 
             const instruction = getCloseMerkleDistributionInstruction(
                 {
@@ -400,10 +400,10 @@ export function useRewardsMutations() {
     const closeDirectRecipient = useMutation({
         mutationFn: async (input: CloseDirectRecipientInput): Promise<RewardsMutationResult> => {
             const txSigner = requireSigner();
-            const { programAddress, eventAuthority } = getProgramConfig();
+            const { programAddress, eventAuthority } = await getProgramConfig();
             const distribution = input.distribution.trim();
             const originalPayer = input.originalPayer.trim();
-            const [recipientAccount] = deriveDirectRecipientPda(distribution, txSigner.address, programAddress);
+            const [recipientAccount] = await deriveDirectRecipientPda(distribution, txSigner.address, programAddress);
 
             const instruction = getCloseDirectRecipientInstruction(
                 {
@@ -428,9 +428,9 @@ export function useRewardsMutations() {
     const closeMerkleClaim = useMutation({
         mutationFn: async (input: CloseMerkleClaimInput): Promise<RewardsMutationResult> => {
             const txSigner = requireSigner();
-            const { programAddress, eventAuthority } = getProgramConfig();
+            const { programAddress, eventAuthority } = await getProgramConfig();
             const distribution = input.distribution.trim();
-            const [claimAccount] = deriveMerkleClaimPda(distribution, txSigner.address, programAddress);
+            const [claimAccount] = await deriveMerkleClaimPda(distribution, txSigner.address, programAddress);
 
             const instruction = getCloseMerkleClaimInstruction(
                 {
@@ -454,13 +454,13 @@ export function useRewardsMutations() {
     const claimDirect = useMutation({
         mutationFn: async (input: ClaimDirectInput): Promise<RewardsMutationResult> => {
             const txSigner = requireSigner();
-            const { programAddress, eventAuthority } = getProgramConfig();
+            const { programAddress, eventAuthority } = await getProgramConfig();
             const distribution = input.distribution.trim();
             const mint = input.mint.trim();
             const tokenProgram = normalizeTokenProgram(input.tokenProgram);
-            const [recipientAccount] = deriveDirectRecipientPda(distribution, txSigner.address, programAddress);
-            const distributionVault = deriveAta(distribution, mint, tokenProgram);
-            const recipientTokenAccount = deriveAta(txSigner.address, mint, tokenProgram);
+            const [recipientAccount] = await deriveDirectRecipientPda(distribution, txSigner.address, programAddress);
+            const distributionVault = await deriveAta(distribution, mint, tokenProgram);
+            const recipientTokenAccount = await deriveAta(txSigner.address, mint, tokenProgram);
 
             const instruction = getClaimDirectInstruction(
                 {
@@ -491,14 +491,18 @@ export function useRewardsMutations() {
     const claimMerkle = useMutation({
         mutationFn: async (input: ClaimMerkleInput): Promise<RewardsMutationResult> => {
             const txSigner = requireSigner();
-            const { programAddress, eventAuthority } = getProgramConfig();
+            const { programAddress, eventAuthority } = await getProgramConfig();
             const distribution = input.distribution.trim();
             const mint = input.mint.trim();
             const tokenProgram = normalizeTokenProgram(input.tokenProgram);
-            const [claimAccount, claimBump] = deriveMerkleClaimPda(distribution, txSigner.address, programAddress);
-            const [revocationMarker] = deriveRevocationPda(distribution, txSigner.address, programAddress);
-            const distributionVault = deriveAta(distribution, mint, tokenProgram);
-            const claimantTokenAccount = deriveAta(txSigner.address, mint, tokenProgram);
+            const [claimAccount, claimBump] = await deriveMerkleClaimPda(
+                distribution,
+                txSigner.address,
+                programAddress,
+            );
+            const [revocationMarker] = await deriveRevocationPda(distribution, txSigner.address, programAddress);
+            const distributionVault = await deriveAta(distribution, mint, tokenProgram);
+            const claimantTokenAccount = await deriveAta(txSigner.address, mint, tokenProgram);
 
             const instruction = getClaimMerkleInstruction(
                 {
@@ -536,16 +540,16 @@ export function useRewardsMutations() {
     const revokeDirectRecipient = useMutation({
         mutationFn: async (input: RevokeDirectRecipientInput): Promise<RewardsMutationResult> => {
             const txSigner = requireSigner();
-            const { programAddress, eventAuthority } = getProgramConfig();
+            const { programAddress, eventAuthority } = await getProgramConfig();
             const distribution = input.distribution.trim();
             const mint = input.mint.trim();
             const recipient = input.recipient.trim();
             const originalPayer = input.originalPayer.trim();
             const tokenProgram = normalizeTokenProgram(input.tokenProgram);
-            const [recipientAccount] = deriveDirectRecipientPda(distribution, recipient, programAddress);
-            const distributionVault = deriveAta(distribution, mint, tokenProgram);
-            const recipientTokenAccount = deriveAta(recipient, mint, tokenProgram);
-            const authorityTokenAccount = deriveAta(txSigner.address, mint, tokenProgram);
+            const [recipientAccount] = await deriveDirectRecipientPda(distribution, recipient, programAddress);
+            const distributionVault = await deriveAta(distribution, mint, tokenProgram);
+            const recipientTokenAccount = await deriveAta(recipient, mint, tokenProgram);
+            const authorityTokenAccount = await deriveAta(txSigner.address, mint, tokenProgram);
 
             const instruction = getRevokeDirectRecipientInstruction(
                 {
@@ -579,16 +583,16 @@ export function useRewardsMutations() {
     const revokeMerkleClaim = useMutation({
         mutationFn: async (input: RevokeMerkleClaimInput): Promise<RewardsMutationResult> => {
             const txSigner = requireSigner();
-            const { programAddress, eventAuthority } = getProgramConfig();
+            const { programAddress, eventAuthority } = await getProgramConfig();
             const distribution = input.distribution.trim();
             const mint = input.mint.trim();
             const claimant = input.claimant.trim();
             const tokenProgram = normalizeTokenProgram(input.tokenProgram);
-            const [claimAccount] = deriveMerkleClaimPda(distribution, claimant, programAddress);
-            const [revocationMarker] = deriveRevocationPda(distribution, claimant, programAddress);
-            const distributionVault = deriveAta(distribution, mint, tokenProgram);
-            const claimantTokenAccount = deriveAta(claimant, mint, tokenProgram);
-            const authorityTokenAccount = deriveAta(txSigner.address, mint, tokenProgram);
+            const [claimAccount] = await deriveMerkleClaimPda(distribution, claimant, programAddress);
+            const [revocationMarker] = await deriveRevocationPda(distribution, claimant, programAddress);
+            const distributionVault = await deriveAta(distribution, mint, tokenProgram);
+            const claimantTokenAccount = await deriveAta(claimant, mint, tokenProgram);
+            const authorityTokenAccount = await deriveAta(txSigner.address, mint, tokenProgram);
 
             const instruction = getRevokeMerkleClaimInstruction(
                 {

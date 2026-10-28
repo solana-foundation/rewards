@@ -8,10 +8,6 @@ allowBuilds:
   unrs-resolver: true
   utf-8-validate: false
 
-overrides:
-  'stream-json@^1.0.0': 3.7.0
-  'uuid@^8.0.0': 11.1.1
-
 auditConfig:
   ignoreGhsas:
     - GHSA-gcqx-w48m-w2h4

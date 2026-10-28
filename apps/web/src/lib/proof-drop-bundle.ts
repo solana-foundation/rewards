@@ -1,6 +1,6 @@
 import { keccak_256 } from '@noble/hashes/sha3.js';
+import { address, getAddressEncoder } from '@solana/kit';
 import { getVestingScheduleEncoder, type VestingScheduleArgs } from '@solana/rewards';
-import { PublicKey } from '@solana/web3.js';
 
 import { parseBigIntValue, validateAddress, validatePositiveInteger } from '@/lib/validation';
 import { buildVestingSchedule, isVestingScheduleState, type VestingScheduleState } from '@/lib/vesting-schedule';
@@ -69,6 +69,7 @@ interface MerkleNode {
 }
 
 const vestingScheduleEncoder = getVestingScheduleEncoder();
+const addressEncoder = getAddressEncoder();
 
 function normalize(value: string) {
     return value.trim();
@@ -134,7 +135,7 @@ function scheduleBytes(schedule: VestingScheduleArgs) {
 }
 
 function computeLeafHash(recipient: string, totalAmount: bigint, schedule: VestingScheduleArgs) {
-    const claimantBytes = new PublicKey(recipient).toBytes();
+    const claimantBytes = Uint8Array.from(addressEncoder.encode(address(recipient)));
     const innerHash = keccak_256(concatBytes(claimantBytes, u64Le(totalAmount), scheduleBytes(schedule)));
     return keccak_256(concatBytes(new Uint8Array([LEAF_PREFIX]), innerHash));
 }
