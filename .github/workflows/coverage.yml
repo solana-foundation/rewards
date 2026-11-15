@@ -30,7 +30,7 @@ jobs:
           key: cargo-coverage-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@2409e52fd2fc8a8601d0d900fab9d85ae1fe714a # cargo-llvm-cov
+        uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # cargo-llvm-cov
 
       - name: Run unit tests with coverage
         run: cargo llvm-cov --package rewards-program --html --output-dir .coverage
